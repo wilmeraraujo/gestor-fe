@@ -1,0 +1,45 @@
+<div class="dashboard">
+
+  <!-- SIDEBAR -->
+  <app-sidebar
+    [collapsed]="sidebarCollapsed">
+  </app-sidebar>
+
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div
+    class="dashboard-main"
+    [class.dashboard-main-expanded]="!sidebarCollapsed"
+    [class.dashboard-main-collapsed]="sidebarCollapsed">
+
+    <!-- NAVBAR -->
+    <nav
+      class="dashboard-navbar"
+      [class.dashboard-navbar-expanded]="!sidebarCollapsed"
+      [class.dashboard-navbar-collapsed]="sidebarCollapsed">
+
+      <app-header
+        (toggle)="toggleSidebar()">
+      </app-header>
+
+    </nav>
+
+
+    <!-- CONTENIDO -->
+    <div class="dashboard-content">
+
+      <router-outlet></router-outlet>
+
+    </div>
+
+
+    <!-- FOOTER -->
+    <div class="dashboard-footer">
+
+      <app-footer></app-footer>
+
+    </div>
+
+  </div>
+
+</div>
