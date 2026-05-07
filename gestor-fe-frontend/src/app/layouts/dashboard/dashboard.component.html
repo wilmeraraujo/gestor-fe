@@ -5,40 +5,25 @@
     [collapsed]="sidebarCollapsed">
   </app-sidebar>
 
-
-  <!-- CONTENIDO PRINCIPAL -->
+  <!-- MAIN -->
   <div
     class="dashboard-main"
-    [class.dashboard-main-expanded]="!sidebarCollapsed"
     [class.dashboard-main-collapsed]="sidebarCollapsed">
 
-    <!-- NAVBAR -->
-    <nav
-      class="dashboard-navbar"
-      [class.dashboard-navbar-expanded]="!sidebarCollapsed"
-      [class.dashboard-navbar-collapsed]="sidebarCollapsed">
+    <!-- HEADER -->
+    <app-header
+      (toggle)="toggleSidebar()">
+    </app-header>
 
-      <app-header
-        (toggle)="toggleSidebar()">
-      </app-header>
-
-    </nav>
-
-
-    <!-- CONTENIDO -->
-    <div class="dashboard-content">
+    <!-- CONTENT -->
+    <main class="dashboard-content">
 
       <router-outlet></router-outlet>
 
-    </div>
-
+    </main>
 
     <!-- FOOTER -->
-    <div class="dashboard-footer">
-
-      <app-footer></app-footer>
-
-    </div>
+    <app-footer></app-footer>
 
   </div>
 

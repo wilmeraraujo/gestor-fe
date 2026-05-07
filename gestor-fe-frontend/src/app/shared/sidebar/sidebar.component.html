@@ -1,1 +1,83 @@
-<p>sidebar works!</p>
+<aside
+  class="sidebar"
+  [class.sidebar-collapsed]="collapsed">
+
+  <!-- LOGO -->
+  <div class="sidebar-logo">
+
+    <h2 *ngIf="!collapsed">
+      FE
+    </h2>
+
+    <h2 *ngIf="collapsed">
+      F
+    </h2>
+
+  </div>
+
+  <!-- MENU -->
+  <ul class="sidebar-menu">
+
+    <!-- HOME -->
+    <li>
+
+      <a
+        routerLink="/dashboard/home"
+        routerLinkActive="sidebar-active"
+        class="sidebar-item">
+
+        <span class="material-icons sidebar-icon">
+          home
+        </span>
+
+        <span *ngIf="!collapsed">
+          Home
+        </span>
+
+      </a>
+
+    </li>
+
+    <!-- ADMIN -->
+    <li>
+
+      <a
+        routerLink="/dashboard/administracion"
+        routerLinkActive="sidebar-active"
+        class="sidebar-item">
+
+        <span class="material-icons sidebar-icon">
+          admin_panel_settings
+        </span>
+
+        <span *ngIf="!collapsed">
+          Administración
+        </span>
+
+      </a>
+
+    </li>
+
+    <!-- CARGUE -->
+    <li>
+
+      <a
+        routerLink="/dashboard/cargue"
+        routerLinkActive="sidebar-active"
+        class="sidebar-item">
+
+        <span class="material-icons sidebar-icon">
+          upload_file
+        </span>
+
+        <span *ngIf="!collapsed">
+          Cargue
+        </span>
+
+      </a>
+
+    </li>
+
+  </ul>
+
+</aside>

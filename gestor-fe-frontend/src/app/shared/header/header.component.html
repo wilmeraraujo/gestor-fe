@@ -1,1 +1,76 @@
-<p>header works!</p>
+<div class="header">
+
+  <!-- LEFT -->
+  <div class="header-left">
+
+    <!-- TOGGLE -->
+    <button
+      (click)="toggleSidebar()"
+      class="header-toggle">
+
+      <svg xmlns="http://www.w3.org/2000/svg"
+           class="header-toggle-icon"
+           fill="none"
+           viewBox="0 0 24 24"
+           stroke="currentColor">
+
+        <path stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16" />
+
+      </svg>
+
+    </button>
+
+    <!-- BREADCRUMB -->
+    <div class="header-breadcrumb">
+
+      <span class="breadcrumb-item">GESTION</span>
+
+      <span class="breadcrumb-separator">/</span>
+
+      <span class="breadcrumb-item-active">
+        FE
+      </span>
+
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="header-actions">
+
+    <!-- SEARCH -->
+    <div class="header-search">
+
+      <input
+        type="text"
+        placeholder="Buscar..."
+        class="header-input">
+
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <button class="header-icon-btn">
+
+      <span class="material-icons">
+        notifications
+      </span>
+
+    </button>
+
+    <!-- USER -->
+    <button class="header-user">
+
+      <span>{{user}}</span>
+
+      <span class="material-icons">
+        account_circle
+      </span>
+
+    </button>
+
+  </div>
+
+</div>

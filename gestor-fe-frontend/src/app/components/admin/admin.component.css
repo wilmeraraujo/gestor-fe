@@ -1,0 +1,310 @@
+.buscador-container {
+  flex: 0 0 50%; /* ocupa solo la mitad */
+  margin-left: 0%;
+}
+
+.buscador-field {
+  width: 50%;
+}
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.card {
+  margin: 0;
+
+  padding: 20px;
+
+  border-radius: 20px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+
+/* =========================================================
+   HEADER CARD
+========================================================= */
+
+mat-card-header {
+  margin-bottom: 20px;
+}
+
+mat-card-header h1 {
+  margin: 0;
+
+  font-size: 24px;
+
+  font-weight: 600;
+
+  color: #374151;
+}
+
+
+/* =========================================================
+   TABLA
+========================================================= */
+
+.full-width-table {
+  width: 100%;
+
+  border-spacing: 0;
+
+  overflow: hidden;
+
+  border-radius: 14px 14px 0 0;
+
+  background: white;
+}
+
+
+/* =========================================================
+   HEADER TABLA
+========================================================= */
+
+.encabezado-tabla {
+  position: sticky;
+
+  top: 0;
+
+  z-index: 10;
+
+  background-color: #f5f5f7;
+
+  height: 56px;
+}
+
+
+/* =========================================================
+   CELDAS HEADER
+========================================================= */
+
+.mat-mdc-header-cell {
+  background-color: #f5f5f7 !important;
+
+  color: #6b7280 !important;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+
+/* =========================================================
+   ESQUINAS HEADER
+========================================================= */
+
+.mat-mdc-header-cell:first-child {
+  border-top-left-radius: 14px;
+}
+
+.mat-mdc-header-cell:last-child {
+  border-top-right-radius: 14px;
+}
+
+
+/* =========================================================
+   FILAS TABLA
+========================================================= */
+
+.mat-mdc-row {
+  background: white;
+
+  transition: background 0.2s ease;
+}
+
+.mat-mdc-row:hover {
+  background: #fafafa;
+}
+
+
+/* =========================================================
+   CELDAS TABLA
+========================================================= */
+
+.mat-mdc-cell {
+  border-bottom: 1px solid #f1f5f9;
+
+  color: #374151;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   PAGINADOR
+========================================================= */
+
+::ng-deep .mat-mdc-paginator {
+  margin-top: -1px;
+
+  background-color: #f5f5f7 !important;
+
+  color: #374151 !important;
+
+  border-radius: 0 0 14px 14px;
+
+  overflow: hidden;
+
+  border-top: 1px solid #e5e7eb;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+
+/* =========================================================
+   TEXTO PAGINADOR
+========================================================= */
+
+::ng-deep .mat-mdc-paginator-page-size-label,
+::ng-deep .mat-mdc-paginator-range-label {
+  color: #374151 !important;
+
+  font-size: 13px !important;
+}
+
+
+/* =========================================================
+   NUMERO SELECT PAGINADOR
+========================================================= */
+
+::ng-deep .mat-mdc-select-min-line {
+  color: #374151 !important;
+}
+
+
+/* =========================================================
+   FLECHA SELECT
+========================================================= */
+
+::ng-deep .mat-mdc-select-arrow svg {
+  fill: #374151 !important;
+}
+
+
+/* =========================================================
+   BOTONES PAGINADOR
+========================================================= */
+
+::ng-deep .mat-mdc-paginator .mat-mdc-icon-button {
+  color: #374151 !important;
+
+  border-radius: 8px;
+
+  transition: background 0.2s ease;
+}
+
+
+/* =========================================================
+   ICONOS SVG PAGINADOR
+========================================================= */
+
+::ng-deep .mat-mdc-paginator .mat-mdc-icon-button svg {
+  fill: #374151 !important;
+}
+
+
+/* =========================================================
+   HOVER BOTONES PAGINADOR
+========================================================= */
+
+::ng-deep .mat-mdc-paginator .mat-mdc-icon-button:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+
+/* =========================================================
+   BOTONES DESHABILITADOS
+========================================================= */
+
+::ng-deep .mat-mdc-paginator .mat-mdc-icon-button[disabled] svg {
+  fill: rgba(55,65,81,0.35) !important;
+}
+
+
+/* =========================================================
+   SELECT PAGINADOR
+========================================================= */
+
+::ng-deep .mat-mdc-text-field-wrapper {
+  background: white !important;
+
+  border-radius: 8px !important;
+}
+
+
+/* =========================================================
+   BORDER SELECT
+========================================================= */
+
+::ng-deep .mdc-notched-outline__leading,
+::ng-deep .mdc-notched-outline__notch,
+::ng-deep .mdc-notched-outline__trailing {
+  border-color: #d1d5db !important;
+}
+
+
+/* =========================================================
+   ALERT INFO
+========================================================= */
+
+.alert-info {
+  margin: 12px 0;
+
+  padding: 14px;
+
+  border-radius: 10px;
+
+  background: #ecfeff;
+
+  border: 1px solid #bae6fd;
+
+  color: #0f766e;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   ACTIONS
+========================================================= */
+
+mat-card-actions {
+  margin-top: 20px;
+
+  display: flex;
+
+  gap: 12px;
+}
+
+
+/* =========================================================
+   BOTONES
+========================================================= */
+
+.btn {
+  min-width: 120px;
+
+  height: 40px;
+
+  border-radius: 10px;
+
+  font-size: 14px;
+
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+
+
