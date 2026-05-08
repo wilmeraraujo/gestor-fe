@@ -1,70 +1,102 @@
-import { Component, ViewChild } from '@angular/core';
-import { MATERIAL_MODULES } from '../../shared/material';
-import { MatPaginator } from '@angular/material/paginator';
+import { Component } from '@angular/core';
+
 import { CommonListarComponent } from '../common-listar.component';
+
 import { AdminService } from '../../services/admin.service';
+
 import { Admin } from '../../models/admin';
-import { MatTooltip } from "@angular/material/tooltip";
+
+import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [...MATERIAL_MODULES, MatTooltip],
+  imports: [
+    DataTableComponent
+  ],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.css'
 })
-export class AdminComponent extends CommonListarComponent<Admin,AdminService>{
+export class AdminComponent
+  extends CommonListarComponent<Admin, AdminService>
+  {
+  override titulo = 'Administración';
 
-  tituloCardHeader : string = 'Administración';
-  mostrarColumnas: string[] = ['id', 'codigo', 'descripcion', 'acciones'];
-  @ViewChild(MatPaginator) override paginator!: MatPaginator;
+  columnas = [
+
+    {
+      field: 'id',
+      header: 'ID'
+    },
+
+    {
+      field: 'codigo',
+      header: 'Código'
+    },
+
+    {
+      field: 'descripcion',
+      header: 'Descripción'
+    }
+
+  ];
 
   constructor(
-    service: AdminService,
+    service: AdminService
   ) {
     super(service);
-    this.nombreModel = 'Categoria de documento';
   }
 
-  override calcularRangos(): void {
+  override lista = [
 
-    const datos: Admin[] = [
+    {
+      id: 1,
+      codigo: 'ADM-001',
+      descripcion: 'Administración General'
+    },
 
-      {
-        id: 1,
-        codigo: 'ADM-001',
-        descripcion: 'Administración General'
-      },
+    {
+      id: 2,
+      codigo: 'ADM-002',
+      descripcion: 'Gestión Documental'
+    },
 
-      {
-        id: 2,
-        codigo: 'ADM-002',
-        descripcion: 'Gestión Documental'
-      },
+    {
+      id: 3,
+      codigo: 'ADM-003',
+      descripcion: 'Facturación Electrónica'
+    },
 
-      {
-        id: 3,
-        codigo: 'ADM-003',
-        descripcion: 'Facturación Electrónica'
-      },
-
-      {
-        id: 4,
-        codigo: 'ADM-004',
-        descripcion: 'Auditoría Médica'
-      }];
-
-      this.lista = datos;
-
-      this.totalRegistros = datos.length;
-
-      this.dataSource.data = datos;
-
-      this.dataSource.paginator = this.paginator;
-
-      this.paginator._intl.itemsPerPageLabel =
-        'Registros por página:';
-
+    {
+      id: 4,
+      codigo: 'ADM-004',
+      descripcion: 'Auditoría Médica'
     }
+
+  ];
+
+  override totalRegistros = this.lista.length;
+
+  override totalPorPagina = 5;
+
+  agregar(): void {
+
+    console.log('Adicionar registro');
+
+  }
+
+  editar(row: Admin): void {
+
+    console.log('Editar:', row);
+
+  }
+
+
+  buscar(texto: string): void {
+
+    console.log('Buscar:', texto);
+
+  }
+
 
 }

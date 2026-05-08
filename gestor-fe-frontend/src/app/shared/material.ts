@@ -15,6 +15,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 
 import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 export const MATERIAL_MODULES = [
 
@@ -26,6 +27,7 @@ export const MATERIAL_MODULES = [
   MatDividerModule,
   MatTableModule,
   MatFormFieldModule,
-  MatInputModule
+  MatInputModule,
+  MatTooltipModule
 
 ];
