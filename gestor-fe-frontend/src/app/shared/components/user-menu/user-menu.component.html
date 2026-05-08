@@ -1,0 +1,67 @@
+<div
+  class="user-menu-container"
+  (click)="stopPropagation($event)">
+
+  <!-- BUTTON -->
+  <button
+    class="header-user"
+    (click)="toggleMenu()">
+
+    <span>{{ user }}</span>
+
+    <span class="material-icons">
+      account_circle
+    </span>
+
+  </button>
+
+  <!-- DROPDOWN -->
+  <div
+    class="user-dropdown"
+    *ngIf="isOpen">
+
+    <!-- HEADER -->
+    <div class="dropdown-header">
+
+      <div class="avatar">
+        {{ user.charAt(0) }}
+      </div>
+
+      <h3>{{ user }}</h3>
+
+      <p>{{ email }}</p>
+
+    </div>
+
+    <!-- BODY -->
+    <div class="dropdown-body">
+
+      <button
+        class="dropdown-item"
+        (click)="perfil()">
+
+        <span class="material-icons">
+          person
+        </span>
+
+        Mi perfil
+
+      </button>
+
+      <button
+        class="dropdown-item"
+        (click)="cerrarSesion()">
+
+        <span class="material-icons">
+          logout
+        </span>
+
+        Cerrar sesión
+
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

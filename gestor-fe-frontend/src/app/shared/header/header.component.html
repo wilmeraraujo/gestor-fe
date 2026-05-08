@@ -61,15 +61,10 @@
     </button>
 
     <!-- USER -->
-    <button class="header-user">
-
-      <span>{{user}}</span>
-
-      <span class="material-icons">
-        account_circle
-      </span>
-
-    </button>
+    <app-user-menu
+      [user]="user"
+      [email]="email">
+    </app-user-menu>
 
   </div>
 

@@ -1,0 +1,161 @@
+.user-menu-container {
+
+  position: relative;
+}
+
+/* ========================================= */
+
+.header-user {
+
+  height: 42px;
+
+  padding: 0 14px;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 999px;
+
+  background: white;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.header-user:hover {
+
+  background: #f9fafb;
+}
+
+/* ========================================= */
+
+.user-dropdown {
+
+  position: absolute;
+
+  top: 55px;
+
+  right: 0;
+
+  width: 320px;
+
+  background: white;
+
+  border-radius: 24px;
+
+  border: 1px solid #e5e7eb;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.12);
+
+  overflow: hidden;
+
+  z-index: 999;
+}
+
+/* ========================================= */
+
+.dropdown-header {
+
+  padding: 24px;
+
+  text-align: center;
+
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* ========================================= */
+
+.avatar {
+
+  width: 72px;
+
+  height: 72px;
+
+  margin: 0 auto 12px;
+
+  border-radius: 50%;
+
+  background: #94a3b8;
+
+  color: white;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 32px;
+
+  font-weight: 600;
+}
+
+/* ========================================= */
+
+.dropdown-header h3 {
+
+  margin: 0;
+
+  font-size: 20px;
+
+  color: #1f2937;
+}
+
+/* ========================================= */
+
+.dropdown-header p {
+
+  margin-top: 6px;
+
+  color: #6b7280;
+
+  font-size: 14px;
+}
+
+/* ========================================= */
+
+.dropdown-body {
+
+  padding: 12px;
+}
+
+/* ========================================= */
+
+.dropdown-item {
+
+  width: 100%;
+
+  height: 48px;
+
+  border: none;
+
+  border-radius: 12px;
+
+  background: white;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 0 14px;
+
+  cursor: pointer;
+
+  transition: background 0.2s ease;
+
+  font-size: 14px;
+}
+
+.dropdown-item:hover {
+
+  background: #f3f4f6;
+}
