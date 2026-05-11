@@ -8,7 +8,11 @@
 
   [totalRegistros]="totalRegistros"
 
-  [totalPorPagina]="5"
+  [totalPorPagina]="totalPorPagina"
+
+  [pageSizeOptions]="pageSizeOptions"
+
+  (paginar)="paginar($event)"
 
   (editar)="editar($event)"
 
@@ -17,5 +21,6 @@
   (agregar)="agregar()"
 
   (buscar)="buscar($event)">
+
 
 </app-data-table>

@@ -7,7 +7,8 @@ import { MatTableDataSource } from '@angular/material/table';
 import { Observable } from 'rxjs';
 
 @Directive()
-export abstract class CommonListarComponent<E extends Generic,S extends CommonService<E> > implements AfterViewInit{
+export abstract class CommonListarComponent<E extends Generic,S extends CommonService<E> > //implements AfterViewInit
+{
 
   titulo: string = '';
   lista: E[] = [];
@@ -20,10 +21,10 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
 
   dataSource: MatTableDataSource<E> = new MatTableDataSource<E>();
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  //@ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(protected service: S){}
-
+  /*
   ngAfterViewInit(): void {
 
     if(this.paginator){
@@ -32,7 +33,7 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
 
     }
 
-  }
+  }*/
 
   public paginar(event: PageEvent):void{
     this.paginaActual = event.pageIndex;
@@ -48,9 +49,9 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
         this.lista = p.content as E[];
         this.totalRegistros = p.totalElements as number;
         this.dataSource.data = this.lista;
-        if(this.paginator){
+        /*if(this.paginator){
           this.paginator._intl.itemsPerPageLabel = 'Registros por página:';
-        }
+        }*/
       });
 
   }
