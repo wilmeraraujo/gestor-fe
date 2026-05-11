@@ -35,17 +35,16 @@ public class TipoIdentificacionController extends GlobalController<TipoIdentific
 	}
 	
 	@GetMapping("/paginable/activos")
-    public ResponseEntity<?> listAll(
-            Pageable pageable,
-            @RequestParam(defaultValue = "descripcion") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDirection) {
-        Pageable sortedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                Sort.by(Sort.Direction.fromString(sortDirection), sortBy, "id"));
-        return ResponseEntity.ok().body(service.findByDeletedAtIsNull(sortedPageable));
+	public ResponseEntity<?> listAll(Pageable pageable) {
 
-    }
+	    Pageable sortedPageable = PageRequest.of(
+	            pageable.getPageNumber(),
+	            pageable.getPageSize(),
+	            Sort.by(Sort.Direction.DESC, "id"));
+
+	    return ResponseEntity.ok()
+	            .body(service.findByDeletedAtIsNull(sortedPageable));
+	}
 	
 	@PutMapping("/deleted-at/{id}")
 	public ResponseEntity<?> addDeletedAt(@PathVariable Long id){

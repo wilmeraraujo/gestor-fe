@@ -1,0 +1,82 @@
+<form
+  [formGroup]="form"
+  class="row g-3">
+
+  <div
+    class="col-12"
+    *ngFor="let campo of campos">
+
+    <label class="form-label">
+
+      {{ campo.label }}
+
+    </label>
+
+    <!-- TEXT -->
+    <input
+      *ngIf="campo.type === 'text'"
+      type="text"
+      class="form-control rounded-4"
+      [formControlName]="campo.name">
+
+    <!-- TEXTAREA -->
+    <textarea
+      *ngIf="campo.type === 'textarea'"
+      rows="3"
+      class="form-control rounded-4"
+      [formControlName]="campo.name">
+    </textarea>
+
+    <!-- SELECT -->
+    <select
+      *ngIf="campo.type === 'select'"
+      class="form-select rounded-4"
+      [formControlName]="campo.name">
+
+      <option
+        *ngFor="let op of campo.options"
+        [value]="op.value">
+
+        {{ op.label }}
+
+      </option>
+
+    </select>
+
+    <!-- VALIDACION -->
+    <small
+      class="text-danger"
+      *ngIf="
+        form.get(campo.name)?.invalid &&
+        form.get(campo.name)?.touched
+      ">
+
+      Campo obligatorio
+
+    </small>
+
+  </div>
+   <!-- BOTONES -->
+  <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+
+    <button
+      type="button"
+      class="btn btn-outline-secondary rounded-pill px-4"
+      (click)="cerrar()">
+
+      Cancelar
+
+    </button>
+
+    <button
+      type="button"
+      class="btn btn-outline-primary rounded-pill px-4"
+      (click)="guardar()">
+
+      Guardar
+
+    </button>
+
+  </div>
+
+</form>

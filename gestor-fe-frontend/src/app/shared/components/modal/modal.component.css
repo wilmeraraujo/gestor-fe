@@ -1,0 +1,26 @@
+::ng-deep .mat-mdc-dialog-surface{
+  border-radius: 22px !important;
+  overflow: hidden;
+}
+
+/* HEADER */
+.modal-title-custom{
+  padding: 20px 24px;
+  font-size: 22px;
+  font-weight: 600;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+/* CONTENT */
+.modal-content-custom{
+  min-width: 450px;
+  padding: 24px;
+  font-size: 15px;
+}
+
+/* ACTIONS */
+.modal-actions-custom{
+  padding: 18px 24px;
+  border-top: 1px solid #f1f1f1;
+  gap: 10px;
+}

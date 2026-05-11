@@ -58,7 +58,7 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
   public eliminar(e: E): void{
 
     Swal.fire({
-      title: 'Cuidado',
+      title: 'Atención!',
       text: `¿Seguro que desea eliminar a ${e.descripcion}?`,
       icon: 'warning',
       showCancelButton: true,

@@ -3,6 +3,8 @@ import { TipoIdentificacion } from '../../../models/tipo-identificacion';
 import { TipoIdentificacionService } from '../../../services/tipo-identificacion.service';
 import { CommonListarComponent } from '../../common-listar.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-tipo-identificacion',
@@ -35,8 +37,27 @@ export class TipoIdentificacionComponent
 
   ];
 
+  campos = [
+
+    {
+      name: 'codigo',
+      label: 'Código',
+      type: 'text',
+      required: true
+    },
+
+    {
+      name: 'descripcion',
+      label: 'Descripción',
+      type: 'text',
+      required: true
+    }
+
+  ];
+
   constructor(
-      service: TipoIdentificacionService
+      service: TipoIdentificacionService,
+      private dialog: MatDialog
   ) {
     super(service);
   }
@@ -50,13 +71,53 @@ export class TipoIdentificacionComponent
 
   agregar(): void {
 
-    console.log('Adicionar registro');
+    const dialogRef = this.dialog.open(ModalComponent, {
+
+      width: '500px',
+
+      data: {
+        titulo: 'Nuevo Tipo Identificación',
+        campos: this.campos,
+        formData: {},
+        service: this.service
+      }
+
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+
+      if(result){
+        this.calcularRangos();
+      }
+
+    });
 
   }
 
   editar(row: TipoIdentificacion): void {
 
-    console.log('Editar:', row);
+    const dialogRef = this.dialog.open(ModalComponent, {
+
+      width: '500px',
+
+      data: {
+
+        titulo: 'Editar Tipo Identificación',
+        campos: this.campos,
+        formData: row,
+        service: this.service
+
+      }
+
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+
+      if(result){
+        this.calcularRangos();
+      }
+
+    });
 
   }
 

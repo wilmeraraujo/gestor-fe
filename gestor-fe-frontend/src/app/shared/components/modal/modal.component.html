@@ -1,0 +1,38 @@
+<h2 mat-dialog-title class="modal-title-custom">
+
+  {{ data.titulo }}
+
+</h2>
+
+<mat-dialog-content class="modal-content-custom">
+
+  <app-common-form
+    [campos]="data.campos"
+    [data]="data.formData"
+    [service]="data.service">
+  </app-common-form>
+
+</mat-dialog-content>
+<!--
+<mat-dialog-actions
+  align="end"
+  class="modal-actions-custom">
+
+  <button
+    type="button"
+    class="btn btn-outline-secondary rounded-pill px-4"
+    (click)="cerrar()">
+
+    Cancelar
+
+  </button>
+
+  <button
+    type="button"
+    class="btn btn-outline-primary rounded-pill px-4">
+
+    Guardar
+
+  </button>
+
+</mat-dialog-actions>-->
