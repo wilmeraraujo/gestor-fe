@@ -10,13 +10,9 @@ import { Observable } from 'rxjs';
 })
 export class AdminService extends CommonService<Admin>{
 
-  protected override endPointBase = BE + '/api/gestion-fe/admin';
+  protected override endPointBase = BE + '/api/v1/gestion-fe/admin';
 
   constructor(http: HttpClient) {
     super(http);
-  }
-
-  public listarCategoriasActivos(): Observable<Admin[]> {
-    return this.http.get<Admin[]>(`${this.endPointBase}/activos`);
   }
 }

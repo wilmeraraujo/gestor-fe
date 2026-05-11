@@ -17,12 +17,19 @@ export class CommonService <E extends Generic>{
     return this.http.get<E[]>(this.endPointBase);
   }
 
-  public listarPaginas(page: string, size: string): Observable<any>{
+  public getPaginable(page: string, size: string): Observable<any>{
     const params = new HttpParams()
     .set('page',page)
     .set('size',size)
     .set('sort', 'id,asc');
     return this.http.get<any>(`${this.endPointBase}/paginable`, { params: params });
+  }
+
+  public getPaginableActivos(page: string, size: string): Observable<any>{
+    const params = new HttpParams()
+    .set('page',page)
+    .set('size',size);
+    return this.http.get<any>(`${this.endPointBase}/paginable/activos`, { params: params });
   }
 
   public ver(id: number | string): Observable<E>{

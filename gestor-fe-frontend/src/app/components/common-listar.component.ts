@@ -25,8 +25,13 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
   constructor(protected service: S){}
 
   ngAfterViewInit(): void {
-    this.paginator.page.subscribe(event => this.paginar(event));
-    this.calcularRangos();
+
+    if(this.paginator){
+
+      this.paginator.page.subscribe(event => this.paginar(event));
+
+    }
+
   }
 
   public paginar(event: PageEvent):void{
@@ -37,13 +42,15 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
 
   public calcularRangos(): void {
 
-    const servicio = this.service.listarPaginas(this.paginaActual.toString(), this.totalPorPagina.toString());
+    const servicio = this.service.getPaginableActivos(this.paginaActual.toString(), this.totalPorPagina.toString());
 
       servicio.subscribe(p => {
         this.lista = p.content as E[];
         this.totalRegistros = p.totalElements as number;
         this.dataSource.data = this.lista;
-        this.paginator._intl.itemsPerPageLabel = 'Registros por página:';
+        if(this.paginator){
+          this.paginator._intl.itemsPerPageLabel = 'Registros por página:';
+        }
       });
 
   }

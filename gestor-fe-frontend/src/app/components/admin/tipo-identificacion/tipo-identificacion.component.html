@@ -1,0 +1,21 @@
+<app-data-table
+
+  [titulo]="titulo"
+
+  [columnas]="columnas"
+
+  [datos]="lista"
+
+  [totalRegistros]="totalRegistros"
+
+  [totalPorPagina]="5"
+
+  (editar)="editar($event)"
+
+  (eliminar)="eliminar($event)"
+
+  (agregar)="agregar()"
+
+  (buscar)="buscar($event)">
+
+</app-data-table>

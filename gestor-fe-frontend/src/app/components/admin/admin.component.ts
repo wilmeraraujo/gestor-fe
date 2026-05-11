@@ -18,8 +18,8 @@ import { DataTableComponent } from '../../shared/components/data-table/data-tabl
   styleUrl: './admin.component.css'
 })
 export class AdminComponent
-  extends CommonListarComponent<Admin, AdminService>
-  {
+  extends CommonListarComponent<Admin, AdminService>{
+
   override titulo = 'Administración';
 
   columnas = [

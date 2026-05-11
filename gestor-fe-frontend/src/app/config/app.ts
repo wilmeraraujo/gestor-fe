@@ -1,1 +1,1 @@
-export const BE='http://localhost:8080';
+export const BE='http://localhost:8095';

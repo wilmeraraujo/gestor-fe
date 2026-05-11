@@ -19,7 +19,21 @@ export class SidebarComponent implements OnInit{
 
   menuNav: MenuItem[] = [
     { name: "Home", route: "/dashboard/home" },
-    { name: "Administración", route: "/dashboard/admin" },
+    {
+      name: "Administración",
+      route: "/dashboard/admin",
+      children: [
+        {
+          name: "Admin",
+          route: "/dashboard/admin/admin"
+        },
+        {
+          name: "Tipo identificación",
+          route: "/dashboard/admin/tipo-identificacion"
+        }
+      ]
+    },
+    { name: "Cargue", route: "/dashboard/cargue" }
   ];
 
   toggleSidebar(): void {

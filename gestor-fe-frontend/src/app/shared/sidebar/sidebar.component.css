@@ -77,3 +77,53 @@
 .sidebar-icon {
   font-size: 22px;
 }
+
+.sidebar-submenu{
+  margin-left: 20px;
+  list-style: none;
+  padding-left: 10px;
+}
+
+.sidebar-subitem{
+  display: block;
+  padding: 8px;
+  text-decoration: none;
+}
+
+.sidebar-submenu{
+  margin-top: 6px;
+  margin-left: 12px;
+
+  list-style: none;
+  padding-left: 8px;
+}
+
+.sidebar-submenu li{
+  margin-bottom: 6px;
+}
+
+.sidebar-subitem{
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 14px;
+
+  border-radius: 12px;
+
+  color: #d1d5db;
+  text-decoration: none;
+
+  transition: 0.2s;
+}
+
+.sidebar-subitem:hover{
+  background: #989999;
+  color: white;
+}
+
+.sidebar-subitem.sidebar-active{
+  background: #989999;
+  color: white;
+}

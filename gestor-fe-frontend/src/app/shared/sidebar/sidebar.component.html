@@ -18,66 +18,40 @@
   <!-- MENU -->
   <ul class="sidebar-menu">
 
-    <!-- HOME -->
-    <li>
+  <li *ngFor="let item of menuNav">
 
-      <a
-        routerLink="/dashboard/home"
-        routerLinkActive="sidebar-active"
-        class="sidebar-item">
+    <!-- ITEM PRINCIPAL -->
+    <a
+      [routerLink]="item.route"
+      routerLinkActive="sidebar-active"
+      class="sidebar-item">
 
-        <span class="material-icons sidebar-icon">
-          home
-        </span>
+      <span *ngIf="!collapsed">
+        {{ item.name }}
+      </span>
 
-        <span *ngIf="!collapsed">
-          Home
-        </span>
+    </a>
 
-      </a>
+    <!-- SUBMENU -->
+    <ul *ngIf="item.children && !collapsed" class="sidebar-submenu">
 
-    </li>
+      <li *ngFor="let child of item.children">
 
-    <!-- ADMIN -->
-    <li>
+        <a
+          [routerLink]="child.route"
+          routerLinkActive="sidebar-active"
+          class="sidebar-subitem">
 
-      <a
-        routerLink="/dashboard/administracion"
-        routerLinkActive="sidebar-active"
-        class="sidebar-item">
+          {{ child.name }}
 
-        <span class="material-icons sidebar-icon">
-          admin_panel_settings
-        </span>
+        </a>
 
-        <span *ngIf="!collapsed">
-          Administración
-        </span>
+      </li>
 
-      </a>
+    </ul>
 
-    </li>
+  </li>
 
-    <!-- CARGUE -->
-    <li>
-
-      <a
-        routerLink="/dashboard/cargue"
-        routerLinkActive="sidebar-active"
-        class="sidebar-item">
-
-        <span class="material-icons sidebar-icon">
-          upload_file
-        </span>
-
-        <span *ngIf="!collapsed">
-          Cargue
-        </span>
-
-      </a>
-
-    </li>
-
-  </ul>
+</ul>
 
 </aside>
