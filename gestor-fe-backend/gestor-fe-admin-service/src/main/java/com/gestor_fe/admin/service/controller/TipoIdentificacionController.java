@@ -34,6 +34,11 @@ public class TipoIdentificacionController extends GlobalController<TipoIdentific
 		this.service = service;
 	}
 	
+	@GetMapping("/buscar/{desc}")
+	public ResponseEntity<?> filter(@PathVariable String desc){
+		return ResponseEntity.ok(service.findByDescripcion(desc));
+	}
+	
 	@GetMapping("/paginable/activos")
 	public ResponseEntity<?> listAll(Pageable pageable) {
 

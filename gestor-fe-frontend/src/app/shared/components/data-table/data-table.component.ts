@@ -94,14 +94,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
       'Registros por página:';
   }
 
-  onBuscar(event: any): void {
-
-    const valor = event.target.value;
-
+  onBuscar(valor: string): void {
     this.buscar.emit(valor);
-
-    this.dataSource.filter =
-      valor.trim().toLowerCase();
   }
 
   onEditar(row: any): void {

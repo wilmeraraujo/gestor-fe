@@ -32,6 +32,10 @@ export class CommonService <E extends Generic>{
     return this.http.get<any>(`${this.endPointBase}/paginable/activos`, { params: params });
   }
 
+  public buscar(desc: string): Observable<E[]>{
+    return this.http.get<E[]>(`${this.endPointBase}/buscar/${desc}`);
+  }
+
   public ver(id: number | string): Observable<E>{
     return this.http.get<E>(`${this.endPointBase}/${id}`);
   }

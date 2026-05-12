@@ -124,7 +124,15 @@ export class TipoIdentificacionComponent
 
   buscar(texto: string): void {
 
-    console.log('Buscar:', texto);
+    if(!texto || texto.trim() === ''){
+      this.calcularRangos();
+      return;
+    }
+
+    this.service.buscar(texto).subscribe(response => {
+      this.lista = response;
+      this.totalRegistros = response.length;
+    });
 
   }
 }

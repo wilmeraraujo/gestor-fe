@@ -18,12 +18,15 @@
 
           <input
             matInput
+            #txtBuscar
             placeholder="Buscar..."
-            (keyup)="onBuscar($event)" />
+            (keyup.enter)="onBuscar(txtBuscar.value)"
+            (input)="txtBuscar.value === '' ? onBuscar('') : null" />
 
           <button
             mat-icon-button
-            matSuffix>
+            matSuffix
+            (click)="onBuscar(txtBuscar.value)">
 
             <mat-icon>search</mat-icon>
 

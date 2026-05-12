@@ -1,5 +1,7 @@
 package com.gestor_fe.admin.service.services;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -8,6 +10,6 @@ import com.service.common.service.GlobalService;
 
 public interface EstadoService extends GlobalService<Estado>{
 
-	public Page<Estado> findByDeletedAtIsNull(Pageable pageable);
-	
+	Page<Estado> findByDeletedAtIsNull(Pageable pageable);
+	List<Estado> findByDescripcion(String desc);
 }

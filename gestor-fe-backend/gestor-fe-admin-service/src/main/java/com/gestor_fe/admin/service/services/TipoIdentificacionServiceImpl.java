@@ -1,8 +1,11 @@
 package com.gestor_fe.admin.service.services;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.gestor_fe.admin.service.model.entity.TipoIdentificacion;
 import com.gestor_fe.admin.service.repository.TipoIdentificacionRepository;
@@ -14,6 +17,12 @@ public class TipoIdentificacionServiceImpl extends GlobalServiceImpl<TipoIdentif
 	@Override
 	public Page<TipoIdentificacion> findByDeletedAtIsNull(Pageable pageable) {
 		return repository.findByDeletedAtIsNull(pageable);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<TipoIdentificacion> findByDescripcion(String desc) {
+		return repository.findByDescripcion(desc);
 	}
 
 }

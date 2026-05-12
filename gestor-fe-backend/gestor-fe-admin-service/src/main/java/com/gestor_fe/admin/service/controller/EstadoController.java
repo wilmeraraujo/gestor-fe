@@ -33,6 +33,11 @@ public class EstadoController extends GlobalController<Estado, EstadoService> {
 		this.service = service;
 	}
 	
+	@GetMapping("/buscar/{desc}")
+	public ResponseEntity<?> filter(@PathVariable String desc){
+		return ResponseEntity.ok(service.findByDescripcion(desc));
+	}
+	
 	@GetMapping("/paginable/activos")
 	public ResponseEntity<?> listAll(Pageable pageable) {
 
