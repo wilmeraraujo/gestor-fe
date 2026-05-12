@@ -4,6 +4,7 @@ import { HomeComponent } from './components/home/home.component';
 import { CargueComponent } from './components/cargue/cargue.component';
 import { TipoIdentificacionComponent } from './components/admin/tipo-identificacion/tipo-identificacion.component';
 import { AdminComponent } from './components/admin/admin.component';
+import { EstadoComponent } from './components/admin/estado/estado.component';
 
 
 export const routes: Routes = [
@@ -42,6 +43,11 @@ export const routes: Routes = [
           {
             path: 'tipo-identificacion',
             component: TipoIdentificacionComponent
+          },
+
+          {
+            path: 'estado',
+            component: EstadoComponent
           }
 
         ]

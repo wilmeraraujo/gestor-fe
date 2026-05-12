@@ -18,40 +18,84 @@
   <!-- MENU -->
   <ul class="sidebar-menu">
 
-  <li *ngFor="let item of menuNav">
+    <li *ngFor="let item of menuNav">
 
-    <!-- ITEM PRINCIPAL -->
-    <a
-      [routerLink]="item.route"
-      routerLinkActive="sidebar-active"
-      class="sidebar-item">
+      <!-- ITEM NORMAL CON RUTA -->
+      <a
+        *ngIf="item.route && !item.children"
+        [routerLink]="item.route"
+        routerLinkActive="sidebar-active"
+        class="sidebar-item">
 
-      <span *ngIf="!collapsed">
-        {{ item.name }}
-      </span>
+        <!-- ICONO -->
+        <span class="material-icons sidebar-icon">
+          {{ item.icon }}
+        </span>
 
-    </a>
+        <!-- TEXTO -->
+        <span *ngIf="!collapsed" class="sidebar-text">
+          {{ item.name }}
+        </span>
 
-    <!-- SUBMENU -->
-    <ul *ngIf="item.children && !collapsed" class="sidebar-submenu">
+      </a>
 
-      <li *ngFor="let child of item.children">
+      <!-- ITEM CON SUBMENU -->
+      <div
+        *ngIf="item.children"
+        class="sidebar-item"
+        (click)="toggleMenu(item)">
 
-        <a
-          [routerLink]="child.route"
-          routerLinkActive="sidebar-active"
-          class="sidebar-subitem">
+        <!-- ICONO -->
+        <span class="material-icons sidebar-icon">
+          {{ item.icon }}
+        </span>
 
-          {{ child.name }}
+        <!-- TEXTO -->
+        <span *ngIf="!collapsed" class="sidebar-text">
+          {{ item.name }}
+        </span>
 
-        </a>
+        <!-- FLECHA -->
+        <span
+          *ngIf="!collapsed"
+          class="material-icons sidebar-arrow">
 
-      </li>
+          {{ item.expanded ? 'expand_less' : 'expand_more' }}
 
-    </ul>
+        </span>
 
-  </li>
+      </div>
 
-</ul>
+      <!-- SUBMENU -->
+      <ul
+        *ngIf="item.children && item.expanded && !collapsed"
+        class="sidebar-submenu">
+
+        <li *ngFor="let child of item.children">
+
+          <a
+            [routerLink]="child.route"
+            routerLinkActive="sidebar-active"
+            class="sidebar-subitem">
+
+            <!-- ICONO SUBMENU -->
+            <span class="material-icons sidebar-subicon">
+              {{ child.icon }}
+            </span>
+
+            <!-- TEXTO -->
+            <span>
+              {{ child.name }}
+            </span>
+
+          </a>
+
+        </li>
+
+      </ul>
+
+    </li>
+
+  </ul>
 
 </aside>

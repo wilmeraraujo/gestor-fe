@@ -4,7 +4,10 @@ import {
   Input,
   Output,
   ViewChild,
-  AfterViewInit
+  AfterViewInit,
+  OnInit,
+  OnChanges,
+  SimpleChanges
 } from '@angular/core';
 
 
@@ -32,7 +35,7 @@ import { MATERIAL_MODULES } from '../../material';
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css'
 })
-export class DataTableComponent implements AfterViewInit {
+export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
 
   @Input() titulo = '';
 
@@ -77,13 +80,15 @@ export class DataTableComponent implements AfterViewInit {
     this.dataSource.data = this.datos;
   }
 
-  ngOnChanges(): void {
-    this.dataSource.data = this.datos;
+  ngOnChanges(changes: SimpleChanges): void {
+
+    if (changes['datos']) {
+      this.dataSource.data = this.datos;
+    }
+
   }
 
   ngAfterViewInit(): void {
-
-    this.dataSource.paginator = this.paginator;
 
     this.paginator._intl.itemsPerPageLabel =
       'Registros por página:';

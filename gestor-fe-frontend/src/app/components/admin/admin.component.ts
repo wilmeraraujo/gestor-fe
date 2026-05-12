@@ -1,12 +1,8 @@
 import { Component } from '@angular/core';
-
 import { CommonListarComponent } from '../common-listar.component';
-
-import { AdminService } from '../../services/admin.service';
-
 import { Admin } from '../../models/admin';
-
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
+import { AdminService } from '../../services/admin.service';
 
 @Component({
   selector: 'app-admin',

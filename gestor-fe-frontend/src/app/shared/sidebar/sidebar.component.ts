@@ -18,36 +18,54 @@ export class SidebarComponent implements OnInit{
   isLoggedIn: boolean = false;
 
   menuNav: MenuItem[] = [
-    { name: "Home", route: "/dashboard/home" },
+    {
+      name: "Home",
+      icon: "home",
+      route: "/dashboard/home"
+    },
     {
       name: "Administración",
-      route: "/dashboard/admin",
+      icon: "settings",
+      expanded: false,
       children: [
         {
-          name: "Admin",
-          route: "/dashboard/admin/admin"
+          name: "Tipo identificación",
+          icon: "badge",
+          route: "/dashboard/admin/tipo-identificacion"
         },
         {
-          name: "Tipo identificación",
-          route: "/dashboard/admin/tipo-identificacion"
+          name: "Estado",
+          icon: "badge",
+          route: "/dashboard/admin/estado"
         }
       ]
     },
-    { name: "Cargue", route: "/dashboard/cargue" }
+    {
+      name: "Cargue",
+      icon: "upload",
+      route: "/dashboard/cargue" }
   ];
+
+
+  constructor(){}
+
+  async ngOnInit(): Promise<void> {}
 
   toggleSidebar(): void {
     this.collapsed = !this.collapsed;
   }
 
-  constructor(){}
+  toggleMenu(item: MenuItem): void {
+    item.expanded = !item.expanded;
+  }
 
-  async ngOnInit(): Promise<void> {}
 }
 
 interface MenuItem {
   name: string;
+  icon?: string;
   route?: string;
   roles?: string[];
+  expanded?: boolean;
   children?: MenuItem[];
 }
