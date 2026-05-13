@@ -15,7 +15,7 @@ public interface TipoIdentificacionRepository extends JpaRepository<TipoIdentifi
 
 	Page<TipoIdentificacion> findByDeletedAtIsNull(Pageable pageable);
 	
-	@Query("select x from TipoIdentificacion x where upper(x.descripcion) like upper(concat('%', ?1, '%'))")
+	@Query("select x from TipoIdentificacion x where deletedAt is null and upper(x.descripcion) like upper(concat('%', ?1, '%'))")
 	List<TipoIdentificacion> findByDescripcion(String desc);
 	
 }

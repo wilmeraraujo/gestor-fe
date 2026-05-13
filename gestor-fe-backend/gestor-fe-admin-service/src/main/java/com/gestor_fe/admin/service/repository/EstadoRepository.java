@@ -15,7 +15,7 @@ public interface EstadoRepository extends JpaRepository<Estado, Long>{
 	
 	Page<Estado> findByDeletedAtIsNull(Pageable pageable);
 
-	@Query("select x from Estado x where upper(x.descripcion) like upper(concat('%', ?1, '%'))")
+	@Query("select x from Estado x where deletedAt is null and upper(x.descripcion) like upper(concat('%', ?1, '%'))")
 	List<Estado> findByDescripcion(String desc);
 	
 }

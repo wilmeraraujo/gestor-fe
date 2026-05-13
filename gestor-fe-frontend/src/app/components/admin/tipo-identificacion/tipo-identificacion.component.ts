@@ -135,4 +135,24 @@ export class TipoIdentificacionComponent
     });
 
   }
+
+  deletedAt(row: TipoIdentificacion): void {
+
+      if (!confirm(`¿Desea eliminar el registro ${row.descripcion}?`)) {
+        return;
+      }
+
+      this.service.deletedAt(row.id).subscribe({
+
+        next: () => {
+          this.calcularRangos();
+        },
+
+        error: (err) => {
+          console.error(err);
+        }
+
+      });
+
+    }
 }

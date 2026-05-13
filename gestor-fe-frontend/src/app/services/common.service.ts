@@ -2,6 +2,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Generic } from '../models/generic';
+import { Estado } from '../models/estado';
 
 @Injectable({
   providedIn: 'root'
@@ -62,5 +63,10 @@ export class CommonService <E extends Generic>{
 
   public eliminar(id: number | string): Observable<void>{
     return this.http.delete<void>(`${this.endPointBase}/${id}`);
+  }
+
+  public deletedAt(id: number): Observable<Estado> {
+    const endpoint = `${this.endPointBase}/deleted-at/${id}`;
+    return this.http.put<Estado>(endpoint, {});
   }
 }
