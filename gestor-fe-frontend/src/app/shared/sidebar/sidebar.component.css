@@ -1,17 +1,14 @@
 .sidebar {
   width: 260px;
   height: 100vh;
-
   background: #111827;
-  color: white;
-
+  color: #1DA6BA;
   position: fixed;
   top: 0;
   left: 0;
-
   transition: 0.3s;
-
   overflow: hidden;
+  border-right: 4px solid #1DA6BA; 
 }
 
 .sidebar-collapsed {
@@ -65,11 +62,11 @@
 }
 
 .sidebar-item:hover {
-  background: #3a8d7f;
+  background: #1DA6BA;
 }
 
 .sidebar-active {
-  background: #3a8d7f;
+  background: #1DA6BA;
   color: white;
 }
 
@@ -119,11 +116,11 @@
 }
 
 .sidebar-subitem:hover{
-  background: #989999;
-  color: white;
+  background: #1DA6BA;
+  color: #111111;
 }
 
 .sidebar-subitem.sidebar-active{
-  background: #989999;
+  background: #1DA6BA;
   color: white;
 }

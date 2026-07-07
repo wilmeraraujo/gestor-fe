@@ -37,6 +37,26 @@ export class SidebarComponent implements OnInit{
           name: "Estado",
           icon: "badge",
           route: "/dashboard/admin/estado"
+        },
+        {
+          name: "Tipo",
+          icon: "badge",
+          route: "/dashboard/admin/tipo"
+        },
+        {
+          name: "Extensión",
+          icon: "badge",
+          route: "/dashboard/admin/extension"
+        },
+        {
+          name: "Clasificación",
+          icon: "badge",
+          route: "/dashboard/admin/clasificacion"
+        },
+        {
+          name: "Fase",
+          icon: "badge",
+          route: "/dashboard/admin/fase"
         }
       ]
     },
