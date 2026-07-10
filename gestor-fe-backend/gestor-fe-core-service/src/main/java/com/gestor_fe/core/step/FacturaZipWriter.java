@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.batch.infrastructure.item.Chunk;
 import org.springframework.batch.infrastructure.item.ItemWriter;
 
+import com.gestor_fe.core.entity.Documento;
 import com.gestor_fe.core.entity.Factura;
 import com.gestor_fe.core.repository.FacturaRepository;
 
@@ -45,37 +46,29 @@ public class FacturaZipWriter implements ItemWriter<Factura> {
 
         for (Factura factura : chunk.getItems()) {
             
-            // 1. Transferencia física y cambio de nombre del archivo XML
-            if (factura.getDocumentoXml() != null && factura.getDocumentoXml().getArchivoTemporal() != null) {
-                File xmlTemporal = factura.getDocumentoXml().getArchivoTemporal();
-                
-                // Generar nombre UUID único para evitar colisiones en la carpeta compartida o volumen
-                String nombreUnicoXml = UUID.randomUUID() + "_" + factura.getDocumentoXml().getNombreOriginal();
-                Path destinoXml = Paths.get(rutaStorage, nombreUnicoXml);
-                
-                // Mover archivo desde la carpeta transitoria del ZIP al almacenamiento definitivo
-                Files.move(xmlTemporal.toPath(), destinoXml, StandardCopyOption.REPLACE_EXISTING);
-                
-                // Inyectar la ubicación real absoluta que irá en la tabla gestor.documento
-                factura.getDocumentoXml().setRuta(destinoXml.toString());
-            }
-
-            // 2. Transferencia física y cambio de nombre del archivo PDF (Opcional)
-            if (factura.getDocumentoPdf() != null && factura.getDocumentoPdf().getArchivoTemporal() != null) {
-                File pdfTemporal = factura.getDocumentoPdf().getArchivoTemporal();
-                
-                String nombreUnicoPdf = UUID.randomUUID() + "_" + factura.getDocumentoPdf().getNombreOriginal();
-                Path destinoPdf = Paths.get(rutaStorage, nombreUnicoPdf);
-                
-                Files.move(pdfTemporal.toPath(), destinoPdf, StandardCopyOption.REPLACE_EXISTING);
-                
-                // Inyectar la ubicación real absoluta que irá en la tabla gestor.documento
-                factura.getDocumentoPdf().setRuta(destinoPdf.toString());
+            // Iterar dinámicamente sobre todos los documentos asociados (Relación Uno a Muchos)
+            if (factura.getDocumentos() != null) {
+                for (Documento doc : factura.getDocumentos()) {
+                    
+                    if (doc.getArchivoTemporal() != null) {
+                        File archivoTemporal = doc.getArchivoTemporal();
+                        
+                        // Generar nombre UUID único para evitar colisiones en la carpeta de destino
+                        String nombreUnico = UUID.randomUUID() + "_" + doc.getNombreOriginal();
+                        Path destinoFinal = Paths.get(rutaStorage, nombreUnico);
+                        
+                        // Mover archivo físico desde la carpeta transitoria del ZIP al almacenamiento definitivo
+                        Files.move(archivoTemporal.toPath(), destinoFinal, StandardCopyOption.REPLACE_EXISTING);
+                        
+                        // Inyectar la ubicación real absoluta que irá en la tabla gestor.documento
+                        doc.setRuta(destinoFinal.toString());
+                    }
+                }
             }
         }
 
-        // 3. Persistencia relacional de todo el Chunk de manera atómica (Spring se encarga de la transacción)
+        // Persistencia relacional de todo el Chunk y sus hijos asociados en cascada de forma atómica
         facturaRepository.saveAll(chunk.getItems());
-        LOGGER.info("=== ✅ Bloque de facturas y registros de auditoría guardados en PostgreSQL ===");
+        LOGGER.info("=== ✅ Bloque de facturas y sus múltiples documentos guardados en PostgreSQL ===");
     }
 }
