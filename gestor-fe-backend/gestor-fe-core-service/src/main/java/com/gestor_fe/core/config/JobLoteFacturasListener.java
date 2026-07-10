@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.gestor_fe.core.entity.Cargue;
-import com.gestor_fe.core.repository.CargueRepository; // O tu servicio de Cargue si lo prefieres
+import com.gestor_fe.core.repository.CargueRepository;
 
 @Component
 public class JobLoteFacturasListener implements JobExecutionListener {
@@ -25,17 +25,10 @@ public class JobLoteFacturasListener implements JobExecutionListener {
     @Autowired
     private CargueRepository cargueRepository;
 
-    // Nota: Si mantienes la lógica de la tabla batch_job_execution mapeada:
-    // @Autowired
-    // private EjecucionTareaService ejecucionTareaService;
-
     @Override
     public void beforeJob(JobExecution jobExecution) {
         Long identificadorCargue = jobExecution.getJobParameters().getLong("identificadorCargue");
         LOGGER.info("=== 🚀 [beforeJob] Iniciando Job de procesamiento para el cargue ID: {} ===", identificadorCargue);
-        
-        // No requerimos lógica externa aquí, dado que la metadata comercial (NIT/Razón Social)
-        // se extrae de forma dinámica por XPath en el Processor por cada XML.
     }
 
     @Override
@@ -43,11 +36,14 @@ public class JobLoteFacturasListener implements JobExecutionListener {
         JobParameters parameters = jobExecution.getJobParameters();
         Long identificadorCargue = parameters.getLong("identificadorCargue");
         String rutaZipOriginal = parameters.getString("fullPathFileName");
+        
+        // Capturamos el ID asignado por el motor de Spring Batch
+        Long jobExecutionId = jobExecution.getId();
 
         LOGGER.info("=== 🏁 [afterJob] El Job para el cargue ID: {} finalizó con estado: {} ===", 
                 identificadorCargue, jobExecution.getStatus());
 
-        // 🗑️ 1. Limpieza preventiva del archivo .zip original para liberar espacio en disco
+        // 🗑️ 1. Limpieza preventiva del archivo .zip original
         if (rutaZipOriginal != null) {
             try {
                 boolean eliminado = Files.deleteIfExists(Paths.get(rutaZipOriginal));
@@ -65,8 +61,8 @@ public class JobLoteFacturasListener implements JobExecutionListener {
         if (cargueOpt.isPresent()) {
             Cargue cargue = cargueOpt.get();
             
-            // Asociar la tarea de ejecución nativa de Spring Batch
-            // If necesario: cargue.setEjecucionTarea(ejecucionTareaService.finById(jobExecution.getId()).orElse(null));
+            // CORREGIDO: Asignación directa del ID numérico sin interrupción relacional
+            cargue.setJobExecutionId(jobExecutionId);
 
             if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
                 LOGGER.info("✅ Cargue finalizado de forma exitosa.");
@@ -84,7 +80,7 @@ public class JobLoteFacturasListener implements JobExecutionListener {
             }
 
             cargueRepository.save(cargue);
-            LOGGER.info("💾 Registro maestro del cargue actualizado con éxito en base de datos.");
+            LOGGER.info("💾 Registro maestro del cargue actualizado con éxito en la BD. Vinculado a job_execution_id: {}.", jobExecutionId);
         } else {
             LOGGER.warn("⚠️ No se encontró ningún registro en 'gestor.cargue' con el ID: {}", identificadorCargue);
         }

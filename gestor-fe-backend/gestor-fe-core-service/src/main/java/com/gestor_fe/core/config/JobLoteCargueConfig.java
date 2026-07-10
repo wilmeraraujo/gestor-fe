@@ -6,7 +6,6 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
-// CORREGIDO: Imports movidos al paquete moderno de infraestructura (Spring Batch 5 / Spring Boot 4.x)
 import org.springframework.batch.infrastructure.item.ItemReader;
 import org.springframework.batch.infrastructure.item.ItemProcessor;
 import org.springframework.batch.infrastructure.item.ItemWriter;
@@ -15,7 +14,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
-// CORREGIDO: Asegúrate de usar el nombre exacto de tu DTO/Wrapper (FacturaZipWrapper)
 import com.gestor_fe.core.dto.FacturaZipWrapperDto;
 import com.gestor_fe.core.entity.Factura;
 import com.gestor_fe.core.repository.FacturaRepository;
@@ -42,26 +40,26 @@ public class JobLoteCargueConfig {
     }
 
     @Bean
-    public Job procesarLoteFacturasJob(Step stepOne) {
-        return new JobBuilder("procesarLoteFacturasJob", jobRepository)
+    public Job procesarLoteFacturasJob(JobLoteFacturasListener listener, Step stepOne) throws Exception {
+        return new JobBuilder("procesarLoteFacturasJob", jobRepository) 
+                .listener(listener)
                 .start(stepOne)
                 .build();
     }
 
     @Bean
     public Step stepOne(
-        JobRepository jobRepository,
-        PlatformTransactionManager transactionManager,
         ItemReader<FacturaZipWrapperDto> reader,
         ItemProcessor<FacturaZipWrapperDto, Factura> processor,
         ItemWriter<Factura> writer
-    ) {
-      return new StepBuilder("stepOne", jobRepository)
-          .<FacturaZipWrapperDto, Factura>chunk(20, transactionManager) // Recibe Wrapper, entrega Factura
+    ) throws Exception {
+      return new StepBuilder("stepOne", jobRepository) 
+          .<FacturaZipWrapperDto, Factura>chunk(20, transactionManager)
           .reader(reader)
           .processor(processor)
           .writer(writer)
           .faultTolerant()
+          .noSkip(IllegalStateException.class)
           .skip(Exception.class)
           .skipLimit(Integer.MAX_VALUE)
           .build();

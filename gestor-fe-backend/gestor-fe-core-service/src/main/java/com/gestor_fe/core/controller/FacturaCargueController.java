@@ -20,7 +20,7 @@ import com.gestor_fe.core.entity.Cargue;
 import com.gestor_fe.core.service.CargueService;
 
 @RestController
-@RequestMapping("/api/facturas/cargue")
+@RequestMapping("/api/v1/facturas/cargue")
 @CrossOrigin("*")
 public class FacturaCargueController {
 
@@ -32,8 +32,8 @@ public class FacturaCargueController {
 
     @PostMapping("/procesar-zip")
     public ResponseEntity<?> procesarZipFacturas(
-            @RequestParam("usuario") String usuario,
-            @RequestParam("file") MultipartFile multipartFile
+            @RequestParam("file") MultipartFile multipartFile,
+            @RequestParam("usuario") String usuario
     ) {
         // 1. Validaciones iniciales defensivas del archivo recibido
         if (multipartFile == null || multipartFile.isEmpty()) {
