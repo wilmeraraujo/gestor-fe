@@ -34,64 +34,53 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
 
     @Override
     public FacturaZipWrapperDto read() throws Exception {
-        // Inicialización diferida (Lazy): se ejecuta solo la primera vez que el paso llama al Reader
         if (!procesado) {
-            LOGGER.info("=== 📂 Iniciando descompresión y emparejamiento del archivo ZIP: {} ===", rutaZip);
+            LOGGER.info("=== 📂 Iniciando descompresión y validación estricta del ZIP: {} ===", rutaZip);
             List<FacturaZipWrapperDto> listaEmparejada = descomprimirYEmparejar();
             this.iterator = listaEmparejada.iterator();
             this.procesado = true;
-            LOGGER.info("=== 🧩 Se detectaron y emparejaron un total de {} documentos para procesar ===", listaEmparejada.size());
         }
 
-        // Retorna el siguiente elemento del lote
         if (iterator != null && iterator.hasNext()) {
             return iterator.next();
         }
-        
-        // Retornar 'null' es la señal que exige Spring Batch para saber que el Job ha terminado con éxito
         return null; 
     }
 
     private List<FacturaZipWrapperDto> descomprimirYEmparejar() throws Exception {
         File zipFileObj = new File(rutaZip);
         if (!zipFileObj.exists()) {
-            throw new IllegalArgumentException("Error Crítico: El archivo ZIP no existe en la ruta especificada: " + rutaZip);
+            throw new IllegalArgumentException("El archivo ZIP no existe.");
         }
 
-        // Crear una carpeta temporal única en el sistema operativo para esta ejecución del lote
         File dirTemporal = Files.createTempDirectory("gestorfe-batch-zip-").toFile();
         
-        // Mapas para almacenar temporalmente los archivos clasificados por su nombre sin extensión
+        // Guardaremos usando la parte numérica o identificador único (removiendo los prefijos de la DIAN)
         Map<String, File> mapasXml = new HashMap<>();
         Map<String, File> mapasPdf = new HashMap<>();
+        
+        // Guardar nombres originales para el reporte de error
+        Map<String, String> nombresOriginalesXml = new HashMap<>();
+        Map<String, String> nombresOriginalesPdf = new HashMap<>();
 
         try (ZipFile zipFile = new ZipFile(zipFileObj)) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
-                
-                // Ignorar carpetas internas o archivos ocultos del sistema (como los de MacOS __MACOSX)
                 if (entry.isDirectory() || entry.getName().contains("__MACOSX")) {
                     continue;
                 }
 
                 String nombreArchivoCompleto = entry.getName();
-                
-                // Extraer el nombre plano si viene dentro de subcarpetas en el zip
                 String nombreArchivo = new File(nombreArchivoCompleto).getName();
-                
                 String extension = StringUtils.getFilenameExtension(nombreArchivo);
                 String nombreBase = StringUtils.stripFilenameExtension(nombreArchivo);
 
-                if (extension == null) {
-                    continue;
-                }
+                if (extension == null) continue;
 
-                // Definir el destino físico del archivo transitorio
                 File archivoExtraido = new File(dirTemporal, nombreArchivo);
 
-                // Transferencia del stream del ZIP al disco temporal del servidor
                 try (InputStream is = zipFile.getInputStream(entry);
                      FileOutputStream fos = new FileOutputStream(archivoExtraido)) {
                     byte[] buffer = new byte[4096];
@@ -101,31 +90,51 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
                     }
                 }
 
-                // Clasificación por tipo de documento para posterior emparejamiento
+                // Normalización de nombres de la DIAN: removemos "ad" o "de" si existen para extraer la raíz común
+                String raizUnica = nombreBase;
+                if (nombreBase.startsWith("ad") || nombreBase.startsWith("de")) {
+                    raizUnica = nombreBase.substring(2);
+                }
+
                 if (extension.equalsIgnoreCase("xml")) {
-                    mapasXml.put(nombreBase, archivoExtraido);
+                    mapasXml.put(raizUnica, archivoExtraido);
+                    nombresOriginalesXml.put(raizUnica, nombreArchivo);
                 } else if (extension.equalsIgnoreCase("pdf")) {
-                    mapasPdf.put(nombreBase, archivoExtraido);
+                    mapasPdf.put(raizUnica, archivoExtraido);
+                    nombresOriginalesPdf.put(raizUnica, nombreArchivo);
                 }
             }
         }
 
-        // Proceso de emparejamiento inteligente de estructuras XML + PDF
         List<FacturaZipWrapperDto> listaWrappers = new ArrayList<>();
+
+        // === REGLA DE VALIDACIÓN ESTRICTA: TODO O NADA ===
         
-        for (String nombreBase : mapasXml.keySet()) {
-            File xml = mapasXml.get(nombreBase);
-            File pdf = mapasPdf.get(nombreBase); // Puede ser null si la factura XML no cuenta con soporte PDF
+        // 1. Validar que cada XML tenga su PDF
+        for (String raiz : mapasXml.keySet()) {
+            File xml = mapasXml.get(raiz);
+            File pdf = mapasPdf.get(raiz);
 
             if (pdf == null) {
-                LOGGER.warn("⚠️ Advertencia: La factura [{}] posee archivo XML pero no se encontró su PDF de soporte.", nombreBase);
+                String errorMsg = String.format("❌ ERROR CRÍTICO [Todo o Nada]: El archivo XML [%s] no tiene su pareja PDF correspondiente en el ZIP.", nombresOriginalesXml.get(raiz));
+                LOGGER.error(errorMsg);
+                throw new IllegalStateException(errorMsg); // Rompe el Batch inmediatamente
             }
 
             listaWrappers.add(FacturaZipWrapperDto.builder()
-                    .nombreBase(nombreBase)
+                    .nombreBase(raiz)
                     .archivoXml(xml)
                     .archivoPdf(pdf)
                     .build());
+        }
+
+        // 2. Validar que no existan PDFs huérfanos sin su XML
+        for (String raiz : mapasPdf.keySet()) {
+            if (!mapasXml.containsKey(raiz)) {
+                String errorMsg = String.format("❌ ERROR CRÍTICO [Todo o Nada]: El archivo PDF [%s] no tiene su pareja XML correspondiente en el ZIP.", nombresOriginalesPdf.get(raiz));
+                LOGGER.error(errorMsg);
+                throw new IllegalStateException(errorMsg); // Rompe el Batch inmediatamente
+            }
         }
 
         return listaWrappers;

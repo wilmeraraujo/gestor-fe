@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -29,7 +31,6 @@ public class Factura {
     @Column(nullable = false)
     private Long linea;
 
-    // Campos de negocio adicionales sugeridos
     @Column(name = "razon_social_emisor")
     private String razonSocialEmisor;
 
@@ -39,12 +40,18 @@ public class Factura {
     @Column(name = "fecha_emision")
     private LocalDate fechaEmision;
 
-    // Relación lógica con el PDF y XML guardados
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "documento_xml_id")
-    private Documento documentoXml;
+    // =========================================================================
+    // NUEVA RELACIÓN: Una factura tiene muchos documentos asociados
+    // =========================================================================
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "factura_id") // Esto creará la llave foránea 'factura_id' en la tabla gestor.documento
+    private List<Documento> documentos = new ArrayList<>();
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "documento_pdf_id")
-    private Documento documentoPdf;
+    // Método helper conveniente para añadir documentos manteniendo consistencia
+    public void addDocumento(Documento documento) {
+        if (this.documentos == null) {
+            this.documentos = new ArrayList<>();
+        }
+        this.documentos.add(documento);
+    }
 }

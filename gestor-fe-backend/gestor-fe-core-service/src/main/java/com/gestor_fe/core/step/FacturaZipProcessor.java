@@ -31,12 +31,12 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         
         File xmlFile = item.getArchivoXml();
         if (xmlFile == null || !xmlFile.exists()) {
-            return null; // Salta el registro si no se encuentra el XML base
+            return null; // Omitir el registro si no hay XML base
         }
 
         // Cargar y parsear el documento XML de forma nativa (DOM)
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-        dbFactory.setNamespaceAware(false); // Desactivar Namespaces para facilitar búsquedas XPath directas
+        dbFactory.setNamespaceAware(false); // Desactivar Namespaces para búsquedas XPath directas
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         Document doc = dBuilder.parse(xmlFile);
         doc.getDocumentElement().normalize();
@@ -67,7 +67,7 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
             factura.setValorTotal(new BigDecimal(valorStr.trim()));
         }
 
-        // 📂 Mapear metadatos del XML adjuntando el File temporal para el Writer
+        // 📂 1. Mapear metadatos del XML adjuntando el File temporal
         Documento docXml = new Documento();
         docXml.setNombreOriginal(xmlFile.getName());
         docXml.setTamano(xmlFile.length());
@@ -75,9 +75,11 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         docXml.setExtensionId(1L); // Catálogo: XML
         docXml.setTipoId(1L);      
         docXml.setArchivoTemporal(xmlFile); // Pasa la referencia física al Writer
-        factura.setDocumentoXml(docXml);
+        
+        // Agregar a la lista mediante el método helper (Relación Uno a Muchos)
+        factura.addDocumento(docXml);
 
-        // 📂 Mapear metadatos del PDF si viene incluido en el paquete
+        // 📂 2. Mapear metadatos del PDF si viene incluido en el paquete
         if (item.getArchivoPdf() != null && item.getArchivoPdf().exists()) {
             Documento docPdf = new Documento();
             docPdf.setNombreOriginal(item.getArchivoPdf().getName());
@@ -86,7 +88,9 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
             docPdf.setExtensionId(2L); // Catálogo: PDF
             docPdf.setTipoId(1L);
             docPdf.setArchivoTemporal(item.getArchivoPdf()); // Pasa la referencia física al Writer
-            factura.setDocumentoPdf(docPdf);
+            
+            // Agregar a la lista mediante el método helper (Relación Uno a Muchos)
+            factura.addDocumento(docPdf);
         }
 
         return factura;
