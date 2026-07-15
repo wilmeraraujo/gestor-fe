@@ -87,6 +87,7 @@ CREATE SEQUENCE BATCH_JOB_INSTANCE_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
 select * from gestor.cargue c order by id desc limit 10;
 select * from gestor.documento d order by id desc limit 10;
 select * from gestor.factura f order by id desc limit 10;
+select * from gestor.error_cargue ec order by id desc limit 10;
 
 select * from public.batch_job_execution bje order by bje.job_execution_id desc limit 10; 
 select * from public.batch_job_execution_context bjec; 
@@ -96,6 +97,7 @@ select * from public.batch_step_execution bse;--ver
 select * from public.batch_step_execution_context bsec; 
 
 truncate table gestor.cargue restart identity CASCADE;
+truncate table gestor.error_cargue restart identity CASCADE;
 truncate table gestor.documento restart identity CASCADE;
 truncate table gestor.factura restart identity CASCADE;
 truncate table public.batch_job_execution restart identity CASCADE;

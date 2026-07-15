@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -19,17 +20,25 @@ import org.springframework.batch.infrastructure.item.ItemReader;
 import org.springframework.util.StringUtils;
 
 import com.gestor_fe.core.dto.FacturaZipWrapperDto;
+import com.gestor_fe.core.entity.ErrorCargue;
+import com.gestor_fe.core.service.ErrorCargueService; // <-- CORREGIDO: Importamos el servicio
 
 public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FacturaZipItemReader.class);
 
     private final String rutaZip;
+    private final ErrorCargueService errorCargueService; // <-- CORREGIDO: Cambiado de Repository a Service
+    private final Long cargueId;
+    
     private Iterator<FacturaZipWrapperDto> iterator;
     private boolean procesado = false;
 
-    public FacturaZipItemReader(String rutaZip) {
+    // CORREGIDO: El constructor ahora recibe el ErrorCargueService para aislar la transacción
+    public FacturaZipItemReader(String rutaZip, ErrorCargueService errorCargueService, Long cargueId) {
         this.rutaZip = rutaZip;
+        this.errorCargueService = errorCargueService;
+        this.cargueId = cargueId;
     }
 
     @Override
@@ -55,11 +64,9 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
 
         File dirTemporal = Files.createTempDirectory("gestorfe-batch-zip-").toFile();
         
-        // Guardaremos usando la parte numérica o identificador único (removiendo los prefijos de la DIAN)
         Map<String, File> mapasXml = new HashMap<>();
         Map<String, File> mapasPdf = new HashMap<>();
         
-        // Guardar nombres originales para el reporte de error
         Map<String, String> nombresOriginalesXml = new HashMap<>();
         Map<String, String> nombresOriginalesPdf = new HashMap<>();
 
@@ -90,7 +97,6 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
                     }
                 }
 
-                // Normalización de nombres de la DIAN: removemos "ad" o "de" si existen para extraer la raíz común
                 String raizUnica = nombreBase;
                 if (nombreBase.startsWith("ad") || nombreBase.startsWith("de")) {
                     raizUnica = nombreBase.substring(2);
@@ -107,34 +113,65 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
         }
 
         List<FacturaZipWrapperDto> listaWrappers = new ArrayList<>();
+        List<ErrorCargue> listaErrores = new ArrayList<>(); 
 
         // === REGLA DE VALIDACIÓN ESTRICTA: TODO O NADA ===
         
-        // 1. Validar que cada XML tenga su PDF
+        // 1. Validar XMLs huérfanos sin su PDF
+        int lineaError = 1;
         for (String raiz : mapasXml.keySet()) {
             File xml = mapasXml.get(raiz);
             File pdf = mapasPdf.get(raiz);
 
             if (pdf == null) {
-                String errorMsg = String.format("❌ ERROR CRÍTICO [Todo o Nada]: El archivo XML [%s] no tiene su pareja PDF correspondiente en el ZIP.", nombresOriginalesXml.get(raiz));
-                LOGGER.error(errorMsg);
-                throw new IllegalStateException(errorMsg); // Rompe el Batch inmediatamente
+                String xmlNombre = nombresOriginalesXml.get(raiz);
+                String errorMsg = String.format("El archivo XML [%s] no tiene su pareja PDF correspondiente en el ZIP.", xmlNombre);
+                LOGGER.error("❌ ERROR CRÍTICO: {}", errorMsg);
+                
+                ErrorCargue error = new ErrorCargue();
+                error.setCargueId(cargueId);
+                error.setNumeroLinea(lineaError++);
+                error.setTipoError("ARCHIVO_HUERFANO");
+                error.setCampo("PDF");
+                error.setError(errorMsg);
+                error.setValorAsociado(xmlNombre);
+                error.setCreatedAt(LocalDateTime.now());
+                listaErrores.add(error);
+            } else {
+                listaWrappers.add(FacturaZipWrapperDto.builder()
+                        .nombreBase(raiz)
+                        .archivoXml(xml)
+                        .archivoPdf(pdf)
+                        .build());
             }
-
-            listaWrappers.add(FacturaZipWrapperDto.builder()
-                    .nombreBase(raiz)
-                    .archivoXml(xml)
-                    .archivoPdf(pdf)
-                    .build());
         }
 
-        // 2. Validar que no existan PDFs huérfanos sin su XML
+        // 2. Validar PDFs huérfanos sin su XML
         for (String raiz : mapasPdf.keySet()) {
             if (!mapasXml.containsKey(raiz)) {
-                String errorMsg = String.format("❌ ERROR CRÍTICO [Todo o Nada]: El archivo PDF [%s] no tiene su pareja XML correspondiente en el ZIP.", nombresOriginalesPdf.get(raiz));
-                LOGGER.error(errorMsg);
-                throw new IllegalStateException(errorMsg); // Rompe el Batch inmediatamente
+                String pdfNombre = nombresOriginalesPdf.get(raiz);
+                String errorMsg = String.format("El archivo PDF [%s] no tiene su pareja XML correspondiente en el ZIP.", pdfNombre);
+                LOGGER.error("❌ ERROR CRÍTICO: {}", errorMsg);
+                
+                ErrorCargue error = new ErrorCargue();
+                error.setCargueId(cargueId);
+                error.setNumeroLinea(lineaError++);
+                error.setTipoError("ARCHIVO_HUERFANO");
+                error.setCampo("XML");
+                error.setError(errorMsg);
+                error.setValorAsociado(pdfNombre);
+                error.setCreatedAt(LocalDateTime.now());
+                listaErrores.add(error);
             }
+        }
+
+        // Si se capturó algún error, guardamos el listado y detenemos la transacción
+        if (!listaErrores.isEmpty()) {
+            // CORREGIDO: Invocamos al servicio con Propagation.REQUIRES_NEW para salvar los registros del rollback
+            errorCargueService.saveAll(listaErrores); 
+            
+            String failMsg = "Se canceló el procesamiento del lote debido a que " + listaErrores.size() + " archivos fallaron la regla de parejas (Todo o Nada).";
+            throw new IllegalStateException(failMsg); 
         }
 
         return listaWrappers;

@@ -10,6 +10,9 @@ import com.gestor_fe.core.repository.ErrorCargueRepository;
 import com.gestor_fe.core.service.ErrorCargueService;
 import com.gestor_fe.core.service.ExportarExcelService;
 
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class ErrorCargueServiceImpl implements ErrorCargueService{
 
@@ -23,6 +26,7 @@ public class ErrorCargueServiceImpl implements ErrorCargueService{
 	}
 	
 	@Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
 	public Iterable<ErrorCargue> saveAll(Iterable<ErrorCargue> errores) {
 		return repository.saveAll(errores);
 	}
