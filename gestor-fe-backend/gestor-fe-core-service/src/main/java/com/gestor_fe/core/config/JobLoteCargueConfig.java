@@ -17,6 +17,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import com.gestor_fe.core.dto.FacturaZipWrapperDto;
 import com.gestor_fe.core.entity.Factura;
 import com.gestor_fe.core.repository.FacturaRepository;
+import com.gestor_fe.core.service.ErrorCargueService; // <-- CORREGIDO: Importamos el servicio de errores
 import com.gestor_fe.core.step.FacturaZipItemReader;
 import com.gestor_fe.core.step.FacturaZipProcessor;
 import com.gestor_fe.core.step.FacturaZipWriter;
@@ -27,16 +28,20 @@ public class JobLoteCargueConfig {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
     private final FacturaRepository facturaRepository;
+    private final ErrorCargueService errorCargueService; // <-- CORREGIDO: Usamos el servicio
 
     @Value("${ruta.storage}")
     private String rutaStorage;
 
+    // Inyección por constructor limpia y consistente
     public JobLoteCargueConfig(JobRepository jobRepository, 
                                PlatformTransactionManager transactionManager,
-                               FacturaRepository facturaRepository) {
+                               FacturaRepository facturaRepository,
+                               ErrorCargueService errorCargueService) { // <-- CORREGIDO
         this.jobRepository = jobRepository;
         this.transactionManager = transactionManager;
         this.facturaRepository = facturaRepository;
+        this.errorCargueService = errorCargueService; // <-- CORREGIDO
     }
 
     @Bean
@@ -68,8 +73,10 @@ public class JobLoteCargueConfig {
     @Bean
     @StepScope
     public ItemReader<FacturaZipWrapperDto> reader(
-            @Value("#{jobParameters['fullPathFileName']}") String zipFilePath) {
-        return new FacturaZipItemReader(zipFilePath);
+            @Value("#{jobParameters['fullPathFileName']}") String zipFilePath,
+            @Value("#{jobParameters['identificadorCargue']}") Long identificadorCargue) { 
+        // CORREGIDO: Le pasamos el Servicio de errores en lugar del Repositorio
+        return new FacturaZipItemReader(zipFilePath, errorCargueService, identificadorCargue); 
     }
 
     @Bean
