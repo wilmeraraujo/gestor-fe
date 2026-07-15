@@ -1,6 +1,10 @@
 package com.gestor_fe.core.entity;
 
 import java.io.File;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -31,6 +35,13 @@ public class Documento {
 
     @Column(name = "tipo_id", nullable = false)
     private Long tipoId;
+    
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreationTimestamp 
+    private LocalDateTime createdAt;
+    
+    @Column(name = "deleted_at")
+    private LocalDate deletedAt;
     
     @Transient
     private File archivoTemporal;

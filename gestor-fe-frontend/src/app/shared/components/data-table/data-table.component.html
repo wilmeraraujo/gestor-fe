@@ -107,6 +107,28 @@
           </button>
 
           <button
+            *ngIf="mostrarDescargaErrores && (row.exiteError === true || row.exiteError === 'true')"
+            mat-icon-button
+            color="warn"
+            (click)="onDescargarErrores(row)"
+            matTooltip="Descargar Reporte de Errores (Excel)">
+
+            <mat-icon>insert_drive_file</mat-icon>
+
+          </button>
+
+          <button
+            *ngIf="mostrarDetalle"
+            mat-icon-button
+            color="primary"
+            (click)="onVerDetalle(row)"
+            matTooltip="Ver registros asociados">
+
+            <mat-icon>visibility</mat-icon>
+
+          </button>
+
+          <button
             mat-icon-button
             (click)="onEliminar(row)"
             matTooltip="Eliminar">

@@ -28,42 +28,56 @@ export class SidebarComponent implements OnInit{
       icon: "settings",
       expanded: false,
       children: [
+        /*
         {
           name: "Tipo identificación",
           icon: "badge",
           route: "/dashboard/admin/tipo-identificacion"
-        },
+        },*/
         {
           name: "Estado",
-          icon: "badge",
+          icon: "check_circle",
           route: "/dashboard/admin/estado"
         },
         {
           name: "Tipo",
-          icon: "badge",
+          icon: "category",
           route: "/dashboard/admin/tipo"
         },
         {
           name: "Extensión",
-          icon: "badge",
+          icon: "extension",
           route: "/dashboard/admin/extension"
         },
         {
           name: "Clasificación",
-          icon: "badge",
+          icon: "class",
           route: "/dashboard/admin/clasificacion"
         },
         {
           name: "Fase",
-          icon: "badge",
+          icon: "schema",
           route: "/dashboard/admin/fase"
         }
       ]
     },
     {
-      name: "Cargue",
-      icon: "upload",
-      route: "/dashboard/cargue" }
+      name: "Gestión",
+      icon: "badge",
+      expanded: false,
+      children: [
+        {
+          name: "Cargue soportes",
+          icon: "upload",
+          route: "/dashboard/cargue"
+        },
+        {
+          name: "Faturas",
+          icon: "receipt_long",
+          route: "/dashboard/factura"
+        }
+      ]
+    }
   ];
 
 

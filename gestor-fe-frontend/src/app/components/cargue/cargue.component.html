@@ -1,21 +1,26 @@
+<!-- Input nativo de archivos oculto de uso exclusivo para el Cargue ZIP -->
+<input 
+  type="file" 
+  #fileInput 
+  style="display: none;" 
+  accept=".zip" 
+  (change)="onFileSelected($event)">
+
 <app-data-table
-
   [titulo]="titulo"
-
   [columnas]="columnas"
-
   [datos]="lista"
-
   [totalRegistros]="totalRegistros"
-
-  [totalPorPagina]="5"
-
-  (editar)="editar($event)"
-
-  (eliminar)="eliminar($event)"
-
+  [totalPorPagina]="totalPorPagina"
+  [pageSizeOptions]="pageSizeOptions"
+  [mostrarAcciones]="true"
+  [mostrarDetalle]="true"
+  [mostrarDescargaErrores]="true"
+  (paginar)="paginar($event)"
+  (descargarErrores)="descargarExcelErrores($event)"
   (agregar)="agregar()"
-
-  (buscar)="buscar($event)">
-
+  (verDetalle)="verFacturas($event)"
+  (buscar)="buscar($event)"
+  (eliminar)="deletedAt($event)"
+>
 </app-data-table>

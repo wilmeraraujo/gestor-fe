@@ -1,6 +1,7 @@
 package com.gestor_fe.core.service.impl;
 
 import java.io.File;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +11,8 @@ import org.springframework.batch.core.job.parameters.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,4 +62,15 @@ public class CargueServiceImpl implements CargueService {
             LOGGER.error("❌ Error crítico ejecutando el Job Asíncrono de Facturas: ", e);
         }
     }
+
+	@Override
+	public Page<Cargue> findByDeletedAtIsNull(Pageable pageable) {
+		return cargueRepository.findByDeletedAtIsNull(pageable);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<Cargue> findByNitPrestador(String desc) {
+		return cargueRepository.findByNitPrestador(desc);
+	}
 }

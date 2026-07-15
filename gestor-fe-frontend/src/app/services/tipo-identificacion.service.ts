@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BE } from '../config/app';
+import { BEADMIN } from '../config/app';
 import { CommonService } from './common.service';
 import { TipoIdentificacion } from '../models/tipo-identificacion';
 import { HttpClient } from '@angular/common/http';
@@ -9,7 +9,7 @@ import { HttpClient } from '@angular/common/http';
 })
 export class TipoIdentificacionService extends CommonService<TipoIdentificacion>{
 
-  protected override endPointBase = BE + '/api/v1/admin/tipo-identificacion';
+  protected override endPointBase = BEADMIN + '/api/v1/admin/tipo-identificacion';
 
   constructor(http: HttpClient) {
       super(http);
