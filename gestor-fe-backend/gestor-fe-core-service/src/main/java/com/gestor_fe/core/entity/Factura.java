@@ -4,8 +4,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 @Data
 @Entity
@@ -39,6 +42,13 @@ public class Factura {
 
     @Column(name = "fecha_emision")
     private LocalDate fechaEmision;
+    
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+    
+    @Column(name = "deleted_at")
+    private LocalDate deletedAt;
 
     // =========================================================================
     // NUEVA RELACIÓN: Una factura tiene muchos documentos asociados

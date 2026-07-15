@@ -47,17 +47,25 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
 
   @Input() totalPorPagina = 5;
 
-  @Input() pageSizeOptions: number[] = [5, 10, 20];
+  @Input() pageSizeOptions: number[] = [5, 10, 20, 50, 100];
 
   @Input() mostrarAgregar = true;
 
   @Input() mostrarAcciones = true;
+
+  @Input() mostrarDescargaErrores = false;
+  
+  @Input() mostrarDetalle = false;
 
   @Output() agregar = new EventEmitter<void>();
 
   @Output() editar = new EventEmitter<any>();
 
   @Output() eliminar = new EventEmitter<any>();
+
+  @Output() descargarErrores = new EventEmitter<any>();
+  
+  @Output() verDetalle = new EventEmitter<any>();
 
   @Output() buscar = new EventEmitter<string>();
 
@@ -108,5 +116,13 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
 
   onPaginar(event: PageEvent): void {
     this.paginar.emit(event);
+  }
+
+  onDescargarErrores(row: any): void {
+    this.descargarErrores.emit(row);
+  }
+
+  onVerDetalle(row: any): void {
+    this.verDetalle.emit(row);
   }
 }

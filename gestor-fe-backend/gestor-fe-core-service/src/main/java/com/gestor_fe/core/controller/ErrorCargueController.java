@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.gestor_fe.core.service.ErrorCargueService;
 
 @RestController
-@RequestMapping("/api/error-cargue")
+@RequestMapping("/api/v1/cargue/error-cargue")
 @CrossOrigin("*")
 public class ErrorCargueController {
 	
@@ -24,11 +24,11 @@ public class ErrorCargueController {
 	}
 	
 	@GetMapping("/{id}")
-	public ResponseEntity<byte[]> exportErrorToExcel(@PathVariable Long id) {
+	public ResponseEntity<byte[]> exportErrorToExcel(@PathVariable("id") Long id) {
 		try {
 			byte[] bytes = service.exportErrorCargueToExcel(id);
 			HttpHeaders headers = new HttpHeaders();
-			headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=error_medicamentos.xlsx");
+			headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=error_en_cargue.xlsx");
 			return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
 import { CommonService } from './common.service';
-import { Fase } from '../models/fase';
-import { BEADMIN } from '../config/app';
+import { Factura } from '../models/factura';
+import { BECORE } from '../config/app';
 import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
-export class FaseService extends CommonService<Fase>{
+export class FacturaService extends CommonService<Factura>{
 
-  protected override endPointBase = BEADMIN + '/api/v1/admin/fase';
+  protected override endPointBase = BECORE + '/api/v1/factura';
 
   constructor(http: HttpClient) {
       super(http);

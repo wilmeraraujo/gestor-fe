@@ -9,6 +9,7 @@ import { TipoComponent } from './components/admin/tipo/tipo.component';
 import { ClasificacionComponent } from './components/admin/clasificacion/clasificacion.component';
 import { ExtensionComponent } from './components/admin/extension/extension.component';
 import { FaseComponent } from './components/admin/fase/fase.component';
+import { FacturaComponent } from './components/factura/factura.component';
 
 
 export const routes: Routes = [
@@ -74,6 +75,10 @@ export const routes: Routes = [
       {
         path: 'cargue',
         component: CargueComponent
+      },
+      {
+        path: 'factura',
+        component: FacturaComponent
       }
 
     ]

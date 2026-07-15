@@ -6,10 +6,14 @@ import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,7 +24,7 @@ import com.gestor_fe.core.entity.Cargue;
 import com.gestor_fe.core.service.CargueService;
 
 @RestController
-@RequestMapping("/api/v1/facturas/cargue")
+@RequestMapping("/api/v1/cargue")
 @CrossOrigin("*")
 public class FacturaCargueController {
 
@@ -78,4 +82,16 @@ public class FacturaCargueController {
                     .body("Error de I/O escribiendo el archivo en el servidor: " + e.getMessage());
         }
     }
+    
+    @GetMapping("/paginable/activos")
+	public ResponseEntity<?> listAll(Pageable pageable) {
+
+	    Pageable sortedPageable = PageRequest.of(
+	            pageable.getPageNumber(),
+	            pageable.getPageSize(),
+	            Sort.by(Sort.Direction.DESC, "id"));
+
+	    return ResponseEntity.ok()
+	            .body(cargueService.findByDeletedAtIsNull(sortedPageable));
+	}
 }
