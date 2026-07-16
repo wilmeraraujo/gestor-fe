@@ -16,7 +16,7 @@ public class Documento {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(nullable = false, length = 1200)
     private String ruta;
