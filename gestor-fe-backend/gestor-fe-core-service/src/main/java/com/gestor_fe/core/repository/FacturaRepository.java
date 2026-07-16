@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import com.gestor_fe.core.entity.Factura;
 
 @Repository
-public interface FacturaRepository extends JpaRepository<Factura, Integer> {
+public interface FacturaRepository extends JpaRepository<Factura, Long> {
 	
 	Page<Factura> findByDeletedAtIsNull(Pageable pageable);
     

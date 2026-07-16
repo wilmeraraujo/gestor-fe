@@ -10,6 +10,7 @@ import { ClasificacionComponent } from './components/admin/clasificacion/clasifi
 import { ExtensionComponent } from './components/admin/extension/extension.component';
 import { FaseComponent } from './components/admin/fase/fase.component';
 import { FacturaComponent } from './components/factura/factura.component';
+import { DocumentoComponent } from './components/documento/documento.component';
 
 
 export const routes: Routes = [
@@ -79,6 +80,10 @@ export const routes: Routes = [
       {
         path: 'factura',
         component: FacturaComponent
+      },
+      {
+        path: 'documento',
+        component: DocumentoComponent
       }
 
     ]

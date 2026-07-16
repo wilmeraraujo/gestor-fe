@@ -75,6 +75,11 @@ export class SidebarComponent implements OnInit{
           name: "Faturas",
           icon: "receipt_long",
           route: "/dashboard/factura"
+        },
+        {
+          name: "Soportes Documentales",
+          icon: "receipt_long",
+          route: "/dashboard/documento"
         }
       ]
     }
