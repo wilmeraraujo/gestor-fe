@@ -66,6 +66,10 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         if (valorStr != null && !valorStr.isBlank()) {
             factura.setValorTotal(new BigDecimal(valorStr.trim()));
         }
+        
+        factura.setEstado("RADICADO"); // Estado inicial del ciclo de vida de la factura
+        factura.setFaseId(1L);         // Fase 1: Extracción / Carga inicial
+        factura.setObservacion("");
 
         // 📂 1. Mapear metadatos del XML adjuntando el File temporal
         Documento docXml = new Documento();

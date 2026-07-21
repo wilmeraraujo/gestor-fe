@@ -39,6 +39,15 @@ public class Factura {
 
     @Column(name = "valor_total")
     private BigDecimal valorTotal;
+    
+    @Column(length = 50)
+    private String estado;
+
+    @Column(length = 1000)
+    private String observacion;
+
+    @Column(name = "fase_id")
+    private Long faseId;
 
     @Column(name = "fecha_emision")
     private LocalDate fechaEmision;

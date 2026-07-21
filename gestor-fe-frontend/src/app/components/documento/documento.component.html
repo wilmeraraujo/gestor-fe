@@ -14,6 +14,14 @@
           <!-- Contenedor alineado horizontalmente con Bootstrap -->
           <div class="row g-2 align-items-center">
             
+            <!-- Input 2: NIT Emisor -->
+            <div class="col-xl-3 col-lg-3 col-md-3">
+              <mat-form-field appearance="outline" class="w-100 dense-form">
+                <mat-label>NIT</mat-label>
+                <input matInput [(ngModel)]="filtro.nit" placeholder="Ej. 123">
+              </mat-form-field>
+            </div>
+
             <!-- Input 1: No. Factura -->
             <div class="col-xl-3 col-lg-3 col-md-3">
               <mat-form-field appearance="outline" class="w-100 dense-form">
@@ -22,13 +30,7 @@
               </mat-form-field>
             </div>
             
-            <!-- Input 2: NIT Emisor -->
-            <div class="col-xl-3 col-lg-3 col-md-3">
-              <mat-form-field appearance="outline" class="w-100 dense-form">
-                <mat-label>NIT Emisor</mat-label>
-                <input matInput [(ngModel)]="filtro.nit" placeholder="Ej. 123">
-              </mat-form-field>
-            </div>
+            
             
             <!-- Input 3: Tipo -->
             <div class="col-xl-2 col-lg-2 col-md-2">
