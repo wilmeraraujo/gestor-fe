@@ -24,7 +24,11 @@ export class FacturaComponent extends CommonListarComponent<Factura, FacturaServ
     { field: 'numeroFactura', header: 'No. Factura' },
     { field: 'valorTotal', header: 'Valor Total' },
     { field: 'fechaEmision', header: 'Fecha Emisión' },
-    { field: 'linea', header: 'Línea Archivo' }
+    { field: 'cufe', header: 'CUFE' },
+    { field: 'estado', header: 'Estado' },
+    { field: 'observacion', header: 'Observación' },
+    { field: 'faseId', header: 'Fase' },
+    //{ field: 'linea', header: 'Línea Archivo' }
   ];
 
   constructor(
