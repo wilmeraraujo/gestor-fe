@@ -112,7 +112,7 @@ ALTER TABLE gestor.documento ADD COLUMN created_at TIMESTAMP(6) NOT NULL;
 ALTER TABLE gestor.factura ADD COLUMN created_at TIMESTAMP(6) NOT NULL;
 
 
-
-
-
+select * from gestor.cargue car
+inner join gestor.factura fac on car.id = fac.identificador_cargue 
+inner join gestor.documento doc on fac.id = doc.factura_id;
 
