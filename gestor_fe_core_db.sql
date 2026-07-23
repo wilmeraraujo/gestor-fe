@@ -89,20 +89,18 @@ select * from gestor.documento d order by id desc limit 10;
 select * from gestor.factura f order by id desc limit 10;
 select * from gestor.error_cargue ec order by id desc limit 10;
 
-
---inquietudes
-
 select * from public.batch_job_execution bje order by bje.job_execution_id desc limit 10; 
 select * from public.batch_job_execution_context bjec; 
 select * from public.batch_job_execution_params bjep;--ver 
 select * from public.batch_job_instance bji; 
 select * from public.batch_step_execution bse;--ver 
-select * from public.batch_step_execution_context bsec; 
+select * from public.batch_step_execution_context bsec;
 
 truncate table gestor.cargue restart identity CASCADE;
 truncate table gestor.error_cargue restart identity CASCADE;
 truncate table gestor.documento restart identity CASCADE;
 truncate table gestor.factura restart identity CASCADE;
+
 truncate table public.batch_job_execution restart identity CASCADE;
 truncate table public.batch_job_execution_context restart identity CASCADE; 
 truncate table public.batch_job_execution_params restart identity CASCADE; 
@@ -110,8 +108,11 @@ truncate table public.batch_job_instance restart identity CASCADE;
 truncate table public.batch_step_execution restart identity CASCADE; 
 truncate table public.batch_step_execution_context restart identity CASCADE;
 
+ALTER TABLE gestor.documento ADD COLUMN created_at TIMESTAMP(6) NOT NULL;
+ALTER TABLE gestor.factura ADD COLUMN created_at TIMESTAMP(6) NOT NULL;
 
 
-
-
+select * from gestor.cargue car
+inner join gestor.factura fac on car.id = fac.identificador_cargue 
+inner join gestor.documento doc on fac.id = doc.factura_id;
 

@@ -63,6 +63,7 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
         }
 
         File dirTemporal = Files.createTempDirectory("gestorfe-batch-zip-").toFile();
+        dirTemporal.deleteOnExit();
         
         Map<String, File> mapasXml = new HashMap<>();
         Map<String, File> mapasPdf = new HashMap<>();
@@ -125,7 +126,7 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
 
             if (pdf == null) {
                 String xmlNombre = nombresOriginalesXml.get(raiz);
-                String errorMsg = String.format("El archivo XML [%s] no tiene su pareja PDF correspondiente en el ZIP.", xmlNombre);
+                String errorMsg = String.format("El archivo XML [%s] no tiene el archivo PDF correspondiente en el ZIP.", xmlNombre);
                 LOGGER.error("❌ ERROR CRÍTICO: {}", errorMsg);
                 
                 ErrorCargue error = new ErrorCargue();
@@ -150,7 +151,7 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
         for (String raiz : mapasPdf.keySet()) {
             if (!mapasXml.containsKey(raiz)) {
                 String pdfNombre = nombresOriginalesPdf.get(raiz);
-                String errorMsg = String.format("El archivo PDF [%s] no tiene su pareja XML correspondiente en el ZIP.", pdfNombre);
+                String errorMsg = String.format("El archivo PDF [%s] no tiene el archivo XML correspondiente en el ZIP.", pdfNombre);
                 LOGGER.error("❌ ERROR CRÍTICO: {}", errorMsg);
                 
                 ErrorCargue error = new ErrorCargue();

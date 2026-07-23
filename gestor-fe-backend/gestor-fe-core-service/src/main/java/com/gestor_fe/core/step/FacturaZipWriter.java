@@ -21,12 +21,12 @@ public class FacturaZipWriter implements ItemWriter<Factura> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FacturaZipWriter.class);
 
     private final FacturaRepository facturaRepository;
-    private final String rutaStorage;
+    private final String rutaStorageValidos; // 👈 Cambiado para apuntar al directorio de válidos
     private final Long identificadorCargue;
 
-    public FacturaZipWriter(FacturaRepository facturaRepository, String rutaStorage, Long identificadorCargue) {
+    public FacturaZipWriter(FacturaRepository facturaRepository, String rutaStorageValidos, Long identificadorCargue) {
         this.facturaRepository = facturaRepository;
-        this.rutaStorage = rutaStorage;
+        this.rutaStorageValidos = rutaStorageValidos;
         this.identificadorCargue = identificadorCargue;
     }
 
@@ -38,37 +38,55 @@ public class FacturaZipWriter implements ItemWriter<Factura> {
 
         LOGGER.info("=== 💾 Procesando e ingresando un bloque de {} facturas para el cargue {} ===", chunk.size(), identificadorCargue);
 
-        // Verificar o crear el directorio definitivo en el servidor de archivos
-        File carpetaDestino = new File(rutaStorage);
-        if (!carpetaDestino.exists()) {
-            carpetaDestino.mkdirs();
-        }
-
         for (Factura factura : chunk.getItems()) {
             
-            // Iterar dinámicamente sobre todos los documentos asociados (Relación Uno a Muchos)
+            // 1. Limpieza de nombres de carpetas para evitar caracteres ilegales en Windows/Linux
+            String nitCarpeta = sanearNombreCarpeta(factura.getNit());
+            String numFacturaCarpeta = sanearNombreCarpeta(factura.getNumeroFactura());
+
+            // 2. Construir la estructura de directorios: E:\gestion-fe-validos\NIT\NUM_FACTURA\
+            Path directorioFactura = Paths.get(rutaStorageValidos, nitCarpeta, numFacturaCarpeta);
+            
+            // Crear carpetas padre e hijas si no existen
+            if (!Files.exists(directorioFactura)) {
+                Files.createDirectories(directorioFactura);
+            }
+
+            // 3. Iterar y mover los archivos PDF/XML asociados a esta factura
             if (factura.getDocumentos() != null) {
                 for (Documento doc : factura.getDocumentos()) {
                     
                     if (doc.getArchivoTemporal() != null) {
                         File archivoTemporal = doc.getArchivoTemporal();
                         
-                        // Generar nombre UUID único para evitar colisiones en la carpeta de destino
+                        // Mantenemos tu nombre único con UUID para evitar colisiones
                         String nombreUnico = UUID.randomUUID() + "_" + doc.getNombreOriginal();
-                        Path destinoFinal = Paths.get(rutaStorage, nombreUnico);
                         
-                        // Mover archivo físico desde la carpeta transitoria del ZIP al almacenamiento definitivo
+                        // Ruta final: E:\gestion-fe-validos\NIT\NUM_FACTURA\UUID_NombreOriginal.pdf
+                        Path destinoFinal = directorioFactura.resolve(nombreUnico);
+                        
+                        // Mover archivo desde la carpeta transitoria al almacenamiento estructurado definitivo
                         Files.move(archivoTemporal.toPath(), destinoFinal, StandardCopyOption.REPLACE_EXISTING);
                         
-                        // Inyectar la ubicación real absoluta que irá en la tabla gestor.documento
+                        // Guardar la ubicación absoluta estructurada en PostgreSQL
                         doc.setRuta(destinoFinal.toString());
                     }
                 }
             }
         }
 
-        // Persistencia relacional de todo el Chunk y sus hijos asociados en cascada de forma atómica
+        // Persistencia atómica de las facturas y sus documentos en BD
         facturaRepository.saveAll(chunk.getItems());
-        LOGGER.info("=== ✅ Bloque de facturas y sus múltiples documentos guardados en PostgreSQL ===");
+        LOGGER.info("=== ✅ Bloque de facturas y sus múltiples documentos guardados exitosamente ===");
+    }
+
+    /**
+     * Reemplaza caracteres no válidos en nombres de directorios (ej. /, \, :, *, ?, ", <, >, |)
+     */
+    private String sanearNombreCarpeta(String nombre) {
+        if (nombre == null || nombre.isBlank()) {
+            return "DESCONOCIDO";
+        }
+        return nombre.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
     }
 }
