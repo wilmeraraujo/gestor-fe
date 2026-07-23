@@ -32,6 +32,9 @@ public class JobLoteCargueConfig {
 
     @Value("${ruta.storage}")
     private String rutaStorage;
+    
+    @Value("${ruta.storage.validos}")
+    private String rutaStorageValidos;
 
     // Inyección por constructor limpia y consistente
     public JobLoteCargueConfig(JobRepository jobRepository, 
@@ -90,6 +93,6 @@ public class JobLoteCargueConfig {
     @StepScope
     public ItemWriter<Factura> writer(
             @Value("#{jobParameters['identificadorCargue']}") Long identificadorCargue) {
-        return new FacturaZipWriter(facturaRepository, rutaStorage, identificadorCargue);
+        return new FacturaZipWriter(facturaRepository, rutaStorageValidos, identificadorCargue);
     }
 }
