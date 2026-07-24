@@ -86,6 +86,7 @@ CREATE SEQUENCE BATCH_JOB_INSTANCE_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
 --
 select * from gestor.cargue c order by id desc limit 10;
 select * from gestor.documento d order by id desc limit 10;
+select * from gestor.prestador p order by id desc limit 10;
 select * from gestor.factura f order by id desc limit 10;
 select * from gestor.error_cargue ec order by id desc limit 10;
 

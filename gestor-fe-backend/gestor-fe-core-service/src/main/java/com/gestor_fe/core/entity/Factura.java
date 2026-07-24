@@ -2,6 +2,8 @@ package com.gestor_fe.core.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -52,7 +54,7 @@ public class Factura {
     @Column(name = "fecha_emision")
     private LocalDate fechaEmision;
     
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
     
@@ -60,17 +62,18 @@ public class Factura {
     private LocalDate deletedAt;
 
     // =========================================================================
-    // NUEVA RELACIÓN: Una factura tiene muchos documentos asociados
+    // RELACIÓN OPTIMIZADA: Bidireccional mapeada por la entidad Documento
     // =========================================================================
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JoinColumn(name = "factura_id") // Esto creará la llave foránea 'factura_id' en la tabla gestor.documento
+    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
     private List<Documento> documentos = new ArrayList<>();
 
-    // Método helper conveniente para añadir documentos manteniendo consistencia
+    // Método helper optimizado
     public void addDocumento(Documento documento) {
         if (this.documentos == null) {
             this.documentos = new ArrayList<>();
         }
         this.documentos.add(documento);
+        documento.setFactura(this); // 👈 Asigna la relación padre para la clave foránea
     }
 }
