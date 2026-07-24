@@ -6,8 +6,11 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
 @Data
 @Entity
@@ -35,6 +38,20 @@ public class Documento {
 
     @Column(name = "tipo_id", nullable = false)
     private Long tipoId;
+    
+ // Relación Opcional: Se llena si es un XML/PDF de Factura
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "factura_id")
+    @JsonIgnoreProperties("documentos") // 👈 Ignora la lista de documentos dentro de factura
+    @ToString.Exclude // 👈 Evita StackOverflow en Lombok
+    private Factura factura;
+
+    // Relación Opcional: Se llena si es un Soporte del Prestador (RUT, Certificación, etc.)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "prestador_id")
+    @JsonIgnoreProperties("soportes") // 👈 Ignora la lista de soportes dentro de prestador
+    @ToString.Exclude
+    private Prestador prestador;
     
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp 

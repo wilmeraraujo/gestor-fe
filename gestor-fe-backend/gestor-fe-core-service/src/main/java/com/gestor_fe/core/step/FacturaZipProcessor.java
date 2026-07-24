@@ -168,7 +168,7 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
             docPdf.setTamano(item.getArchivoPdf().length());
             docPdf.setEstadoId(1L);
             docPdf.setExtensionId(2L); 
-            docPdf.setTipoId(1L);
+            docPdf.setTipoId(2L);
             docPdf.setArchivoTemporal(item.getArchivoPdf());
             factura.addDocumento(docPdf);
         }
