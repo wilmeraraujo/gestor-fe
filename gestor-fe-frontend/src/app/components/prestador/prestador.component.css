@@ -1,0 +1,51 @@
+.border-left-primary {
+  border-left: 4px solid #4e73df !important;
+}
+
+.border-success {
+  border-left: 4px solid #1cc88a !important;
+}
+
+.card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+/* Color principal del tema */
+.bg-theme {
+  background-color: #1DA6BA !important;
+  color: #ffffff !important;
+}
+
+.btn-theme {
+  background-color: #1DA6BA !important;
+  border-color: #1DA6BA !important;
+  color: #ffffff !important;
+}
+
+.btn-theme:hover {
+  background-color: #178899 !important;
+  border-color: #178899 !important;
+}
+
+.btn-outline-theme {
+  color: #1DA6BA !important;
+  border-color: #1DA6BA !important;
+  background-color: transparent;
+}
+
+.btn-outline-theme:hover {
+  background-color: #1DA6BA !important;
+  color: #ffffff !important;
+}
+
+.text-theme {
+  color: #1DA6BA !important;
+}
+
+.border-left-theme {
+  border-left: 4px solid #1DA6BA !important;
+}

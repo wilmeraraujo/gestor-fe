@@ -17,6 +17,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.ToString;
+import org.hibernate.annotations.SQLRestriction;
 
 @Data
 @Entity
@@ -58,6 +59,7 @@ public class Prestador {
     // Soportes del Prestador (RUT, Cámara de Comercio, etc.)
     @OneToMany(mappedBy = "prestador", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
+    @SQLRestriction("deleted_at IS NULL")
     private List<Documento> soportes = new ArrayList<>();
 
     public void addSoporte(Documento doc) {
