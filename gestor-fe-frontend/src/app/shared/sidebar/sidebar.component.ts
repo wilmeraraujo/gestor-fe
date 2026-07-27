@@ -9,9 +9,12 @@ import { RouterModule } from '@angular/router';
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.css'
 })
-export class SidebarComponent implements OnInit{
+export class SidebarComponent implements OnInit {
 
   @Input() collapsed: boolean = false;
+
+  // 🚀 Estado temporal para el efecto Hover cuando está contraído
+  isHovered: boolean = false;
 
   username: any;
   roles: string[] = [];
@@ -28,12 +31,6 @@ export class SidebarComponent implements OnInit{
       icon: "settings",
       expanded: false,
       children: [
-        /*
-        {
-          name: "Tipo identificación",
-          icon: "badge",
-          route: "/dashboard/admin/tipo-identificacion"
-        },*/
         {
           name: "Estado",
           icon: "check_circle",
@@ -67,17 +64,17 @@ export class SidebarComponent implements OnInit{
       expanded: false,
       children: [
         {
-          name: "Cargue prestador",
+          name: "Soportes prestador",
           icon: "domain_add",
           route: "/dashboard/prestador"
         },
         {
-          name: "Cargue soportes",
+          name: "Soportes FE",
           icon: "cloud_upload",
           route: "/dashboard/cargue"
         },
         {
-          name: "Faturas",
+          name: "Facturas",
           icon: "receipt_long",
           route: "/dashboard/factura"
         },
@@ -90,8 +87,7 @@ export class SidebarComponent implements OnInit{
     }
   ];
 
-
-  constructor(){}
+  constructor() {}
 
   async ngOnInit(): Promise<void> {}
 
@@ -103,6 +99,23 @@ export class SidebarComponent implements OnInit{
     item.expanded = !item.expanded;
   }
 
+  // 🚀 Eventos para controlar cuando el ratón entra o sale del Sidebar
+  onMouseEnter(): void {
+    if (this.collapsed) {
+      this.isHovered = true;
+    }
+  }
+
+  onMouseLeave(): void {
+    if (this.collapsed) {
+      this.isHovered = false;
+    }
+  }
+
+  // 🚀 Retorna true si el sidebar está completamente visible (ya sea por toggle o por hover)
+  get isExpanded(): boolean {
+    return !this.collapsed || this.isHovered;
+  }
 }
 
 interface MenuItem {

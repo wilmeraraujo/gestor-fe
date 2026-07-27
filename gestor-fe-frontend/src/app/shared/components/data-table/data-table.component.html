@@ -1,12 +1,16 @@
 <mat-card class="card">
 
-  <!-- HEADER -->
-  <mat-card-header>
-    <div class="buscador-container">
-      <h1>{{ titulo }}</h1>
-      <div class="acciones-header">
+  <!-- HEADER CON TÍTULO Y BÚSQUEDA A LA IZQUIERDA -->
+  <mat-card-header class="card-header-custom">
+    <div class="header-content-stacked">
 
-        <!-- BUSCADOR -->
+      <!-- 1️⃣ TÍTULO DE PRIMERO -->
+      <h1 class="titulo-tabla">{{ titulo }}</h1>
+
+      <!-- 2️⃣ BUSCADOR Y BOTONES ABAJO A LA IZQUIERDA -->
+      <div class="acciones-header-left">
+
+        <!-- CAMPO BUSCADOR GLOBAL -->
         <mat-form-field appearance="fill" class="buscador-field">
           <mat-label>Buscar</mat-label>
           <input
@@ -15,138 +19,204 @@
             placeholder="Buscar..."
             (keyup.enter)="onBuscar(txtBuscar.value)"
             (input)="txtBuscar.value === '' ? onBuscar('') : null" />
-          <button
-            mat-icon-button
-            matSuffix
-            (click)="onBuscar(txtBuscar.value)">
-            <mat-icon>search</mat-icon>
-          </button>
         </mat-form-field>
 
-        <!-- BOTON ADD -->
-        <button
-          *ngIf="mostrarAgregar"
-          mat-icon-button
-          matTooltip="Adicionar"
-          (click)="agregar.emit()">
-          <mat-icon>add</mat-icon>
-        </button>
+        <!-- GRUPO DE BOTONES PRINCIPALES -->
+        <div class="botones-container">
+
+          <!-- 🔍 BOTÓN BUSCAR (#1DA6BA) -->
+          <button
+            type="button"
+            class="btn-icon-theme btn-search"
+            (click)="onBuscar(txtBuscar.value)"
+            matTooltip="Buscar en registros">
+            <mat-icon>search</mat-icon>
+            <span>Buscar</span>
+          </button>
+
+          <!-- 🎯 BOTÓN FILTROS (GRIS) -->
+          <button
+            type="button"
+            class="btn-icon-theme btn-filter"
+            [class.active-filter]="mostrarFiltrosColumnas"
+            (click)="toggleFiltros()"
+            [matTooltip]="mostrarFiltrosColumnas ? 'Ocultar filtros de columna' : 'Activar filtros por columna'">
+            <mat-icon>filter_list</mat-icon>
+            <span>{{ mostrarFiltrosColumnas ? 'Ocultar Filtros' : 'Filtros' }}</span>
+          </button>
+
+          <!-- 🧹 BOTÓN LIMPIAR (ROJO) -->
+          <button
+            *ngIf="mostrarFiltrosColumnas"
+            type="button"
+            class="btn-icon-theme btn-clear-filter"
+            (click)="limpiarFiltrosColumnas()"
+            matTooltip="Limpiar todos los filtros por columna">
+            <mat-icon>filter_alt_off</mat-icon>
+            <span>Limpiar</span>
+          </button>
+
+          <!-- ➕ BOTÓN ADICIONAR (AZUL OSCURO) -->
+          <button
+            *ngIf="mostrarAgregar"
+            type="button"
+            class="btn-icon-theme btn-add"
+            (click)="agregar.emit()"
+            matTooltip="Adicionar nuevo registro">
+            <mat-icon>add</mat-icon>
+            <span>Adicionar</span>
+          </button>
+
+        </div>
 
       </div>
+
     </div>
   </mat-card-header>
 
-  <!-- TABLA -->
-  <mat-card-content>
-    <table
-      mat-table
-      [dataSource]="dataSource"
-      class="full-width-table">
+  <!-- TABLA Y CONTENIDO RESPONSIVO -->
+  <mat-card-content class="card-content-custom">
 
-      <!-- 🚀 NUEVA COLUMNA: CHECKBOX SELECCIÓN MÚLTIPLE (Se renderiza al inicio si mostrarSeleccion es true) -->
-      <ng-container matColumnDef="select">
-        <th mat-header-cell *matHeaderCellDef>
-          <mat-checkbox 
-            (change)="$event ? toggleAllRows() : null"
-            [checked]="selection.hasValue() && isAllSelected()"
-            [indeterminate]="selection.hasValue() && !isAllSelected()">
-          </mat-checkbox>
-        </th>
-        <td mat-cell *matCellDef="let row">
-          <mat-checkbox 
-            (click)="$event.stopPropagation()"
-            (change)="$event ? selection.toggle(row) : null"
-            [checked]="selection.isSelected(row)">
-          </mat-checkbox>
-        </td>
-      </ng-container>
+    <!-- 📟 PAGINADOR SUPERIOR -->
+    <mat-paginator
+      class="paginator-superior"
+      [length]="totalRegistros"
+      [pageSize]="totalPorPagina"
+      [pageSizeOptions]="pageSizeOptions"
+      showFirstLastButtons
+      (page)="onPaginar($event)">
+    </mat-paginator>
 
-      <!-- COLUMNAS DINAMICAS -->
-      <ng-container
-        *ngFor="let col of columnas"
-        [matColumnDef]="col.field">
-        <th
-          mat-header-cell
-          *matHeaderCellDef>
-          {{ col.header }}
-        </th>
-        <td
-          mat-cell
-          *matCellDef="let row">
-          {{ row[col.field] }}
-        </td>
-      </ng-container>
+    <div class="tabla-responsive">
+      <table
+        mat-table
+        [dataSource]="dataSource"
+        class="full-width-table">
 
-      <!-- ACCIONES -->
-      <ng-container matColumnDef="acciones">
-        <th
-          mat-header-cell
-          *matHeaderCellDef>
-          Acciones
-        </th>
-        <td
-          mat-cell
-          *matCellDef="let row">
+        <!-- CHECKBOX SELECCIÓN MÚLTIPLE -->
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef class="cell-checkbox">
+            <mat-checkbox
+              (change)="$event ? toggleAllRows() : null"
+              [checked]="selection.hasValue() && isAllSelected()"
+              [indeterminate]="selection.hasValue() && !isAllSelected()">
+            </mat-checkbox>
+          </th>
+          <td mat-cell *matCellDef="let row" class="cell-checkbox">
+            <mat-checkbox
+              (click)="$event.stopPropagation()"
+              (change)="$event ? selection.toggle(row) : null"
+              [checked]="selection.isSelected(row)">
+            </mat-checkbox>
+          </td>
+        </ng-container>
 
-          <button
-            mat-icon-button
-            (click)="onEditar(row)"
-            matTooltip="Editar">
-            <mat-icon>edit</mat-icon>
-          </button>
+        <!-- COLUMNAS DINÁMICAS DE DATOS -->
+        <ng-container
+          *ngFor="let col of columnas"
+          [matColumnDef]="col.field">
+          <th mat-header-cell *matHeaderCellDef>
+            {{ col.header }}
+          </th>
+          <td mat-cell *matCellDef="let row" class="text-nowrap">
+            {{ row[col.field] }}
+          </td>
+        </ng-container>
 
-          <button
-            *ngIf="mostrarDescargaErrores && (row.exiteError === true || row.exiteError === 'true')"
-            mat-icon-button
-            color="warn"
-            (click)="onDescargarErrores(row)"
-            matTooltip="Descargar Reporte de Errores (Excel)">
-            <mat-icon>insert_drive_file</mat-icon>
-          </button>
+        <!-- ACCIONES -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="text-center">
+            Acciones
+          </th>
+          <td mat-cell *matCellDef="let row" class="text-center text-nowrap">
 
-          <button
-            *ngIf="mostrarDetalle"
-            mat-icon-button
-            color="primary"
-            (click)="onVerDetalle(row)"
-            matTooltip="Ver registros asociados">
-            <mat-icon>visibility</mat-icon>
-          </button>
+            <button
+              mat-icon-button
+              (click)="onEditar(row)"
+              matTooltip="Editar">
+              <mat-icon>edit</mat-icon>
+            </button>
 
-          <button
-            mat-icon-button
-            (click)="onEliminar(row)"
-            matTooltip="Eliminar">
-            <mat-icon>delete</mat-icon>
-          </button>
+            <button
+              *ngIf="mostrarDescargaErrores && (row.exiteError === true || row.exiteError === 'true')"
+              mat-icon-button
+              color="warn"
+              (click)="onDescargarErrores(row)"
+              matTooltip="Descargar Reporte de Errores (Excel)">
+              <mat-icon>insert_drive_file</mat-icon>
+            </button>
 
-        </td>
-      </ng-container>
+            <button
+              *ngIf="mostrarDetalle"
+              mat-icon-button
+              color="primary"
+              (click)="onVerDetalle(row)"
+              matTooltip="Ver registros asociados">
+              <mat-icon>visibility</mat-icon>
+            </button>
 
-      <!-- HEADER -->
-      <tr
-        mat-header-row
-        *matHeaderRowDef="displayedColumns"
-        class="encabezado-tabla">
-      </tr>
+            <button
+              mat-icon-button
+              (click)="onEliminar(row)"
+              matTooltip="Eliminar">
+              <mat-icon>delete</mat-icon>
+            </button>
 
-      <!-- ROW -->
-      <tr
-        mat-row
-        *matRowDef="let row; columns: displayedColumns;">
-      </tr>
+          </td>
+        </ng-container>
 
-    </table>
+        <!-- =======================================================================
+             🎯 FILA DE FILTROS INDIVIDUALES POR COLUMNA
+             ======================================================================= -->
+        <ng-container matColumnDef="select-filter">
+          <th mat-header-cell *matHeaderCellDef class="filter-header-cell"></th>
+        </ng-container>
 
-    <!-- EMPTY -->
-    <div
-      class="alert-info"
-      *ngIf="datos.length === 0">
+        <!-- Muestra el input individual SOLO si col.filtrable no es false -->
+        <ng-container *ngFor="let col of columnas" [matColumnDef]="'filter-' + col.field">
+          <th mat-header-cell *matHeaderCellDef class="filter-header-cell">
+            <mat-form-field
+              *ngIf="col.filtrable !== false"
+              appearance="outline"
+              class="col-filter-input">
+              <input
+                matInput
+                placeholder="Filtrar..."
+                [(ngModel)]="filtrosPorColumna[col.field]"
+                (keyup)="aplicarFiltrosColumnas()" />
+            </mat-form-field>
+          </th>
+        </ng-container>
+
+        <!-- Celda vacía de la fila de filtros para alinear con Acciones -->
+        <ng-container matColumnDef="acciones-filter">
+          <th mat-header-cell *matHeaderCellDef class="filter-header-cell"></th>
+        </ng-container>
+
+        <!-- FILAS DE ENCABEZADO Y DATOS -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="encabezado-tabla"></tr>
+
+        <!-- 🎯 Fila dinámica de Filtros por Columna -->
+        <tr
+          mat-header-row
+          *matHeaderRowDef="filterColumns"
+          class="row-filtros"
+          [style.display]="mostrarFiltrosColumnas ? 'table-row' : 'none'">
+        </tr>
+
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      </table>
+    </div>
+
+    <!-- MENSAJE SIN REGISTROS -->
+    <div class="alert-info text-center" *ngIf="datos.length === 0">
       No hay registros en el sistema
     </div>
 
-    <!-- PAGINADOR -->
+    <!-- 📟 PAGINADOR INFERIOR -->
     <mat-paginator
+      #paginatorInferior
       [length]="totalRegistros"
       [pageSize]="totalPorPagina"
       [pageSizeOptions]="pageSizeOptions"

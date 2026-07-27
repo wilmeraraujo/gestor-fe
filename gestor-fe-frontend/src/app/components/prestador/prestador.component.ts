@@ -2,20 +2,29 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+// 📦 IMPORTS DE ANGULAR MATERIAL
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+
+// 🔌 SERVICIOS Y MODELOS
 import { TipoService } from '../../services/tipo.service';
 import { PrestadorService } from '../../services/prestador.service';
 import { DocumentoService } from '../../services/documento.service';
+import { AlertService } from '../../services/alert.service'; // 👈 Inyección del nuevo servicio
 import { Tipo } from '../../models/tipo';
 import { Prestador } from '../../models/prestador';
 import { Documento } from '../../models/documento';
-import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-prestador',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule
   ],
   templateUrl: './prestador.component.html',
   styleUrls: ['./prestador.component.css']
@@ -27,20 +36,21 @@ export class PrestadorComponent implements OnInit {
   public nitBusqueda: string = '';
   public prestadorActual: Prestador | null = null;
   public tiposSoporte: Tipo[] = [];
-  public soportesCargados: Map<number, Documento> = new Map(); // Mapa [tipoId -> Documento]
+  public soportesCargados: Map<number, Documento> = new Map();
   public cargando: boolean = false;
 
   constructor(
     private tipoService: TipoService,
     private prestadorService: PrestadorService,
-    private documentoService: DocumentoService
+    private documentoService: DocumentoService,
+    private alertService: AlertService // 👈 Inyectado aquí
   ) { }
 
   ngOnInit(): void {
     this.cargarTiposSoporte();
   }
 
-  // 1. Cargar catálogo de tipos filtrando los de factura
+  // 1. Cargar catálogo de tipos
   cargarTiposSoporte(): void {
     this.tipoService.listar().subscribe({
       next: (tipos: any[]) => {
@@ -54,10 +64,10 @@ export class PrestadorComponent implements OnInit {
     });
   }
 
-  // 2. Buscar prestador por el NIT digitado en el input
+  // 2. Buscar prestador por NIT
   buscarPrestador(): void {
     if (!this.nitBusqueda || this.nitBusqueda.trim() === '') {
-      Swal.fire('Advertencia', 'Ingrese un NIT para realizar la búsqueda.', 'warning');
+      this.alertService.advertencia('Ingrese un NIT para realizar la búsqueda.');
       return;
     }
 
@@ -74,12 +84,12 @@ export class PrestadorComponent implements OnInit {
         this.prestadorActual = null;
         this.soportesCargados.clear();
         this.cargando = false;
-        Swal.fire('No encontrado', `No se encontró un prestador registrado con NIT: ${this.nitBusqueda}`, 'info');
+        this.alertService.info(`No se encontró un prestador registrado con NIT: ${this.nitBusqueda}`, 'No encontrado');
       }
     });
   }
 
-  // 3. Cargar los soportes del prestador
+  // 3. Cargar los soportes
   cargarSoportesExistentes(prestadorId: number | string): void {
     this.prestadorService.listarSoportes(Number(prestadorId)).subscribe({
       next: (response) => {
@@ -96,7 +106,14 @@ export class PrestadorComponent implements OnInit {
     });
   }
 
-  // 🛠️ MÉTODOS HELPER PARA EL TEMPLATE
+  // 🧹 Limpiar búsqueda
+  limpiarFiltro(): void {
+    this.nitBusqueda = '';
+    this.prestadorActual = null;
+    this.soportesCargados.clear();
+  }
+
+  // 🛠️ Helpers del template
   tieneSoporte(tipoId: number | string): boolean {
     return this.soportesCargados.has(Number(tipoId));
   }
@@ -105,27 +122,23 @@ export class PrestadorComponent implements OnInit {
     return this.soportesCargados.get(Number(tipoId));
   }
 
-  // 4. Cargar un archivo desde la tarjeta
+  // 4. Subir un archivo
   onFileSelected(event: any, tipo: Tipo): void {
     const archivo: File = event.target.files[0];
     if (!archivo || !this.prestadorActual) return;
 
     const extensionId = archivo.name.toLowerCase().endsWith('.pdf') ? 2 : 1;
 
-    Swal.fire({
-      title: 'Subiendo archivo...',
-      text: `Cargando soporte ${tipo.descripcion || tipo.codigo}`,
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
-    });
+    // 🔄 Muestra alerta de carga
+    this.alertService.cargando(`Cargando soporte ${tipo.descripcion || tipo.codigo}`, 'Subiendo archivo...');
 
     this.prestadorService.cargarSoporte(this.prestadorActual.nit, Number(tipo.id), extensionId, archivo).subscribe({
       next: (docGuardado) => {
         this.soportesCargados.set(Number(tipo.id), docGuardado);
-        Swal.fire('Éxito', `Soporte ${tipo.descripcion || tipo.codigo} guardado correctamente.`, 'success');
+        this.alertService.exito(`Soporte ${tipo.descripcion || tipo.codigo} guardado correctamente.`);
       },
       error: (err) => {
-        Swal.fire('Error', 'No se pudo cargar el archivo. Inténtelo de nuevo.', 'error');
+        this.alertService.error('No se pudo cargar el archivo. Inténtelo de nuevo.');
         console.error(err);
       }
     });
@@ -139,32 +152,27 @@ export class PrestadorComponent implements OnInit {
         const fileURL = URL.createObjectURL(blob);
         window.open(fileURL, '_blank');
       },
-      error: () => Swal.fire('Error', 'No se pudo generar la vista previa del documento.', 'error')
+      error: () => this.alertService.error('No se pudo generar la vista previa del documento.')
     });
   }
 
   // 6. Eliminar el soporte
   eliminarSoporte(tipoId: number | string, docId: number | string): void {
-    Swal.fire({
-      title: '¿Está seguro?',
-      text: 'Se eliminará el soporte seleccionado.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.prestadorService.eliminarSoporte(Number(docId)).subscribe({
-          next: () => {
-            this.soportesCargados.delete(Number(tipoId));
-            Swal.fire('Eliminado', 'El soporte ha sido removido.', 'success');
-          },
-          error: (err) => {
-            Swal.fire('Error', 'No se pudo eliminar el soporte.', 'error');
-            console.error(err);
-          }
-        });
-      }
-    });
+    // ❓ Confirmación con SweetAlert desde el servicio
+    this.alertService.confirmar('Se eliminará el soporte seleccionado.', '¿Está seguro?', 'Sí, eliminar')
+      .then((result) => {
+        if (result.isConfirmed) {
+          this.prestadorService.eliminarSoporte(Number(docId)).subscribe({
+            next: () => {
+              this.soportesCargados.delete(Number(tipoId));
+              this.alertService.exito('El soporte ha sido removido.', 'Eliminado');
+            },
+            error: (err) => {
+              this.alertService.error('No se pudo eliminar el soporte.');
+              console.error(err);
+            }
+          });
+        }
+      });
   }
 }
