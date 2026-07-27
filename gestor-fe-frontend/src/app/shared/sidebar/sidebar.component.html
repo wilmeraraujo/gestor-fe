@@ -1,24 +1,18 @@
 <aside
   class="sidebar"
-  [class.sidebar-collapsed]="collapsed">
+  [class.sidebar-collapsed]="collapsed && !isHovered"
+  [class.sidebar-hovered]="collapsed && isHovered"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()">
 
   <!-- LOGO -->
   <div class="sidebar-logo">
-
-    <h2 *ngIf="!collapsed">
-      <!--<img src="assets/images/logo-empresa.png" alt="Logo" style="max-height: 40px; width: auto; object-fit: contain;">-->
-      FE
-    </h2>
-
-    <h2 *ngIf="collapsed">
-      F
-    </h2>
-
+    <h2 *ngIf="isExpanded">FE</h2>
+    <h2 *ngIf="!isExpanded">F</h2>
   </div>
 
   <!-- MENU -->
   <ul class="sidebar-menu">
-
     <li *ngFor="let item of menuNav">
 
       <!-- ITEM NORMAL CON RUTA -->
@@ -34,10 +28,9 @@
         </span>
 
         <!-- TEXTO -->
-        <span *ngIf="!collapsed" class="sidebar-text">
+        <span *ngIf="isExpanded" class="sidebar-text">
           {{ item.name }}
         </span>
-
       </a>
 
       <!-- ITEM CON SUBMENU -->
@@ -52,28 +45,22 @@
         </span>
 
         <!-- TEXTO -->
-        <span *ngIf="!collapsed" class="sidebar-text">
+        <span *ngIf="isExpanded" class="sidebar-text">
           {{ item.name }}
         </span>
 
         <!-- FLECHA -->
-        <span
-          *ngIf="!collapsed"
-          class="material-icons sidebar-arrow">
-
+        <span *ngIf="isExpanded" class="material-icons sidebar-arrow">
           {{ item.expanded ? 'expand_less' : 'expand_more' }}
-
         </span>
-
       </div>
 
       <!-- SUBMENU -->
       <ul
-        *ngIf="item.children && item.expanded && !collapsed"
+        *ngIf="item.children && item.expanded && isExpanded"
         class="sidebar-submenu">
 
         <li *ngFor="let child of item.children">
-
           <a
             [routerLink]="child.route"
             routerLinkActive="sidebar-active"
@@ -88,15 +75,12 @@
             <span>
               {{ child.name }}
             </span>
-
           </a>
-
         </li>
 
       </ul>
 
     </li>
-
   </ul>
 
 </aside>

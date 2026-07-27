@@ -1,39 +1,48 @@
 <div class="container-fluid mt-3">
 
-  <!-- 🔍 TARJETA DE BÚSQUEDA DE PRESTADOR -->
+  <!-- 🔍 TARJETA DE BÚSQUEDA DE PRESTADOR (Cerrada correctamente) -->
   <div class="card shadow-sm mb-4">
-    <!-- 🎨 Encabezado con color #1DA6BA -->
-    <div class="card-header text-white font-weight-bold" style="background-color: #1DA6BA;">
-      <i class="fas fa-search mr-2"></i> Gestión de Soportes por Prestador
+    <div class="card-header bg-theme text-white font-weight-bold d-flex align-items-center">
+      <mat-icon class="mr-2">search</mat-icon> Gestión de Soportes por Prestador
     </div>
     <div class="card-body">
-      <div class="form-inline">
-        <label class="mr-2 font-weight-bold">NIT del Prestador:</label>
+      <div class="d-flex align-items-center">
+        <label class="mr-3 font-weight-bold mb-0">NIT del Prestador:</label>
+
         <input
           type="text"
-          class="form-control mr-2"
+          class="form-control input-busqueda"
           [(ngModel)]="nitBusqueda"
           placeholder="Ej: 123 o 900123456"
           (keyup.enter)="buscarPrestador()">
 
-        <!-- 🎨 Botón con color #1DA6BA -->
         <button
-          class="btn text-white"
-          style="background-color: #1DA6BA; border-color: #1DA6BA;"
+          type="button"
+          class="btn btn-search-theme ml-3"
           (click)="buscarPrestador()"
+          matTooltip="Buscar Prestador"
           [disabled]="cargando">
-          <i class="fas fa-search mr-1"></i> Buscar
+          <mat-icon>search</mat-icon>
+        </button>
+
+        <button
+          *ngIf="nitBusqueda || prestadorActual"
+          type="button"
+          class="btn btn-clear-theme ml-2"
+          (click)="limpiarFiltro()"
+          matTooltip="Limpiar filtro">
+          <mat-icon>clear</mat-icon>
         </button>
       </div>
     </div>
-  </div>
+  </div> <!-- 👈 AQUÍ FALTABA CERRAR ESTE DIV -->
 
-  <!-- 👤 CABECERA CON DATOS DEL PRESTADOR ENCONTRADO -->
+  <!-- 👤 CABECERA CON DATOS DEL PRESTADOR ENCONTRADO (Ahora es una tarjeta independiente) -->
   <div *ngIf="prestadorActual" class="card shadow-sm mb-4">
-    <div class="card-body bg-light border-left-custom" style="border-left: 4px solid #1DA6BA;">
+    <div class="card-body bg-light border-left-theme">
       <div class="row align-items-center">
         <div class="col-md-5">
-          <h5 class="font-weight-bold mb-1" style="color: #1DA6BA;">{{ prestadorActual.razonSocial }}</h5>
+          <h5 class="font-weight-bold mb-1 text-theme">{{ prestadorActual.razonSocial }}</h5>
           <span class="text-muted small"><strong>NIT:</strong> {{ prestadorActual.nit }}</span>
         </div>
         <div class="col-md-4">
@@ -41,8 +50,8 @@
           <span class="d-block small"><strong>Teléfono:</strong> {{ prestadorActual.telefono }}</span>
         </div>
         <div class="col-md-3 text-right">
-          <span class="badge badge-success p-2">
-            <i class="fas fa-check-circle mr-1"></i> PRESTADOR ACTIVO
+          <span class="badge badge-success p-2 d-inline-flex align-items-center">
+            <mat-icon class="icon-small mr-1">check_circle</mat-icon> PRESTADOR ACTIVO
           </span>
         </div>
       </div>
@@ -51,16 +60,15 @@
 
   <!-- 📋 TARJETAS DINÁMICAS DE SOPORTES GENERALES -->
   <div *ngIf="prestadorActual">
-    <h5 class="mb-3 font-weight-bold text-secondary">
-      <i class="fas fa-folder-open mr-2"></i>Soportes Documentales
+    <h5 class="mb-3 font-weight-bold text-secondary d-flex align-items-center">
+      <mat-icon class="mr-2">folder_shared</mat-icon> Soportes Documentales
     </h5>
 
     <div class="row">
       <div class="col-md-4 mb-3" *ngFor="let tipo of tiposSoporte">
         <div
-          class="card h-100 shadow-sm border-left-custom"
-          [ngClass]="{'border-success': tieneSoporte(tipo.id)}"
-          [style.border-left]="!tieneSoporte(tipo.id) ? '4px solid #1DA6BA' : ''">
+          class="card h-100 shadow-sm"
+          [ngClass]="tieneSoporte(tipo.id) ? 'border-left-success' : 'border-left-theme'">
 
           <div class="card-body d-flex flex-column justify-content-between">
             <div>
@@ -74,27 +82,29 @@
                   {{ tieneSoporte(tipo.id) ? 'CARGADO' : 'PENDIENTE' }}
                 </span>
               </div>
-              <p class="card-text text-muted small">
+              <p class="card-text text-muted small mb-0">
                 Soporte {{ tipo.descripcion || tipo.codigo }}.
               </p>
             </div>
 
             <!-- 🟢 ESTADO A: DOCUMENTO CARGADO -->
             <div *ngIf="tieneSoporte(tipo.id)" class="mt-3">
-              <p class="small text-truncate text-muted mb-2" [title]="obtenerSoporte(tipo.id)?.nombreOriginal">
-                <i class="fas fa-paperclip text-success mr-1"></i>
+              <p class="small text-truncate text-muted mb-2 d-flex align-items-center" [title]="obtenerSoporte(tipo.id)?.nombreOriginal">
+                <mat-icon class="icon-small text-success mr-1">attach_file</mat-icon>
                 {{ obtenerSoporte(tipo.id)?.nombreOriginal }}
               </p>
               <div class="btn-group w-100">
                 <button
-                  class="btn btn-sm btn-outline-info"
+                  class="btn btn-sm btn-outline-info d-flex align-items-center justify-content-center"
+                  matTooltip="Ver soporte"
                   (click)="verDocumento(obtenerSoporte(tipo.id)!)">
-                  <i class="fas fa-eye"></i> Ver
+                  <mat-icon class="icon-btn mr-1">visibility</mat-icon>
                 </button>
                 <button
-                  class="btn btn-sm btn-outline-danger"
+                  class="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center"
+                  matTooltip="Eliminar soporte"
                   (click)="eliminarSoporte(tipo.id, obtenerSoporte(tipo.id)!.id!)">
-                  <i class="fas fa-trash"></i> Eliminar
+                  <mat-icon class="icon-btn mr-1">delete</mat-icon>
                 </button>
               </div>
             </div>
@@ -108,12 +118,10 @@
                 (change)="onFileSelected($event, tipo)"
                 accept=".pdf">
 
-              <!-- 🎨 Botón outline con color #1DA6BA -->
               <button
-                class="btn btn-sm btn-block"
-                style="color: #1DA6BA; border-color: #1DA6BA;"
+                class="btn btn-sm btn-block btn-outline-theme d-flex align-items-center justify-content-center"
                 (click)="fileInput.click()">
-                <i class="fas fa-upload mr-1"></i> Subir Archivo
+                <mat-icon class="icon-btn mr-1">cloud_upload</mat-icon> Subir Archivo
               </button>
             </div>
 
@@ -125,8 +133,8 @@
 
   <!-- ⚠️ MENSAJE INICIAL ANTES DE BUSCAR -->
   <div *ngIf="!prestadorActual" class="text-center text-muted my-5">
-    <i class="fas fa-id-card fa-3x mb-3 text-secondary"></i>
-    <p>Digite el NIT del prestador (por ejemplo <code>123</code>) en el campo superior y haga clic en <strong>Buscar</strong> para cargar sus datos y gestionar los soportes.</p>
+    <mat-icon class="icon-large mb-2 text-secondary">badge</mat-icon>
+    <p>Digite el NIT del prestador (por ejemplo <code>123</code>) en el campo superior y haga clic en el botón de búsqueda para cargar sus datos y gestionar los soportes.</p>
   </div>
 
 </div>

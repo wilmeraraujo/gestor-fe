@@ -1,43 +1,7 @@
-.border-left-primary {
-  border-left: 4px solid #4e73df !important;
-}
-
-.border-success {
-  border-left: 4px solid #1cc88a !important;
-}
-
-.card {
-  transition: transform 0.2s ease-in-out;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-}
-
-/* Color principal del tema */
+/* ==========================================
+   🎯 PALETA DE COLORES Y CLASES DE TEMA (#1DA6BA)
+   ========================================== */
 .bg-theme {
-  background-color: #1DA6BA !important;
-  color: #ffffff !important;
-}
-
-.btn-theme {
-  background-color: #1DA6BA !important;
-  border-color: #1DA6BA !important;
-  color: #ffffff !important;
-}
-
-.btn-theme:hover {
-  background-color: #178899 !important;
-  border-color: #178899 !important;
-}
-
-.btn-outline-theme {
-  color: #1DA6BA !important;
-  border-color: #1DA6BA !important;
-  background-color: transparent;
-}
-
-.btn-outline-theme:hover {
   background-color: #1DA6BA !important;
   color: #ffffff !important;
 }
@@ -46,6 +10,116 @@
   color: #1DA6BA !important;
 }
 
+/* Bordes laterales para las tarjetas */
 .border-left-theme {
   border-left: 4px solid #1DA6BA !important;
+}
+
+.border-left-success {
+  border-left: 4px solid #1cc88a !important;
+}
+
+/* ==========================================
+   🔘 BOTÓN BÚSQUEDA CIRCULAR (#1DA6BA)
+   ==========================================
+*/
+.btn-search-theme {
+  background-color: #1DA6BA !important;
+  color: #ffffff !important;
+  border: none !important;
+
+  /* Forzar forma redonda perfecta */
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+
+  /* Centrado de icono dentro del círculo */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+
+  /* Sombra suave */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.btn-search-theme:hover:not([disabled]) {
+  background-color: #178899 !important;
+  transform: scale(1.08);
+}
+
+/* Tamaño del input de búsqueda */
+.input-busqueda {
+  max-width: 320px;
+  border-radius: 6px;
+}
+
+.btn-clear-theme {
+  background-color: #6c757d !important;
+  color: #ffffff !important;
+  border: none !important;
+
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.btn-clear-theme:hover {
+  background-color: #5a6268 !important;
+  transform: scale(1.08);
+}
+
+/* ==========================================
+   🏷️ BOTÓN OUTLINE TEMA
+   ========================================== */
+.btn-outline-theme {
+  color: #1DA6BA !important;
+  border: 1px solid #1DA6BA !important;
+  background-color: transparent !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-outline-theme:hover {
+  background-color: #1DA6BA !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================
+   🎴 EFECTOS DE TARJETAS Y TAMAÑOS DE ICONOS
+   ========================================== */
+.card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Ajustes de tamaño para Material Icons en botones y badges */
+.icon-small {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.icon-btn {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.icon-large {
+  font-size: 48px !important;
+  width: 48px !important;
+  height: 48px !important;
 }

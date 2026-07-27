@@ -6,35 +6,43 @@
   position: fixed;
   top: 0;
   left: 0;
-  transition: 0.3s;
-  overflow: hidden;
-  border-right: 4px solid #1DA6BA; 
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-right: 4px solid #1DA6BA;
+  z-index: 1001; /* Queda por encima del contenido */
 }
 
+/* Estado contraído */
 .sidebar-collapsed {
   width: 90px;
+}
+
+/* 🚀 Estado desplegado por Hover */
+.sidebar-hovered {
+  width: 260px;
+  box-shadow: 6px 0 20px rgba(0, 0, 0, 0.3); /* Sombra para dar efecto flotante sobre el contenido */
 }
 
 /* LOGO */
 .sidebar-logo {
   height: 70px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
 
 .sidebar-logo h2 {
   font-size: 22px;
   font-weight: 700;
+  margin: 0;
 }
 
 /* MENU */
 .sidebar-menu {
   list-style: none;
-
   padding: 20px 14px;
   margin: 0;
 }
@@ -46,23 +54,21 @@
 /* ITEM */
 .sidebar-item {
   height: 50px;
-
   display: flex;
   align-items: center;
   gap: 16px;
-
   padding: 0 16px;
-
   border-radius: 14px;
-
   color: #d1d5db;
   text-decoration: none;
-
-  transition: 0.2s;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
 }
 
 .sidebar-item:hover {
   background: #1DA6BA;
+  color: #ffffff;
 }
 
 .sidebar-active {
@@ -73,54 +79,49 @@
 /* ICON */
 .sidebar-icon {
   font-size: 22px;
+  flex-shrink: 0;
 }
 
-.sidebar-submenu{
-  margin-left: 20px;
-  list-style: none;
-  padding-left: 10px;
+.sidebar-arrow {
+  margin-left: auto;
 }
 
-.sidebar-subitem{
-  display: block;
-  padding: 8px;
-  text-decoration: none;
-}
-
-.sidebar-submenu{
+/* SUBMENU */
+.sidebar-submenu {
   margin-top: 6px;
   margin-left: 12px;
-
   list-style: none;
   padding-left: 8px;
 }
 
-.sidebar-submenu li{
+.sidebar-submenu li {
   margin-bottom: 6px;
 }
 
-.sidebar-subitem{
+.sidebar-subitem {
   height: 42px;
-
   display: flex;
   align-items: center;
-
+  gap: 12px;
   padding: 0 14px;
-
   border-radius: 12px;
-
   color: #d1d5db;
   text-decoration: none;
-
-  transition: 0.2s;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
 }
 
-.sidebar-subitem:hover{
+.sidebar-subitem:hover {
   background: #1DA6BA;
-  color: #111111;
+  color: #ffffff;
 }
 
-.sidebar-subitem.sidebar-active{
+.sidebar-subitem.sidebar-active {
   background: #1DA6BA;
   color: white;
+}
+
+.sidebar-subicon {
+  font-size: 18px;
+  flex-shrink: 0;
 }
