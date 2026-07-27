@@ -1,0 +1,132 @@
+<div class="container-fluid mt-3">
+
+  <!-- 🔍 TARJETA DE BÚSQUEDA DE PRESTADOR -->
+  <div class="card shadow-sm mb-4">
+    <!-- 🎨 Encabezado con color #1DA6BA -->
+    <div class="card-header text-white font-weight-bold" style="background-color: #1DA6BA;">
+      <i class="fas fa-search mr-2"></i> Gestión de Soportes por Prestador
+    </div>
+    <div class="card-body">
+      <div class="form-inline">
+        <label class="mr-2 font-weight-bold">NIT del Prestador:</label>
+        <input
+          type="text"
+          class="form-control mr-2"
+          [(ngModel)]="nitBusqueda"
+          placeholder="Ej: 123 o 900123456"
+          (keyup.enter)="buscarPrestador()">
+
+        <!-- 🎨 Botón con color #1DA6BA -->
+        <button
+          class="btn text-white"
+          style="background-color: #1DA6BA; border-color: #1DA6BA;"
+          (click)="buscarPrestador()"
+          [disabled]="cargando">
+          <i class="fas fa-search mr-1"></i> Buscar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 👤 CABECERA CON DATOS DEL PRESTADOR ENCONTRADO -->
+  <div *ngIf="prestadorActual" class="card shadow-sm mb-4">
+    <div class="card-body bg-light border-left-custom" style="border-left: 4px solid #1DA6BA;">
+      <div class="row align-items-center">
+        <div class="col-md-5">
+          <h5 class="font-weight-bold mb-1" style="color: #1DA6BA;">{{ prestadorActual.razonSocial }}</h5>
+          <span class="text-muted small"><strong>NIT:</strong> {{ prestadorActual.nit }}</span>
+        </div>
+        <div class="col-md-4">
+          <span class="d-block small"><strong>Email:</strong> {{ prestadorActual.email }}</span>
+          <span class="d-block small"><strong>Teléfono:</strong> {{ prestadorActual.telefono }}</span>
+        </div>
+        <div class="col-md-3 text-right">
+          <span class="badge badge-success p-2">
+            <i class="fas fa-check-circle mr-1"></i> PRESTADOR ACTIVO
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📋 TARJETAS DINÁMICAS DE SOPORTES GENERALES -->
+  <div *ngIf="prestadorActual">
+    <h5 class="mb-3 font-weight-bold text-secondary">
+      <i class="fas fa-folder-open mr-2"></i>Soportes Documentales
+    </h5>
+
+    <div class="row">
+      <div class="col-md-4 mb-3" *ngFor="let tipo of tiposSoporte">
+        <div
+          class="card h-100 shadow-sm border-left-custom"
+          [ngClass]="{'border-success': tieneSoporte(tipo.id)}"
+          [style.border-left]="!tieneSoporte(tipo.id) ? '4px solid #1DA6BA' : ''">
+
+          <div class="card-body d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="card-title font-weight-bold text-dark mb-0">
+                  {{ tipo.descripcion || tipo.codigo }}
+                </h6>
+                <span
+                  class="badge p-1"
+                  [ngClass]="tieneSoporte(tipo.id) ? 'badge-success' : 'badge-warning'">
+                  {{ tieneSoporte(tipo.id) ? 'CARGADO' : 'PENDIENTE' }}
+                </span>
+              </div>
+              <p class="card-text text-muted small">
+                Soporte {{ tipo.descripcion || tipo.codigo }}.
+              </p>
+            </div>
+
+            <!-- 🟢 ESTADO A: DOCUMENTO CARGADO -->
+            <div *ngIf="tieneSoporte(tipo.id)" class="mt-3">
+              <p class="small text-truncate text-muted mb-2" [title]="obtenerSoporte(tipo.id)?.nombreOriginal">
+                <i class="fas fa-paperclip text-success mr-1"></i>
+                {{ obtenerSoporte(tipo.id)?.nombreOriginal }}
+              </p>
+              <div class="btn-group w-100">
+                <button
+                  class="btn btn-sm btn-outline-info"
+                  (click)="verDocumento(obtenerSoporte(tipo.id)!)">
+                  <i class="fas fa-eye"></i> Ver
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="eliminarSoporte(tipo.id, obtenerSoporte(tipo.id)!.id!)">
+                  <i class="fas fa-trash"></i> Eliminar
+                </button>
+              </div>
+            </div>
+
+            <!-- 🟡 ESTADO B: DOCUMENTO PENDIENTE -->
+            <div *ngIf="!tieneSoporte(tipo.id)" class="mt-3">
+              <input
+                type="file"
+                #fileInput
+                [hidden]="true"
+                (change)="onFileSelected($event, tipo)"
+                accept=".pdf">
+
+              <!-- 🎨 Botón outline con color #1DA6BA -->
+              <button
+                class="btn btn-sm btn-block"
+                style="color: #1DA6BA; border-color: #1DA6BA;"
+                (click)="fileInput.click()">
+                <i class="fas fa-upload mr-1"></i> Subir Archivo
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⚠️ MENSAJE INICIAL ANTES DE BUSCAR -->
+  <div *ngIf="!prestadorActual" class="text-center text-muted my-5">
+    <i class="fas fa-id-card fa-3x mb-3 text-secondary"></i>
+    <p>Digite el NIT del prestador (por ejemplo <code>123</code>) en el campo superior y haga clic en <strong>Buscar</strong> para cargar sus datos y gestionar los soportes.</p>
+  </div>
+
+</div>

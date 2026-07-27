@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
 
 @Data
 @Entity
@@ -66,6 +67,7 @@ public class Factura {
     // =========================================================================
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
+    @SQLRestriction("deleted_at IS NULL")
     private List<Documento> documentos = new ArrayList<>();
 
     // Método helper optimizado

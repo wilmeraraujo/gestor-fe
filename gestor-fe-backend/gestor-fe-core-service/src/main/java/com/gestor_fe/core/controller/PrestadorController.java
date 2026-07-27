@@ -15,6 +15,7 @@ import com.gestor_fe.core.entity.Prestador;
 import com.gestor_fe.core.service.PrestadorService;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/api/v1/prestadores")
 public class PrestadorController {
 
@@ -33,9 +34,9 @@ public class PrestadorController {
         Prestador guardado = prestadorService.crearOActualizarPrestador(prestador);
         return new ResponseEntity<>(guardado, HttpStatus.CREATED);
     }
-
+    
     @GetMapping("/nit/{nit}")
-    public ResponseEntity<Prestador> obtenerPorNit(@PathVariable String nit) {
+    public ResponseEntity<Prestador> obtenerPorNit(@PathVariable("nit") String nit) {
         return prestadorService.obtenerPorNit(nit)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -43,9 +44,9 @@ public class PrestadorController {
 
     @GetMapping
     public ResponseEntity<Page<Prestador>> listarPrestadores(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id,desc") String[] sort) {
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", defaultValue = "id,desc") String[] sort) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(prestadorService.listarPrestadores(pageable));
@@ -76,10 +77,10 @@ public class PrestadorController {
      */
     @GetMapping("/{prestadorId}/soportes")
     public ResponseEntity<Page<Documento>> listarSoportesPaginados(
-            @PathVariable Long prestadorId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id,desc") String[] sort) {
+            @PathVariable("prestadorId") Long prestadorId,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", defaultValue = "id,desc") String[] sort) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         Page<Documento> resultado = prestadorService.listarSoportes(prestadorId, pageable);
@@ -90,7 +91,8 @@ public class PrestadorController {
      * Realizar Soft Delete de un soporte por su ID de documento
      */
     @DeleteMapping("/soportes/{documentoId}")
-    public ResponseEntity<Void> eliminarSoporte(@PathVariable Long documentoId) {
+    public ResponseEntity<Void> eliminarSoporte(
+            @PathVariable("documentoId") Long documentoId) {
         prestadorService.eliminarSoporte(documentoId);
         return ResponseEntity.noContent().build();
     }

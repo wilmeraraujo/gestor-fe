@@ -11,6 +11,7 @@ import { ExtensionComponent } from './components/admin/extension/extension.compo
 import { FaseComponent } from './components/admin/fase/fase.component';
 import { FacturaComponent } from './components/factura/factura.component';
 import { DocumentoComponent } from './components/documento/documento.component';
+import { PrestadorComponent } from './components/prestador/prestador.component';
 
 
 export const routes: Routes = [
@@ -60,7 +61,7 @@ export const routes: Routes = [
           {
             path: 'clasificacion',
             component: ClasificacionComponent
-          },          
+          },
           {
             path: 'fase',
             component: FaseComponent
@@ -73,6 +74,10 @@ export const routes: Routes = [
         ]
       },
 
+      {
+        path: 'prestador',
+        component: PrestadorComponent
+      },
       {
         path: 'cargue',
         component: CargueComponent

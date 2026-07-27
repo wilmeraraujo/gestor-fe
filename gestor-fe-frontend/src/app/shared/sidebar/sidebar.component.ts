@@ -67,8 +67,13 @@ export class SidebarComponent implements OnInit{
       expanded: false,
       children: [
         {
+          name: "Cargue prestador",
+          icon: "domain_add",
+          route: "/dashboard/prestador"
+        },
+        {
           name: "Cargue soportes",
-          icon: "upload",
+          icon: "cloud_upload",
           route: "/dashboard/cargue"
         },
         {
@@ -78,7 +83,7 @@ export class SidebarComponent implements OnInit{
         },
         {
           name: "Soportes Documentales",
-          icon: "receipt_long",
+          icon: "topic",
           route: "/dashboard/documento"
         }
       ]

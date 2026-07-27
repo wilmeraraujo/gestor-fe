@@ -82,6 +82,8 @@ CREATE SEQUENCE BATCH_JOB_INSTANCE_SEQ MAXVALUE 9223372036854775807 NO CYCLE;
 
 
 --=====================================================================================================
+--consultas admin
+select * from admin.tipo t;
 --consultas
 --
 select * from gestor.cargue c order by id desc limit 10;
