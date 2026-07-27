@@ -76,13 +76,13 @@
   cursor: pointer;
   flex-shrink: 0;
 
-  /* 🔍 MEJORAS DE NITIDEZ DE TEXTO Y FUENTE */
+  /* 🔍 Nitidez de texto y fuente */
   font-size: 13.5px !important;
   font-weight: 600 !important;
   line-height: 1 !important;
   letter-spacing: 0.2px !important;
 
-  /* Anti-aliasing para renderizado nítido en navegador */
+  /* Anti-aliasing para renderizado nítido */
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
   text-rendering: optimizeLegibility !important;
@@ -92,7 +92,6 @@
   transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease !important;
 }
 
-/* Sin scale() en hover para no distorsionar bordes ni texto */
 .btn-icon-theme:hover {
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
@@ -280,6 +279,112 @@
   width: 48px;
   padding-left: 16px !important;
   padding-right: 8px !important;
+}
+
+/* =====================================
+   🎨 BOTONES DE ACCIONES DENTRO DE LA TABLA (PERFECTAMENTE CENTRADOS)
+   ===================================== */
+.acciones-cell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+/* 1. Reset completo del botón de Material */
+.btn-action.mat-mdc-icon-button {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border: none !important;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 2. Anulación de contenedores internos MDC de Angular Material */
+::ng-deep .btn-action .mat-mdc-button-touch-target,
+::ng-deep .btn-action .mat-mdc-button-persistent-ripple,
+::ng-deep .btn-action .mat-ripple {
+  display: none !important; /* Elimina la capa gigante invisible de toque de Material */
+}
+
+/* 3. Centrado absoluto del icono */
+.btn-action mat-icon,
+::ng-deep .btn-action .mat-icon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+/* =====================================
+   VARIANTE DE COLORES
+   ===================================== */
+
+/* ✏️ 1. Editar (Gris a Azul) */
+.btn-action-edit {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+.btn-action-edit:hover {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* 📄 2. Descargar Errores (Rojo Pastel) */
+.btn-action-error {
+  background-color: #fef2f2 !important;
+  color: #ef4444 !important;
+}
+
+.btn-action-error:hover {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* 👁️ 3. Ver Detalle (Azul / Turquesa Tema) */
+.btn-action-view {
+  background-color: #e0f2fe !important;
+  color: #0284c7 !important;
+}
+
+.btn-action-view:hover {
+  background-color: #1DA6BA !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(29, 166, 186, 0.3) !important;
+}
+
+/* 🗑️ 4. Eliminar (Gris a Rojo Fuerte) */
+.btn-action-delete {
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+}
+
+.btn-action-delete:hover {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3) !important;
 }
 
 /* =====================================
