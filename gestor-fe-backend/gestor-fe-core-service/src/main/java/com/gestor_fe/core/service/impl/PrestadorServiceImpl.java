@@ -37,7 +37,7 @@ public class PrestadorServiceImpl implements PrestadorService {
     public PrestadorServiceImpl(
             PrestadorRepository prestadorRepository,
             DocumentoRepository documentoRepository,
-            @Value("${app.storage.validos:E:/gestion-fe-validos}") String rutaStorageValidos) {
+            @Value("${ruta.storage.validos}") String rutaStorageValidos) {
         this.prestadorRepository = prestadorRepository;
         this.documentoRepository = documentoRepository;
         this.rutaStorageValidos = rutaStorageValidos;
