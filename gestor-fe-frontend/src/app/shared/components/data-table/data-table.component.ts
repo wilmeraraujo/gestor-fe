@@ -43,6 +43,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Input() mostrarDescargaErrores = false;
   @Input() mostrarDetalle = false;
   @Input() mostrarSeleccion = false;
+  @Input() mostrarGestionarFactura = false;
 
   @Output() agregar = new EventEmitter<void>();
   @Output() editar = new EventEmitter<any>();
@@ -52,6 +53,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Output() buscar = new EventEmitter<string>();
   @Output() paginar = new EventEmitter<PageEvent>();
   @Output() selecciononChange = new EventEmitter<any[]>();
+  @Output() gestionarFactura = new EventEmitter<any>(); 
+
 
   @ViewChild('paginatorInferior') paginatorInferior!: MatPaginator;
 
@@ -195,5 +198,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
 
   onVerDetalle(row: any): void {
     this.verDetalle.emit(row);
+  }
+
+  onGestionarFactura(row: any): void {
+    this.gestionarFactura.emit(row);
   }
 }

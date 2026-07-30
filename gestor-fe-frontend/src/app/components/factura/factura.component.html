@@ -6,9 +6,10 @@
   [totalPorPagina]="totalPorPagina"
   [pageSizeOptions]="pageSizeOptions"
   [mostrarDetalle]="true"
+  [mostrarGestionarFactura]="true"
   (paginar)="paginar($event)"
   (verDetalle)="verDocumentos($event)"
+  (gestionarFactura)="abrirModalGestionar($event)"
   (buscar)="buscar($event)"
-  (eliminar)="deletedAt($event)"
->
+  (eliminar)="deletedAt($event)">
 </app-data-table>

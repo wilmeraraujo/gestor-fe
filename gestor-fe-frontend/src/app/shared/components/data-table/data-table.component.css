@@ -336,12 +336,12 @@
    ===================================== */
 
 /* ✏️ 1. Editar (Gris a Azul) */
-.btn-action-edit {
-  background-color: #f1f5f9 !important;
-  color: #475569 !important;
+.btn-action-view {
+  background-color: #cdddee !important;
+  color: #3b82f6 !important;
 }
 
-.btn-action-edit:hover {
+.btn-action-view:hover {
   background-color: #3b82f6 !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
@@ -362,12 +362,12 @@
 }
 
 /* 👁️ 3. Ver Detalle (Azul / Turquesa Tema) */
-.btn-action-view {
+.btn-action-edit {
   background-color: #e0f2fe !important;
-  color: #0284c7 !important;
+  color: #1DA6BA !important;
 }
 
-.btn-action-view:hover {
+.btn-action-edit:hover {
   background-color: #1DA6BA !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
@@ -376,8 +376,8 @@
 
 /* 🗑️ 4. Eliminar (Gris a Rojo Fuerte) */
 .btn-action-delete {
-  background-color: #f1f5f9 !important;
-  color: #64748b !important;
+  background-color: #e4d7d7 !important;
+  color: #dc2626 !important;
 }
 
 .btn-action-delete:hover {
@@ -385,6 +385,19 @@
   color: #ffffff !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3) !important;
+}
+
+/* 🧾 5. Gestionar Factura (Verde Esmeralda suave a fuerte) */
+.btn-action-invoice {
+  background-color: #d2f3e4 !important;
+  color: #059669 !important;
+}
+
+.btn-action-invoice:hover {
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3) !important;
 }
 
 /* =====================================
@@ -409,4 +422,27 @@
   background: #ecfeff;
   color: #0f766e;
   font-weight: 500;
+}
+
+/* =====================================
+   📌 COLUMNA ACCIONES FÍSICA / STICKY
+   ===================================== */
+.cell-sticky-acciones {
+  position: sticky !important;
+  right: 0;
+  z-index: 2 !important;
+  background-color: #ffffff !important;
+  /* Sombra sutil a la izquierda para dar efecto de flotado */
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Fondo para los encabezados y la fila de filtros cuando la columna es fija */
+.encabezado-tabla .cell-sticky-acciones,
+.row-filtros .cell-sticky-acciones {
+  background-color: #f8fafc !important;
+}
+
+/* Efecto hover suave en las filas con la columna fija */
+.mat-mdc-row:hover .cell-sticky-acciones {
+  background-color: #f1f5f9 !important;
 }

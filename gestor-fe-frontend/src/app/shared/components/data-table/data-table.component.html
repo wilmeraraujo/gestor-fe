@@ -124,11 +124,11 @@
         </ng-container>
 
         <!-- ACCIONES CON ESTILO MEJORADO -->
-        <ng-container matColumnDef="acciones">
-          <th mat-header-cell *matHeaderCellDef class="text-center">
+        <ng-container matColumnDef="acciones" stickyEnd>
+          <th mat-header-cell *matHeaderCellDef class="text-center cell-sticky-acciones">
             Acciones
           </th>
-          <td mat-cell *matCellDef="let row" class="text-center text-nowrap">
+          <td mat-cell *matCellDef="let row" class="text-center text-nowrap cell-sticky-acciones">
 
             <div class="acciones-cell">
               <!-- ✏️ EDITAR -->
@@ -138,6 +138,16 @@
                 (click)="onEditar(row)"
                 matTooltip="Editar">
                 <mat-icon>edit</mat-icon>
+              </button>
+
+              <!-- 🧾 GESTIONAR FACTURA (NUEVO) -->
+              <button
+                *ngIf="mostrarGestionarFactura"
+                mat-icon-button
+                class="btn-action btn-action-invoice"
+                (click)="onGestionarFactura(row)"
+                matTooltip="Gestionar Factura">
+                <mat-icon>receipt_long</mat-icon>
               </button>
 
               <!-- 📄 DESCARGAR ERRORES -->
@@ -197,8 +207,8 @@
         </ng-container>
 
         <!-- Celda vacía de la fila de filtros para alinear con Acciones -->
-        <ng-container matColumnDef="acciones-filter">
-          <th mat-header-cell *matHeaderCellDef class="filter-header-cell"></th>
+        <ng-container matColumnDef="acciones-filter" stickyEnd>
+          <th mat-header-cell *matHeaderCellDef class="filter-header-cell cell-sticky-acciones"></th>
         </ng-container>
 
         <!-- FILAS DE ENCABEZADO Y DATOS -->
