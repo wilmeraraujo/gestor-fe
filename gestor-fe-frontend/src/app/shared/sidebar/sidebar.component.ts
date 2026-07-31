@@ -37,6 +37,16 @@ export class SidebarComponent implements OnInit {
           route: "/dashboard/admin/estado"
         },
         {
+          name: "Observación",
+          icon: "comment",
+          route: "/dashboard/admin/observacion"
+        },
+        {
+          name: "Causal devolución",
+          icon: "assignment_return",
+          route: "/dashboard/admin/causal-devolucion"
+        },
+        {
           name: "Tipo",
           icon: "category",
           route: "/dashboard/admin/tipo"

@@ -14,6 +14,10 @@ import com.gestor_fe.core.entity.Factura;
 @Repository
 public interface FacturaRepository extends JpaRepository<Factura, Long> {
 	
+	// 🔍 Obtener facturas activas filtradas por NIT del prestador
+    Page<Factura> findByNitAndDeletedAtIsNull(String nit, Pageable pageable);
+	
+	
 	Page<Factura> findByDeletedAtIsNull(Pageable pageable);
 	
 	// 1. Devuelve la lista de CUFEs que ya existen en la base de datos

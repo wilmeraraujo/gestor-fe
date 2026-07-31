@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.gestor_fe.admin.service.model.entity.Estado;
 import com.gestor_fe.admin.service.model.entity.Extension;
 import com.gestor_fe.admin.service.services.ExtensionService;
 import com.service.common.controller.GlobalController;
@@ -65,7 +64,7 @@ public class ExtensionController extends GlobalController<Extension, ExtensionSe
 	}
 	
 	@PutMapping("/{id}")
-	public ResponseEntity<?> edit(@Validated @RequestBody Estado x,
+	public ResponseEntity<?> edit(@Validated @RequestBody Extension x,
 			BindingResult result,
 			@PathVariable(name = "id") Long id) {
 		
