@@ -18,18 +18,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.gestor_fe.admin.service.model.entity.Tipo;
-import com.gestor_fe.admin.service.services.TipoService;
+import com.gestor_fe.admin.service.model.entity.Observacion;
+import com.gestor_fe.admin.service.services.ObservacionService;
 import com.service.common.controller.GlobalController;
 
 @CrossOrigin(origins = "*")
 @RestController
-@RequestMapping("/api/v1/admin/tipo")
-public class TipoController extends GlobalController<Tipo, TipoService> {
+@RequestMapping("/api/v1/admin/observacion")
+public class ObservacionController extends GlobalController<Observacion, ObservacionService> {
 
-	private final TipoService service;
+	private final ObservacionService service;
 	
-	public TipoController(TipoService service) {
+	public ObservacionController(ObservacionService service) {
 		this.service = service;
 	}
 	
@@ -52,19 +52,19 @@ public class TipoController extends GlobalController<Tipo, TipoService> {
 	
 	@PutMapping("/deleted-at/{id}")
 	public ResponseEntity<?> addDeletedAt(@PathVariable Long id){
-		Optional<Tipo> x = service.findById(id);
+		Optional<Observacion> x = service.findById(id);
 		
 		if (x.isEmpty()) {
 			return ResponseEntity.notFound().build();
 		}
 		
-		Tipo xDb = x.get();
+		Observacion xDb = x.get();
 		xDb.setDeletedAt(LocalDateTime.now());
 		return ResponseEntity.status(HttpStatus.CREATED).body(service.save(xDb));
 	}
 	
 	@PutMapping("/{id}")
-	public ResponseEntity<?> edit(@Validated @RequestBody Tipo x,
+	public ResponseEntity<?> edit(@Validated @RequestBody Observacion x,
 			BindingResult result,
 			@PathVariable(name = "id") Long id) {
 		
@@ -72,12 +72,12 @@ public class TipoController extends GlobalController<Tipo, TipoService> {
 			return this.validar(result);
 		}
 
-		Optional<Tipo> objeto = service.findById(id);
+		Optional<Observacion> objeto = service.findById(id);
 		if (objeto.isEmpty()) {
 			return ResponseEntity.notFound().build();
 		}
 
-		Tipo xDb = objeto.get();
+		Observacion xDb = objeto.get();
 		xDb.setCodigo(x.getCodigo());
 		xDb.setDescripcion(x.getDescripcion());
 		xDb.setDeletedAt(x.getDeletedAt());
