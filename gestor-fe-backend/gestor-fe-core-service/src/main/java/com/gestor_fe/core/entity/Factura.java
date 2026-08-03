@@ -51,6 +51,15 @@ public class Factura {
 
     @Column(name = "fase_id")
     private Long faseId;
+    
+    @Column(name = "causal_devolucion_id")
+    private Long causalDevolucionId;
+    
+    @Column(name = "tipo_registro_contable", length = 10) // FC, GV, ORC, NI, TB
+    private String tipoRegistroContable;
+
+    @Column(name = "numero_causacion", length = 50)
+    private String numeroCausacion;
 
     @Column(name = "fecha_emision")
     private LocalDate fechaEmision;

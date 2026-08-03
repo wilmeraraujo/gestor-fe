@@ -84,13 +84,33 @@ export class SidebarComponent implements OnInit {
           route: "/dashboard/cargue"
         },
         {
-          name: "Facturas",
+          name: "Gestión inicial",
           icon: "receipt_long",
-          route: "/dashboard/factura"
+          route: "/dashboard/gestion-inicial"
         },
         {
-          name: "Soportes Documentales",
-          icon: "topic",
+          name: "Reconocimiento contable",
+          icon: "account_balance",
+          route: "/dashboard/reconocimiento-contable"
+        },
+        {
+          name: "Impuestos",
+          icon: "request_quote",
+          route: "/dashboard/impuestos"
+        },
+        {
+          name: "Pendiente de pago",
+          icon: "paid",
+          route: "/dashboard/pendiente-pago"
+        },
+        {
+          name: "Seguimiento de facturas",
+          icon: "alt_route",
+          route: "/dashboard/seguimiento-factura"
+        },
+        {
+          name: "Reportes",
+          icon: "analytics",
           route: "/dashboard/documento"
         }
       ]

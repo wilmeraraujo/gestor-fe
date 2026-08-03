@@ -99,6 +99,12 @@ select * from public.batch_job_instance bji;
 select * from public.batch_step_execution bse;--ver 
 select * from public.batch_step_execution_context bsec;
 
+--pasar a fase 1
+update gestor.factura 
+set estado = 'RADICADO' ,observacion = null , fase_id = 1 , 
+causal_devolucion_id = null, numero_causacion=null,tipo_registro_contable=null 
+where id in (1);
+
 truncate table gestor.cargue restart identity CASCADE;
 truncate table gestor.error_cargue restart identity CASCADE;
 truncate table gestor.documento restart identity CASCADE;

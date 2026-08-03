@@ -44,6 +44,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Input() mostrarDetalle = false;
   @Input() mostrarSeleccion = false;
   @Input() mostrarGestionarFactura = false;
+  @Input() mostrarEditar = true;    // 👈 Control de visibilidad para Editar
+  @Input() mostrarEliminar = true;  // 👈 Control de visibilidad para Eliminar
 
   @Output() agregar = new EventEmitter<void>();
   @Output() editar = new EventEmitter<any>();
@@ -53,21 +55,15 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Output() buscar = new EventEmitter<string>();
   @Output() paginar = new EventEmitter<PageEvent>();
   @Output() selecciononChange = new EventEmitter<any[]>();
-  @Output() gestionarFactura = new EventEmitter<any>(); 
-
+  @Output() gestionarFactura = new EventEmitter<any>();
 
   @ViewChild('paginatorInferior') paginatorInferior!: MatPaginator;
 
   dataSource = new MatTableDataSource<any>();
   displayedColumns: string[] = [];
-
-  // Nombres de las columnas especiales para la fila de filtros
   filterColumns: string[] = [];
 
-  // 🎯 Estado para activar/desactivar la fila de filtros por columna
   mostrarFiltrosColumnas: boolean = false;
-
-  // Mapa de valores de filtro por cada propiedad: { 'nombreArchivo': 'zip', 'usuario': 'weap' }
   filtrosPorColumna: { [key: string]: string } = {};
 
   selection = new SelectionModel<any>(true, []);
@@ -86,7 +82,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     if (changes['datos']) {
       this.dataSource.data = this.datos;
       this.selection.clear();
-      this.aplicarFiltrosColumnas(); // Re-aplica filtros si la data cambia
+      this.aplicarFiltrosColumnas();
     }
   }
 
@@ -114,7 +110,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     }
   }
 
-  // 🛠️ Configuración de predicado personalizado de filtrado local respetando la propiedad "filtrable"
   configurarFiltroCustom(): void {
     this.dataSource.filterPredicate = (data: any, filter: string) => {
       const searchTerms = JSON.parse(filter);
@@ -132,7 +127,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     };
   }
 
-  // 🎯 Alternar visibilidad de los campos de filtrado por columna
   toggleFiltros(): void {
     this.mostrarFiltrosColumnas = !this.mostrarFiltrosColumnas;
     if (!this.mostrarFiltrosColumnas) {
@@ -140,7 +134,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     }
   }
 
-  // 🔍 Aplica solo filtros de columnas configuradas con filtrable !== false
   aplicarFiltrosColumnas(): void {
     const camposFiltrables = this.columnas
       .filter(c => c.filtrable !== false)
@@ -174,6 +167,42 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
       return;
     }
     this.selection.select(...this.dataSource.data);
+  }
+
+  /**
+   * 🎨 Retorna la clase CSS adecuada según el valor del estado
+   */
+  obtenerClaseEstado(valorEstado: any): string {
+    if (!valorEstado) return 'badge-estado badge-default';
+
+    const estadoUpper = String(valorEstado).trim().toUpperCase();
+
+    switch (estadoUpper) {
+      case 'ANULADO':
+      case 'RECHAZADO':
+      case 'FACTURA NO CONFORME':
+        return 'badge-estado badge-rojo';
+
+      case 'RADICADO':
+      case 'REGISTRADO':
+      case 'PENDIENTE':
+        return 'badge-estado badge-gris';
+
+      case 'EN GESTIÓN':
+      case 'EN GESTION':
+      case 'EN PROCESO':
+        return 'badge-estado badge-azul';
+
+      case 'VALIDADO':
+      case 'APROBADO':
+      case 'CAUSADO':
+      case 'PAGADO':
+      case 'IMPUESTOS VERIFICADOS':
+        return 'badge-estado badge-verde';
+
+      default:
+        return 'badge-estado badge-default';
+    }
   }
 
   onBuscar(valor: string): void {

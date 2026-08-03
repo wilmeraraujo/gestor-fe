@@ -119,7 +119,19 @@
             {{ col.header }}
           </th>
           <td mat-cell *matCellDef="let row" class="text-nowrap">
-            {{ row[col.field] }}
+            
+            <!-- 🏷️ SI LA COLUMNA ES 'estado', RENDERIZAR COMO BADGE OVALADO -->
+            <ng-container *ngIf="col.field === 'estado'; else celdaTextoNormal">
+              <span [class]="obtenerClaseEstado(row[col.field])">
+                {{ row[col.field] }}
+              </span>
+            </ng-container>
+
+            <!-- 📝 DEMÁS CELDAS DE TEXTO ESTÁNDAR -->
+            <ng-template #celdaTextoNormal>
+              {{ row[col.field] }}
+            </ng-template>
+
           </td>
         </ng-container>
 
@@ -131,8 +143,10 @@
           <td mat-cell *matCellDef="let row" class="text-center text-nowrap cell-sticky-acciones">
 
             <div class="acciones-cell">
-              <!-- ✏️ EDITAR -->
+              
+              <!-- ✏️ EDITAR (AHORA CONDICIONAL) -->
               <button
+                *ngIf="mostrarEditar"
                 mat-icon-button
                 class="btn-action btn-action-edit"
                 (click)="onEditar(row)"
@@ -140,7 +154,7 @@
                 <mat-icon>edit</mat-icon>
               </button>
 
-              <!-- 🧾 GESTIONAR FACTURA (NUEVO) -->
+              <!-- 🧾 GESTIONAR FACTURA -->
               <button
                 *ngIf="mostrarGestionarFactura"
                 mat-icon-button
@@ -170,27 +184,25 @@
                 <mat-icon>visibility</mat-icon>
               </button>
 
-              <!-- 🗑️ ELIMINAR -->
+              <!-- 🗑️ ELIMINAR (AHORA CONDICIONAL) -->
               <button
+                *ngIf="mostrarEliminar"
                 mat-icon-button
                 class="btn-action btn-action-delete"
                 (click)="onEliminar(row)"
                 matTooltip="Eliminar">
                 <mat-icon>delete</mat-icon>
               </button>
+
             </div>
 
           </td>
         </ng-container>
 
-        <!-- =======================================================================
-             🎯 FILA DE FILTROS INDIVIDUALES POR COLUMNA
-             ======================================================================= -->
         <ng-container matColumnDef="select-filter">
           <th mat-header-cell *matHeaderCellDef class="filter-header-cell"></th>
         </ng-container>
 
-        <!-- Muestra el input individual SOLO si col.filtrable no es false -->
         <ng-container *ngFor="let col of columnas" [matColumnDef]="'filter-' + col.field">
           <th mat-header-cell *matHeaderCellDef class="filter-header-cell">
             <mat-form-field
@@ -206,15 +218,12 @@
           </th>
         </ng-container>
 
-        <!-- Celda vacía de la fila de filtros para alinear con Acciones -->
         <ng-container matColumnDef="acciones-filter" stickyEnd>
           <th mat-header-cell *matHeaderCellDef class="filter-header-cell cell-sticky-acciones"></th>
         </ng-container>
 
-        <!-- FILAS DE ENCABEZADO Y DATOS -->
         <tr mat-header-row *matHeaderRowDef="displayedColumns" class="encabezado-tabla"></tr>
 
-        <!-- 🎯 Fila dinámica de Filtros por Columna -->
         <tr
           mat-header-row
           *matHeaderRowDef="filterColumns"
