@@ -9,11 +9,15 @@ import { TipoComponent } from './components/admin/tipo/tipo.component';
 import { ClasificacionComponent } from './components/admin/clasificacion/clasificacion.component';
 import { ExtensionComponent } from './components/admin/extension/extension.component';
 import { FaseComponent } from './components/admin/fase/fase.component';
-import { FacturaComponent } from './components/factura/factura.component';
+import { GestionInicialComponent } from './components/gestion-inicial/gestion-inicial.component';
 import { DocumentoComponent } from './components/documento/documento.component';
 import { PrestadorComponent } from './components/prestador/prestador.component';
 import { CausalDevolucionComponent } from './components/admin/causal-devolucion/causal-devolucion.component';
 import { ObservacionComponent } from './components/admin/observacion/observacion.component';
+import { ReconocimientoContableComponent } from './components/reconocimiento-contable/reconocimiento-contable.component';
+import { ImpuestosComponent } from './components/impuestos/impuestos.component';
+import { PendienteDePagoComponent } from './components/pendiente-de-pago/pendiente-de-pago.component';
+import { SeguimientoFacturasComponent } from './components/seguimiento-facturas/seguimiento-facturas.component';
 
 
 export const routes: Routes = [
@@ -93,8 +97,24 @@ export const routes: Routes = [
         component: CargueComponent
       },
       {
-        path: 'factura',
-        component: FacturaComponent
+        path: 'gestion-inicial',
+        component: GestionInicialComponent
+      },
+      {
+        path: 'reconocimiento-contable',
+        component: ReconocimientoContableComponent
+      },
+      {
+        path: 'impuestos',
+        component: ImpuestosComponent
+      },
+      {
+        path: 'pendiente-pago',
+        component: PendienteDePagoComponent
+      },
+      {
+        path: 'seguimiento-factura',
+        component: SeguimientoFacturasComponent
       },
       {
         path: 'documento',

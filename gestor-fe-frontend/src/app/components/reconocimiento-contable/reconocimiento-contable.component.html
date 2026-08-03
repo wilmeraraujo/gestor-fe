@@ -1,0 +1,18 @@
+<app-data-table
+  [titulo]="titulo"
+  [columnas]="columnas"
+  [datos]="lista"
+  [totalRegistros]="totalRegistros"
+  [totalPorPagina]="totalPorPagina"
+  [pageSizeOptions]="pageSizeOptions"
+  
+  [mostrarAgregar]="false"
+  [mostrarEditar]="false"
+  [mostrarEliminar]="false"
+  [mostrarDetalle]="false"
+  [mostrarGestionarFactura]="esGestorF2"
+  
+  (paginar)="paginar($event)"
+  (gestionarFactura)="abrirModalGestionar($event)"
+  (buscar)="buscar($event)">
+</app-data-table>

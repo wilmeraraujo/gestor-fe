@@ -10,7 +10,8 @@ export interface Factura {
   fechaEmision?: Date | string; // Representa el LocalDate
   estado?: string;
   observacion?: string;
-  faseId?: number;
+  faseId: number;
+  numeroCausacion?:string;
   createdAt: Date | string;
   deletedAt?: Date | string | null;
   documentos?: any[]; // Relación OneToMany de documentos asociados

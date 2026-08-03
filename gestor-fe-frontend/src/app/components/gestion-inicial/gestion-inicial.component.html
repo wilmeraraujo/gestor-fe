@@ -5,11 +5,14 @@
   [totalRegistros]="totalRegistros"
   [totalPorPagina]="totalPorPagina"
   [pageSizeOptions]="pageSizeOptions"
-  [mostrarDetalle]="true"
-  [mostrarGestionarFactura]="true"
+  
+  [mostrarAgregar]="mostrarAgregar"
+  [mostrarEditar]="mostrarEditar"
+  [mostrarEliminar]="mostrarEliminar"
+  [mostrarDetalle]="mostrarDetalle"
+  [mostrarGestionarFactura]="esGestorF1"
+  
   (paginar)="paginar($event)"
-  (verDetalle)="verDocumentos($event)"
   (gestionarFactura)="abrirModalGestionar($event)"
-  (buscar)="buscar($event)"
-  (eliminar)="deletedAt($event)">
+  (buscar)="buscar($event)">
 </app-data-table>

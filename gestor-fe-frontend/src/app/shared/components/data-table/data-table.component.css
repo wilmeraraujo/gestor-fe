@@ -282,6 +282,58 @@
 }
 
 /* =====================================
+   🏷️ BADGES DE ESTADO (ESTILO PÍLDORA OVALADO)
+   ===================================== */
+.badge-estado {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 50px; /* Redondeado ovalado impecable */
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* 🔴 1. ROJO (Anulado, Rechazado, Factura no conforme) */
+.badge-rojo {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fca5a5 !important;
+}
+
+/* ⚪ 2. GRIS (Radicado, Registrado, Pendiente) */
+.badge-gris {
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+/* 🔵 3. AZUL (En Gestión, En Proceso) */
+.badge-azul {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #bae6fd !important;
+}
+
+/* 🟢 4. VERDE (Validado, Aprobado, Causado, Pagado, Impuestos Verificados) */
+.badge-verde {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+  border: 1px solid #86efac !important;
+}
+
+/* ⚪ 5. DEFAULT (Sin estado asignado o desconocido) */
+.badge-default {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* =====================================
    🎨 BOTONES DE ACCIONES DENTRO DE LA TABLA (PERFECTAMENTE CENTRADOS)
    ===================================== */
 .acciones-cell {
@@ -332,7 +384,7 @@
 }
 
 /* =====================================
-   VARIANTE DE COLORES
+   VARIANTE DE COLORES DE BOTONES
    ===================================== */
 
 /* ✏️ 1. Editar (Gris a Azul) */
