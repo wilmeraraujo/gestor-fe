@@ -6,13 +6,14 @@
   [totalPorPagina]="totalPorPagina"
   [pageSizeOptions]="pageSizeOptions"
   
-  [mostrarAgregar]="mostrarAgregar"
-  [mostrarEditar]="mostrarEditar"
-  [mostrarEliminar]="mostrarEliminar"
-  [mostrarDetalle]="mostrarDetalle"
+  [mostrarAgregar]="false"
+  [mostrarEditar]="false"
+  [mostrarEliminar]="false"
+  [mostrarDetalle]="true"
   [mostrarGestionarFactura]="esGestorF1"
   
   (paginar)="paginar($event)"
+  (verDetalle)="verSoportesFactura($event)"
   (gestionarFactura)="abrirModalGestionar($event)"
   (buscar)="buscar($event)">
 </app-data-table>

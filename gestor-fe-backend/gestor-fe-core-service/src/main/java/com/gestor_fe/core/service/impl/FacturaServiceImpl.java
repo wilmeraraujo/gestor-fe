@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.gestor_fe.core.dto.GestionDto;
 import com.gestor_fe.core.entity.Documento;
 import com.gestor_fe.core.entity.Factura;
+import com.gestor_fe.core.entity.Gestion;
 import com.gestor_fe.core.repository.FacturaRepository;
 import com.gestor_fe.core.service.FacturaService;
 
@@ -57,7 +58,7 @@ public class FacturaServiceImpl implements FacturaService {
     }
 
     // =========================================================================
-    // ⚙️ MOTOR UNIFICADO DE TRANSICIÓN DE FASES (DSO / TEXTO)
+    // ⚙️ MOTOR UNIFICADO DE TRANSICIÓN DE FASES CON GUARDADO DE HISTORIAL
     // =========================================================================
     @Override
     @Transactional
@@ -66,64 +67,88 @@ public class FacturaServiceImpl implements FacturaService {
                 .orElseThrow(() -> new RuntimeException("Factura no encontrada con el ID: " + id));
 
         boolean esAprobado = "APROBADO".equalsIgnoreCase(dto.getEstadoAccion());
-
-        // Evaluar reglas de negocio según la etapa actual
         int fase = faseActualId != null ? faseActualId.intValue() : 1;
 
+        // 1. Instanciar el registro de Historial/Auditoría
+        Gestion gestion = new Gestion();
+        gestion.setFactura(factura);
+        gestion.setFaseId(faseActualId);
+        gestion.setAccion(dto.getEstadoAccion());
+        gestion.setUsuario(dto.getUsuario()); // Nombre/Sub extraído o enviado del DTO
+
+        // 2. Transición según Etapa
         switch (fase) {
             case 1: // 📝 ETAPA 1: GESTIÓN INICIAL
                 if (esAprobado) {
                     factura.setEstado("EN GESTIÓN");
-                    factura.setFaseId(2L); // Avanza a Reconocimiento Contable
+                    factura.setFaseId(2L);
                     factura.setObservacion(null);
                     factura.setCausalDevolucionId(null);
                 } else {
                     factura.setEstado("ANULADO");
-                    factura.setFaseId(1L); // Se mantiene en Fase 1
+                    factura.setFaseId(1L);
                     factura.setCausalDevolucionId(dto.getCausalDevolucionId());
                     factura.setObservacion(dto.getObservacion());
+
+                    gestion.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    gestion.setObservacion(dto.getObservacion());
                 }
                 break;
 
             case 2: // 🏦 ETAPA 2: RECONOCIMIENTO CONTABLE (Flujo alterno sin archivo)
                 if (esAprobado) {
                     factura.setEstado("CAUSADO");
-                    factura.setTipoRegistroContable(dto.getTipoRegistroContable()); // FC, GV, ORC, NI
+                    factura.setTipoRegistroContableId(dto.getTipoRegistroContableId()); // Long ID
                     factura.setNumeroCausacion(dto.getNumeroCausacion());
-                    factura.setFaseId(3L); // Avanza a Impuestos
+                    factura.setFaseId(3L);
                     factura.setObservacion(null);
                     factura.setCausalDevolucionId(null);
+
+                    gestion.setTipoRegistroContableId(dto.getTipoRegistroContableId());
+                    gestion.setNumeroCausacion(dto.getNumeroCausacion());
                 } else {
                     factura.setEstado("ANULADO");
                     factura.setCausalDevolucionId(dto.getCausalDevolucionId());
                     factura.setObservacion(dto.getObservacion());
+
+                    gestion.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    gestion.setObservacion(dto.getObservacion());
                 }
                 break;
 
             case 3: // 📑 ETAPA 3: IMPUESTOS
                 if (esAprobado) {
                     factura.setEstado("IMPUESTOS VERIFICADOS");
-                    factura.setFaseId(4L); // Avanza a Pendiente de Pago - Tesorería
+                    factura.setFaseId(4L);
                     factura.setObservacion(null);
                     factura.setCausalDevolucionId(null);
                 } else {
                     factura.setEstado("ANULADO");
                     factura.setCausalDevolucionId(dto.getCausalDevolucionId());
                     factura.setObservacion(dto.getObservacion());
+
+                    gestion.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    gestion.setObservacion(dto.getObservacion());
                 }
                 break;
 
-            case 4: // 💸 ETAPA 4: PENDIENTE DE PAGO - TESORERÍA (Flujo alterno sin archivo)
+            case 4: // 💸 ETAPA 4: TESORERÍA (Flujo alterno sin archivo)
                 if (esAprobado) {
                     factura.setEstado("PAGADO");
-                    factura.setTipoRegistroContable("TB"); // Transferencia Bancaria
-                    factura.setFaseId(4L); // Queda finalizada en Fase 4
+                    factura.setTipoRegistroContableId(dto.getTipoRegistroContableId());
+                    factura.setFaseId(4L);
                     factura.setObservacion(null);
                     factura.setCausalDevolucionId(null);
+
+                    gestion.setTipoRegistroContableId(dto.getTipoRegistroContableId());
+                    gestion.setNumeroCausacion(dto.getNumeroCausacion());
                 } else {
                     factura.setEstado("ANULADO");
                     factura.setCausalDevolucionId(dto.getCausalDevolucionId());
                     factura.setObservacion(dto.getObservacion());
+
+                    gestion.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    gestion.setObservacion(dto.getObservacion());
                 }
                 break;
 
@@ -131,27 +156,41 @@ public class FacturaServiceImpl implements FacturaService {
                 throw new IllegalArgumentException("La fase proporcionada no es válida: " + faseActualId);
         }
 
+        gestion.setEstadoResultado(factura.getEstado());
+        factura.addGestion(gestion); // Guarda automáticamente en la tabla gestor.gestion por CascadeType.ALL
+
         return repository.save(factura);
     }
 
     // =========================================================================
-    // 🏦 ETAPA 2: PROCESO DE CAUSACIÓN CON ARCHIVO MULTIPART (PDF)
+    // 🏦 ETAPA 2: PROCESO DE CAUSACIÓN CON ARCHIVO MULTIPART Y REGISTRO EN HISTORIAL
     // =========================================================================
     @Override
     @Transactional
-    public Factura procesarCausacionFase2(Long id, String tipoRegistroContable, String numeroCausacion, MultipartFile archivoCausacion) {
+    public Factura procesarCausacionFase2(Long id, Long tipoRegistroContableId, String numeroCausacion, MultipartFile archivoCausacion) {
         Factura factura = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Factura no encontrada con el ID: " + id));
 
-        // 1. Actualizar estado y promover a Fase 3 (Impuestos)
+        // 1. Actualizar estado actual en Factura
         factura.setEstado("CAUSADO");
-        factura.setTipoRegistroContable(tipoRegistroContable);
+        factura.setTipoRegistroContableId(tipoRegistroContableId);
         factura.setNumeroCausacion(numeroCausacion);
         factura.setFaseId(3L);
         factura.setObservacion(null);
         factura.setCausalDevolucionId(null);
 
-        // 2. Procesar y guardar el archivo si llegó en la petición
+        // 2. Registrar en la tabla de Historial (Gestion)
+        Gestion gestion = new Gestion();
+        gestion.setFactura(factura);
+        gestion.setFaseId(2L);
+        gestion.setAccion("APROBADO");
+        gestion.setEstadoResultado("CAUSADO");
+        gestion.setTipoRegistroContableId(tipoRegistroContableId);
+        gestion.setNumeroCausacion(numeroCausacion);
+
+        factura.addGestion(gestion);
+
+        // 3. Procesar y guardar el archivo si llegó en la petición
         if (archivoCausacion != null && !archivoCausacion.isEmpty()) {
             try {
                 String nitCarpeta = factura.getNit().replaceAll("[\\\\/:*?\"<>|]", "_").trim();
@@ -166,10 +205,8 @@ public class FacturaServiceImpl implements FacturaService {
                 String nombreUnico = UUID.randomUUID() + "_causacion_" + nombreOriginal;
                 Path destinoFinal = directorioFactura.resolve(nombreUnico);
 
-                // Guardado físico en disco
                 archivoCausacion.transferTo(destinoFinal.toFile());
 
-                // Mapeo del nuevo documento
                 Documento docCausacion = new Documento();
                 docCausacion.setNombreOriginal(nombreOriginal);
                 docCausacion.setRuta(destinoFinal.toString());
@@ -179,7 +216,6 @@ public class FacturaServiceImpl implements FacturaService {
                 docCausacion.setTipoId(8L);      // 8 = PDF Soporte de Causación
                 docCausacion.setFactura(factura);
 
-                // Agregar a la colección asociativa
                 factura.addDocumento(docCausacion);
 
             } catch (IOException e) {
@@ -191,24 +227,38 @@ public class FacturaServiceImpl implements FacturaService {
     }
 
     // =========================================================================
-    // 💸 ETAPA 4: PROCESO DE REGISTRO DE PAGO CON SOPORTES (TB + COMPROBANTE)
+    // 💸 ETAPA 4: REGISTRO DE PAGO CON SOPORTES Y REGISTRO EN HISTORIAL
     // =========================================================================
     @Override
     @Transactional
-    public Factura procesarPagoFase4(Long id, String numeroCausacion, MultipartFile soporteTb, MultipartFile comprobantePago) {
+    public Factura procesarPagoFase4(Long id, Long tipoRegistroContableId, String numeroCausacion, MultipartFile soporteTb, MultipartFile comprobantePago) {
         Factura factura = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Factura no encontrada con el ID: " + id));
 
-        // 1. Actualizar estado final a PAGADO y asociar referencia de egreso/causación si aplica
+        // 1. Actualizar estado actual en Factura
         factura.setEstado("PAGADO");
-        factura.setTipoRegistroContable("TB"); // Transferencia Bancaria
+        if (tipoRegistroContableId != null) {
+            factura.setTipoRegistroContableId(tipoRegistroContableId);
+        }
         if (numeroCausacion != null && !numeroCausacion.isBlank()) {
             factura.setNumeroCausacion(numeroCausacion);
         }
-        factura.setFaseId(4L); // Permanece finalizada en Fase 4
+        factura.setFaseId(4L);
         factura.setObservacion(null);
         factura.setCausalDevolucionId(null);
 
+        // 2. Registrar en la tabla de Historial (Gestion)
+        Gestion gestion = new Gestion();
+        gestion.setFactura(factura);
+        gestion.setFaseId(4L);
+        gestion.setAccion("APROBADO");
+        gestion.setEstadoResultado("PAGADO");
+        gestion.setTipoRegistroContableId(tipoRegistroContableId);
+        gestion.setNumeroCausacion(numeroCausacion);
+
+        factura.addGestion(gestion);
+
+        // 3. Guardado físico de archivos
         String nitCarpeta = factura.getNit().replaceAll("[\\\\/:*?\"<>|]", "_").trim();
         String numFacturaCarpeta = factura.getNumeroFactura().replaceAll("[\\\\/:*?\"<>|]", "_").trim();
         Path directorioFactura = Paths.get(rutaStorageValidos, nitCarpeta, numFacturaCarpeta);
@@ -218,12 +268,10 @@ public class FacturaServiceImpl implements FacturaService {
                 Files.createDirectories(directorioFactura);
             }
 
-            // 2. Guardar Documento TB si fue adjuntado
             if (soporteTb != null && !soporteTb.isEmpty()) {
                 guardarSoporteDocumento(factura, soporteTb, directorioFactura, "TB_", 8L);
             }
 
-            // 3. Guardar Comprobante de Pago Bancario si fue adjuntado
             if (comprobantePago != null && !comprobantePago.isEmpty()) {
                 guardarSoporteDocumento(factura, comprobantePago, directorioFactura, "PAGO_", 8L);
             }
@@ -235,9 +283,6 @@ public class FacturaServiceImpl implements FacturaService {
         return repository.save(factura);
     }
 
-    /**
-     * 📁 Método privado reutilizable para abstraer el guardado físico y relacional de soportes PDF
-     */
     private void guardarSoporteDocumento(Factura factura, MultipartFile archivo, Path directorio, String prefijo, Long tipoId) throws IOException {
         String nombreOriginal = archivo.getOriginalFilename();
         String nombreUnico = UUID.randomUUID() + "_" + prefijo + nombreOriginal;
@@ -258,7 +303,7 @@ public class FacturaServiceImpl implements FacturaService {
     }
 
     // =========================================================================
-    // 🔍 VALIDACIONES Y CONSULTAS SECUNDARIAS
+    // 🔍 CONSULTAS SECUNDARIAS
     // =========================================================================
     @Override
     @Transactional(readOnly = true)

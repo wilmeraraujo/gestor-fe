@@ -2,6 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { KeycloakService } from 'keycloak-angular';
 import { throwError } from 'rxjs';
 
@@ -10,7 +15,9 @@ import { CommonListarComponent } from '../common-listar.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 
 import { Factura } from '../../models/factura';
+import { Documento } from '../../models/documento';
 import { FacturaService } from '../../services/factura.service';
+import { DocumentoService } from '../../services/documento.service';
 import { CausalDevolucionService } from '../../services/causal-devolucion.service';
 import { ObservacionService } from '../../services/observacion.service';
 import { FaseService } from '../../services/fase.service';
@@ -18,7 +25,14 @@ import { FaseService } from '../../services/fase.service';
 @Component({
   selector: 'app-reconocimiento-contable',
   standalone: true,
-  imports: [CommonModule, DataTableComponent],
+  imports: [
+    CommonModule, 
+    DataTableComponent,
+    MatTabsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule
+  ],
   templateUrl: './reconocimiento-contable.component.html',
   styleUrl: './reconocimiento-contable.component.css'
 })
@@ -26,18 +40,24 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
 
   override titulo = 'Reconocimiento Contable (Etapa 2)';
 
+  tabSeleccionada: number = 0; 
+  facturaSeleccionada: Factura | null = null;
+  soportesFactura: Documento[] = [];
+  pdfUrlSafe: SafeResourceUrl | null = null;
+  documentoActivo: string = '';
+
   esGestorF2: boolean = false;
 
   opcionesCausal: { value: any, label: string }[] = [];
   opcionesObservacion: { value: any, label: string }[] = [];
   mapaFases: { [key: number]: string } = {};
 
-  // Opciones de Tipo de Registro Contable según norma
+  // Opciones de Tipo de Registro Contable mapeadas con sus IDs numéricos
   opcionesTipoRegistro = [
-    { value: 'FC', label: 'FC - Factura de Compra' },
-    { value: 'GV', label: 'GV - Gastos de Viáticos' },
-    { value: 'ORC', label: 'ORC - Otros Registros Contables' },
-    { value: 'NI', label: 'NI - Nota Interna' }
+    { value: 1, label: 'FC - Factura de Compra' },
+    { value: 2, label: 'GV - Gastos de Viáticos' },
+    { value: 3, label: 'ORC - Otros Registros Contables' },
+    { value: 4, label: 'NI - Nota Interna' }
   ];
 
   columnas = [
@@ -53,13 +73,21 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     { field: 'observacion', header: 'Observación' }
   ];
 
+  columnasSoportes = [
+    { field: 'id', header: 'ID' },
+    { field: 'nombreOriginal', header: 'Nombre Archivo' },
+    { field: 'tipoId', header: 'Tipo ID' }
+  ];
+
   constructor(
     service: FacturaService,
+    private documentoService: DocumentoService,
     private causalService: CausalDevolucionService,
     private observacionService: ObservacionService,
     private faseService: FaseService,
     private keycloakService: KeycloakService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private sanitizer: DomSanitizer
   ) {
     super(service);
   }
@@ -72,7 +100,9 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
 
   private evaluarRolesUsuario(): void {
     const roles = this.keycloakService.getUserRoles();
-    this.esGestorF2 = roles.includes('gestor-fe-f2-rc') || roles.includes('gestor-fe-admin');
+    this.esGestorF2 = roles.includes('gestor-fe-f2-rc') || 
+                      roles.includes('gestor-fe-admin') ||
+                      roles.includes('default-roles-fe');
   }
 
   private cargarFases(): void {
@@ -110,8 +140,6 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   }
 
   private cargarListasMaestras(): void {
-    if (!this.esGestorF2) return;
-
     this.causalService.listar().subscribe(data => {
       this.opcionesCausal = (data || [])
         .filter(c => !c.deletedAt)
@@ -132,6 +160,51 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     });
   }
 
+  verSoportesFactura(row: Factura): void {
+    this.facturaSeleccionada = row;
+    this.pdfUrlSafe = null;
+    this.documentoActivo = '';
+
+    this.documentoService.filtrarDocumentosPaginado(
+      row.numeroFactura,
+      row.nit,
+      null,
+      '0',
+      '50'
+    ).subscribe({
+      next: (res: any) => {
+        this.soportesFactura = res.content || [];
+        this.tabSeleccionada = 1;
+      },
+      error: (err) => {
+        console.error('Error al consultar soportes:', err);
+        alert('No se pudieron consultar los soportes de esta factura.');
+      }
+    });
+  }
+
+  cargarSoporteEnVisor(doc: Documento): void {
+    this.documentoActivo = doc.nombreOriginal;
+
+    this.documentoService.getDocumentoBlob(doc.id).subscribe({
+      next: (blob: Blob) => {
+        const fileUrl = URL.createObjectURL(blob);
+        this.pdfUrlSafe = this.sanitizer.bypassSecurityTrustResourceUrl(fileUrl);
+      },
+      error: (err) => {
+        console.error('Error al cargar la vista previa:', err);
+        alert('Este archivo no se puede previsualizar en el navegador.');
+      }
+    });
+  }
+
+  regresarABandeja(): void {
+    this.tabSeleccionada = 0;
+    this.facturaSeleccionada = null;
+    this.pdfUrlSafe = null;
+    this.documentoActivo = '';
+  }
+
   /**
    * 📝 Configuración de campos dinámicos obligatorios
    */
@@ -150,10 +223,10 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
           const isAprobado = val === 'APROBADO';
           const isRechazado = val === 'RECHAZADO';
 
-          // TODOS LOS CAMPOS DE APROBACIÓN SON OBLIGATORIOS (true)
-          this.toggleCampoVisibilidad(campos, form, 'tipoRegistroContable', isAprobado, true);
+          // CAMPOS DE APROBACIÓN
+          this.toggleCampoVisibilidad(campos, form, 'tipoRegistroContableId', isAprobado, true);
           this.toggleCampoVisibilidad(campos, form, 'numeroCausacion', isAprobado, true);
-          this.toggleCampoVisibilidad(campos, form, 'archivoCausacion', isAprobado, true); // 👈 ¡OBLIGATORIO!
+          this.toggleCampoVisibilidad(campos, form, 'archivoCausacion', isAprobado, true);
 
           // CAMPOS DE RECHAZO
           this.toggleCampoVisibilidad(campos, form, 'causalDevolucionId', isRechazado, true);
@@ -161,7 +234,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         }
       },
       {
-        name: 'tipoRegistroContable',
+        name: 'tipoRegistroContableId', // 👈 Mapeado como ID numérico
         label: 'Tipo de Registro Contable',
         type: 'select',
         options: this.opcionesTipoRegistro,
@@ -233,6 +306,14 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         formData: { id: row.id },
         service: {
           editar: (model: any) => {
+            // 👤 Inyectar nombre del usuario para el historial de auditoría
+            try {
+              model.usuario = this.keycloakService.getUsername() || 'SISTEMA';
+            } catch (error) {
+              console.warn('No se pudo obtener el username de Keycloak. Se asigna valor por defecto:', error);
+              model.usuario = 'GESTOR_SISTEMA';
+            }
+
             if (model.estadoAccion === 'APROBADO') {
 
               // 🎯 CAPTURA DEL ARCHIVO DESDE EL INPUT DEL DOM
@@ -250,7 +331,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
                 }
               }
 
-              // 🛑 VALIDACIÓN ESTRICTA: SI NO SE SELECCIONÓ ARCHIVO, RECHAZA EL ENVÍO
+              // 🛑 VALIDACIÓN ESTRICTA
               if (!archivoFile) {
                 alert('⚠️ Debe adjuntar obligatoriamente el archivo PDF con el Soporte de Causación.');
                 return throwError(() => new Error('El archivo soporte de causación es obligatorio.'));
@@ -258,7 +339,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
 
               return this.service.procesarCausacionFase2(
                 row.id,
-                model.tipoRegistroContable,
+                Number(model.tipoRegistroContableId), // 👈 Mapeado como ID numérico
                 model.numeroCausacion,
                 archivoFile
               );
@@ -280,6 +361,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
 
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado) {
+        this.regresarABandeja();
         this.cargarDatosPaginados();
       }
     });

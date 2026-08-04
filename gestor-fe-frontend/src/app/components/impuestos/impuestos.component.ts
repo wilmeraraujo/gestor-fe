@@ -92,7 +92,10 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
 
   private evaluarRolesUsuario(): void {
     const roles = this.keycloakService.getUserRoles();
-    this.esGestorF3 = roles.includes('gestor-fe-f3-i') || roles.includes('gestor-fe-admin');
+    this.esGestorF3 = roles.includes('gestor-fe-f3-i') || 
+                      roles.includes('gestor-fe-f3-imp') || 
+                      roles.includes('gestor-fe-admin') ||
+                      roles.includes('default-roles-fe');
   }
 
   private cargarFases(): void {
@@ -130,8 +133,6 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
   }
 
   private cargarListasMaestras(): void {
-    if (!this.esGestorF3) return;
-
     this.causalService.listar().subscribe(data => {
       this.opcionesCausal = (data || [])
         .filter(c => !c.deletedAt)
@@ -261,7 +262,7 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
   }
 
   /**
-   * ⚙️ Abrir modal de dictamen (Invocable tanto desde la Pestaña 1 como de la Pestaña 2)
+   * ⚙️ Abrir modal de dictamen
    */
   abrirModalGestionar(row: Factura): void {
     const dialogRef = this.dialog.open(ModalComponent, {
@@ -278,7 +279,15 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
             if (model.observacionId && model.observacionId !== 'OTRO') {
               model.observacion = model.observacionId;
             }
-            // Envia la decisión a la Fase 3 en Spring Boot
+
+            // 👤 Inyectar nombre de usuario autenticado para la tabla gestor.gestion (auditoría)
+            try {
+              model.usuario = this.keycloakService.getUsername() || 'SISTEMA';
+            } catch (error) {
+              console.warn('No se pudo obtener el username de Keycloak. Se asigna valor por defecto:', error);
+              model.usuario = 'GESTOR_SISTEMA';
+            }
+
             return this.service.procesarTransicionFase(row.id, 3, model);
           }
         }
@@ -287,7 +296,6 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
 
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado) {
-        // Al procesar con éxito la factura, regresamos a la Pestaña 1 y refrescamos la lista
         this.regresarABandeja();
         this.cargarDatosPaginados();
       }

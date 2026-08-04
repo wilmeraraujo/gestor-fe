@@ -144,7 +144,7 @@
 
             <div class="acciones-cell">
               
-              <!-- ✏️ EDITAR (AHORA CONDICIONAL) -->
+              <!-- ✏️ EDITAR (CONDICIONAL) -->
               <button
                 *ngIf="mostrarEditar"
                 mat-icon-button
@@ -184,7 +184,18 @@
                 <mat-icon>visibility</mat-icon>
               </button>
 
-              <!-- 🗑️ ELIMINAR (AHORA CONDICIONAL) -->
+              <!-- 📜 NUEVO BOTÓN: VER HISTORIAL / TRAZABILIDAD (ℹ️/history) -->
+              <button
+                *ngIf="mostrarHistorial"
+                mat-icon-button
+                class="btn-action btn-action-history"
+                style="color: #17889b;"
+                (click)="verHistorial.emit(row)"
+                matTooltip="Ver Trazabilidad / Historial de Gestiones">
+                <mat-icon>history</mat-icon>
+              </button>
+
+              <!-- 🗑️ ELIMINAR (CONDICIONAL) -->
               <button
                 *ngIf="mostrarEliminar"
                 mat-icon-button

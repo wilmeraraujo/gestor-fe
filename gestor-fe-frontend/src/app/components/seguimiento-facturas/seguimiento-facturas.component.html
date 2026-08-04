@@ -23,10 +23,12 @@
           [mostrarEditar]="false"
           [mostrarEliminar]="false"
           [mostrarDetalle]="true"
+          [mostrarHistorial]="true"
           [mostrarGestionarFactura]="false"
           
           (paginar)="paginar($event)"
           (verDetalle)="verSoportesFactura($event)"
+          (verHistorial)="verHistorialGestion($event)"
           (buscar)="buscar($event)">
         </app-data-table>
       </div>
@@ -43,7 +45,7 @@
 
       <div class="pt-3" *ngIf="facturaSeleccionada">
         
-        <!-- BARRA DE INFORMACIÓN RESUMIDA Y BOTÓN REGRESAR -->
+        <!-- BARRA DE INFORMACIÓN RESUMIDA Y BOTONES -->
         <div class="d-flex align-items-center justify-content-between mb-3 bg-white p-2 rounded shadow-sm border">
           <div>
             <span class="fw-bold me-3">Factura No: <span class="text-primary">{{ facturaSeleccionada.numeroFactura }}</span></span>
@@ -52,9 +54,17 @@
             <span class="fw-bold">Estado Actual: <span class="badge bg-info text-dark">{{ facturaSeleccionada.estado }}</span></span>
           </div>
 
-          <button mat-stroked-button color="primary" (click)="regresarABandeja()">
-            <mat-icon>arrow_back</mat-icon> Volver al Seguimiento
-          </button>
+          <div class="d-flex gap-2">
+            <!-- ℹ️ BOTÓN PARA CONSULTAR HISTORIAL DIRECTO EN LA PESTAÑA 3 -->
+            <button mat-raised-button style="background-color: #17889b; color: white;" (click)="verHistorialGestion(facturaSeleccionada)">
+              <mat-icon>history</mat-icon> Ver Trazabilidad
+            </button>
+
+            <!-- ⬅️ REGRESAR -->
+            <button mat-stroked-button color="primary" (click)="regresarABandeja()">
+              <mat-icon>arrow_back</mat-icon> Volver al Seguimiento
+            </button>
+          </div>
         </div>
 
         <!-- GRILLA SPLIT 5/7 (SOPORTES / VISOR) -->
@@ -109,6 +119,49 @@
           </div>
 
         </div>
+
+      </div>
+    </mat-tab>
+
+    <!-- =========================================================================
+         📌 PESTAÑA 3: NAVEGACIÓN Y AUDITORÍA DE TRAZABILIDAD COMPLETA
+         ========================================================================= -->
+    <mat-tab [disabled]="!facturaSeleccionada">
+      <ng-template mat-tab-label>
+        <mat-icon class="me-2" style="color: #17889b;">history</mat-icon> 
+        Trazabilidad: {{ facturaSeleccionada ? facturaSeleccionada.numeroFactura : '(Seleccione Factura)' }}
+      </ng-template>
+
+      <div class="pt-3" *ngIf="facturaSeleccionada">
+        
+        <!-- BARRA SUPERIOR CON RESUMEN Y BOTÓN VOLVER -->
+        <div class="d-flex align-items-center justify-content-between mb-3 bg-white p-2 rounded shadow-sm border">
+          <div>
+            <span class="fw-bold me-3">Historial de Trazabilidad: <span style="color: #17889b;">{{ facturaSeleccionada.numeroFactura }}</span></span>
+            <span class="fw-bold me-3">NIT: <span class="text-secondary">{{ facturaSeleccionada.nit }}</span></span>
+            <span class="fw-bold me-3">Razón Social: <span class="text-dark">{{ facturaSeleccionada.razonSocialEmisor }}</span></span>
+          </div>
+
+          <button mat-stroked-button color="primary" (click)="regresarABandeja()">
+            <mat-icon>arrow_back</mat-icon> Volver al Seguimiento
+          </button>
+        </div>
+
+        <!-- GRILLA A ANCHO COMPLETO PARA AUDITORÍA CÓMODA -->
+        <app-data-table
+          [titulo]="'Bitácora de Transiciones e Historial de Gestiones'"
+          [columnas]="columnasHistorial"
+          [datos]="historialFacturaSeleccionada"
+          [totalRegistros]="0"
+          [totalPorPagina]="5"
+          [pageSizeOptions]="[5, 10, 20]"
+          [mostrarAgregar]="false"
+          [mostrarEditar]="false"
+          [mostrarEliminar]="false"
+          [mostrarDetalle]="false"
+          [mostrarAcciones]="false"
+          [mostrarGestionarFactura]="false">
+        </app-data-table>
 
       </div>
     </mat-tab>

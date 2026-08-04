@@ -44,9 +44,11 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Input() mostrarDetalle = false;
   @Input() mostrarSeleccion = false;
   @Input() mostrarGestionarFactura = false;
-  @Input() mostrarEditar = true;    // 👈 Control de visibilidad para Editar
-  @Input() mostrarEliminar = true;  // 👈 Control de visibilidad para Eliminar
+  @Input() mostrarEditar = true;
+  @Input() mostrarEliminar = true;
+  @Input() mostrarHistorial: boolean = false;
 
+  @Output() verHistorial = new EventEmitter<any>();
   @Output() agregar = new EventEmitter<void>();
   @Output() editar = new EventEmitter<any>();
   @Output() eliminar = new EventEmitter<any>();
@@ -70,7 +72,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
 
   ngOnInit(): void {
     this.configurarColumnas();
-    this.dataSource.data = this.datos;
+    this.actualizarDataSource();
     this.configurarFiltroCustom();
 
     this.selection.changed.subscribe(() => {
@@ -79,8 +81,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['datos']) {
-      this.dataSource.data = this.datos;
+    if (changes['columnas'] || changes['datos']) {
+      this.configurarColumnas();
+      this.actualizarDataSource();
       this.selection.clear();
       this.aplicarFiltrosColumnas();
     }
@@ -89,6 +92,17 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   ngAfterViewInit(): void {
     if (this.paginatorInferior) {
       this.paginatorInferior._intl.itemsPerPageLabel = 'Registros por página:';
+      // 🎯 SI NO HAY TOTAL DE REGISTROS SERVIDOR, ASIGNAR PAGINADOR CLIENTE
+      if (!this.totalRegistros || this.totalRegistros === this.datos.length) {
+        this.dataSource.paginator = this.paginatorInferior;
+      }
+    }
+  }
+
+  private actualizarDataSource(): void {
+    this.dataSource.data = this.datos || [];
+    if (this.paginatorInferior && (!this.totalRegistros || this.totalRegistros === this.datos.length)) {
+      this.dataSource.paginator = this.paginatorInferior;
     }
   }
 
@@ -96,13 +110,18 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     this.displayedColumns = [];
     this.filterColumns = [];
 
+    if (!this.columnas || this.columnas.length === 0) {
+      return;
+    }
+
     if (this.mostrarSeleccion) {
       this.displayedColumns.push('select');
       this.filterColumns.push('select-filter');
     }
 
-    this.displayedColumns.push(...this.columnas.map(c => c.field));
-    this.filterColumns.push(...this.columnas.map(c => `filter-${c.field}`));
+    const colsValidas = this.columnas.filter(c => c && c.field);
+    this.displayedColumns.push(...colsValidas.map(c => c.field));
+    this.filterColumns.push(...colsValidas.map(c => `filter-${c.field}`));
 
     if (this.mostrarAcciones) {
       this.displayedColumns.push('acciones');
@@ -169,9 +188,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     this.selection.select(...this.dataSource.data);
   }
 
-  /**
-   * 🎨 Retorna la clase CSS adecuada según el valor del estado
-   */
   obtenerClaseEstado(valorEstado: any): string {
     if (!valorEstado) return 'badge-estado badge-default';
 
@@ -231,5 +247,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
 
   onGestionarFactura(row: any): void {
     this.gestionarFactura.emit(row);
+  }
+
+  onVerHistorial(row: any): void {
+    this.verHistorial.emit(row);
   }
 }
