@@ -36,6 +36,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   tabSeleccionada: number = 0; 
   facturaSeleccionada: Factura | null = null;
   soportesFactura: Documento[] = [];
+  historialFacturaSeleccionada: any[] = []; // 👈 Guardará el historial para la Pestaña 3
   pdfUrlSafe: SafeResourceUrl | null = null;
   documentoActivo: string = '';
 
@@ -48,7 +49,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     { field: 'nit', header: 'NIT Emisor' },
     { field: 'razonSocialEmisor', header: 'Razón Social' },
     { field: 'numeroFactura', header: 'No. Factura' },
-    { field: 'tipoRegistroContable', header: 'Tipo Reg.' },
+    { field: 'tipoRegistroContableId', header: 'Tipo Reg. ID' },
     { field: 'numeroCausacion', header: 'No. Causación' },
     { field: 'valorTotal', header: 'Valor Total' },
     { field: 'fechaEmision', header: 'Fecha Emisión' },
@@ -59,6 +60,17 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     { field: 'id', header: 'ID' },
     { field: 'nombreOriginal', header: 'Nombre Archivo' },
     { field: 'tipoId', header: 'Tipo ID' }
+  ];
+
+  columnasHistorial = [
+    { field: 'id', header: 'ID' },
+    { field: 'faseNombre', header: 'Etapa / Fase' },
+    { field: 'accion', header: 'Acción' },
+    { field: 'estadoResultado', header: 'Resultado' },
+    { field: 'numeroCausacion', header: 'No. Causación / Egreso' },
+    { field: 'observacion', header: 'Observación' },
+    { field: 'usuario', header: 'Usuario' },
+    { field: 'createdAt', header: 'Fecha / Hora' }
   ];
 
   constructor(
@@ -93,9 +105,6 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     });
   }
 
-  /**
-   * 📊 Carga consolidada global de TODAS las facturas registradas en el sistema
-   */
   cargarDatosPaginados(): void {
     this.service.getSeguimiento(this.paginaActual, this.totalPorPagina)
       .subscribe(res => {
@@ -107,13 +116,41 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   private mapearFaseNombre(facturas: Factura[]): any[] {
     return (facturas || []).map(f => ({
       ...f,
-      faseNombre: this.mapaFases[f.faseId] || `Fase ${f.faseId}`
+      faseNombre: this.mapaFases[f.faseId] || `Fase ${f.faseId}`,
+      gestiones: (f.gestiones || []).map((g: any) => ({
+        ...g,
+        faseNombre: this.mapaFases[g.faseId] || `Fase ${g.faseId}`,
+        estado: g.estadoResultado,
+        numeroCausacion: g.numeroCausacion || 'N/A',
+        observacion: g.observacion || 'Sin observaciones',
+        usuario: g.usuario || 'GESTOR_SISTEMA',
+        createdAt: g.createdAt ? (typeof g.createdAt === 'string' ? g.createdAt.replace('T', ' ').substring(0, 19) : g.createdAt) : 'N/A'
+      }))
     }));
   }
 
   /**
-   * 👁️ Carga los soportes documentales de la factura y abre la Pestaña 2
+   * ℹ️ Redirecciona a la 3ª Pestaña de Trazabilidad y carga el historial completo
    */
+  verHistorialGestion(row: Factura): void {
+    this.facturaSeleccionada = row;
+
+    this.historialFacturaSeleccionada = (row.gestiones || []).map((g: any) => ({
+      id: g.id,
+      faseNombre: g.faseNombre || this.mapaFases[g.faseId] || `Fase ${g.faseId}`,
+      accion: g.accion || 'N/A',
+      estadoResultado: g.estadoResultado || 'N/A',
+      estado: g.estadoResultado,
+      numeroCausacion: g.numeroCausacion || 'N/A',
+      observacion: g.observacion || 'Sin observaciones',
+      usuario: g.usuario || 'GESTOR_SISTEMA',
+      createdAt: g.createdAt ? (typeof g.createdAt === 'string' ? g.createdAt.replace('T', ' ').substring(0, 19) : g.createdAt) : 'N/A'
+    }));
+
+    // Navegar a la Pestaña 3
+    this.tabSeleccionada = 2;
+  }
+
   verSoportesFactura(row: Factura): void {
     this.facturaSeleccionada = row;
     this.pdfUrlSafe = null;
@@ -128,7 +165,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     ).subscribe({
       next: (res: any) => {
         this.soportesFactura = res.content || [];
-        this.tabSeleccionada = 1;
+        this.tabSeleccionada = 1; // Navegar a la Pestaña 2
       },
       error: (err) => {
         console.error('Error al consultar expedientes:', err);
@@ -157,6 +194,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     this.facturaSeleccionada = null;
     this.pdfUrlSafe = null;
     this.documentoActivo = '';
+    this.historialFacturaSeleccionada = [];
   }
 
   buscar(texto: string): void {

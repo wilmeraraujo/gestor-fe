@@ -2,6 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { KeycloakService } from 'keycloak-angular';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
@@ -9,7 +14,9 @@ import { CommonListarComponent } from '../common-listar.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 
 import { Factura } from '../../models/factura';
+import { Documento } from '../../models/documento';
 import { FacturaService } from '../../services/factura.service';
+import { DocumentoService } from '../../services/documento.service';
 import { CausalDevolucionService } from '../../services/causal-devolucion.service';
 import { ObservacionService } from '../../services/observacion.service';
 import { FaseService } from '../../services/fase.service';
@@ -17,7 +24,14 @@ import { FaseService } from '../../services/fase.service';
 @Component({
   selector: 'app-gestion-inicial',
   standalone: true,
-  imports: [CommonModule, DataTableComponent],
+  imports: [
+    CommonModule, 
+    DataTableComponent,
+    MatTabsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule
+  ],
   templateUrl: './gestion-inicial.component.html',
   styleUrl: './gestion-inicial.component.css'
 })
@@ -25,19 +39,21 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
 
   override titulo = 'Gestión Inicial de Facturas (Etapa 1)';
 
+  // Control de pestañas y visores
+  tabSeleccionada: number = 0; 
+  facturaSeleccionada: Factura | null = null;
+  soportesFactura: Documento[] = [];
+  pdfUrlSafe: SafeResourceUrl | null = null;
+  documentoActivo: string = '';
+
   // Bandera de permisos
   esGestorF1: boolean = false;
-  mostrarEditar: boolean = false;
-  mostrarEliminar: boolean = false;
-  mostrarDetalle: boolean = false;
-  mostrarAgregar: boolean = false;
 
-  // Catalogos para desplegables
+  // Catálogos para desplegables
   opcionesCausal: { value: any, label: string }[] = [];
   opcionesObservacion: { value: any, label: string }[] = [];
   mapaFases: { [key: number]: string } = {};
 
-  
   // Configuración de columnas
   columnas = [
     { field: 'id', header: 'ID' },
@@ -52,13 +68,21 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
     { field: 'observacion', header: 'Observación' }
   ];
 
+  columnasSoportes = [
+    { field: 'id', header: 'ID' },
+    { field: 'nombreOriginal', header: 'Nombre Archivo' },
+    { field: 'tipoId', header: 'Tipo ID' }
+  ];
+
   constructor(
     service: FacturaService,
+    private documentoService: DocumentoService,
     private causalService: CausalDevolucionService,
     private observacionService: ObservacionService,
     private faseService: FaseService,
     private keycloakService: KeycloakService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private sanitizer: DomSanitizer
   ) {
     super(service);
   }
@@ -70,21 +94,20 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
   }
 
   /**
-   * 🔑 Verifica si el usuario cuenta con el rol operativo asignado
+   * 🔑 Verifica los roles asignados
    */
   private evaluarRolesUsuario(): void {
     const roles = this.keycloakService.getUserRoles();
-    this.esGestorF1 = roles.includes('gestor-fe-f1-g') || roles.includes('gestor-fe-admin');
+    this.esGestorF1 = roles.includes('gestor-fe-f1-g') || 
+                      roles.includes('gestor-fe-admin') ||
+                      roles.includes('default-roles-fe');
   }
 
-  /**
-   * 🏷️ Carga el catálogo de fases activas desde el backend Admin
-   */
   private cargarFases(): void {
     this.faseService.listar().subscribe({
       next: (fases: any[]) => {
         this.mapaFases = (fases || [])
-          .filter((f: any) => !f.deletedAt) // Filtra fases no eliminadas
+          .filter((f: any) => !f.deletedAt)
           .reduce((acc: any, f: any) => {
             acc[f.id] = f.descripcion || f.nombre || `Fase ${f.id}`;
             return acc;
@@ -100,7 +123,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
   }
 
   /**
-   * 📋 Carga exclusivamente las facturas en Fase 1 (Bandeja de trabajo)
+   * 📋 Carga exclusivamente las facturas en Fase 1
    */
   cargarDatosPaginados(): void {
     this.service.getFase1(this.paginaActual, this.totalPorPagina)
@@ -110,9 +133,6 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
       });
   }
 
-  /**
-   * 🏷️ Asigna el nombre descriptivo de la Fase
-   */
   private mapearFaseNombre(facturas: Factura[]): any[] {
     return (facturas || []).map(f => ({
       ...f,
@@ -120,12 +140,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
     }));
   }
 
-  /**
-   * 📚 Carga las causales y observaciones activas para la gestión
-   */
   private cargarListasMaestras(): void {
-    if (!this.esGestorF1) return;
-
     this.causalService.listar().subscribe(data => {
       this.opcionesCausal = (data || [])
         .filter(c => !c.deletedAt)
@@ -144,6 +159,54 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
         }));
       this.opcionesObservacion.push({ value: 'OTRO', label: 'OTRO (Especificar texto libre...)' });
     });
+  }
+
+  /**
+   * 👁️ Carga los soportes documentales de la factura y pasa a Pestaña 2
+   */
+  verSoportesFactura(row: Factura): void {
+    this.facturaSeleccionada = row;
+    this.pdfUrlSafe = null;
+    this.documentoActivo = '';
+
+    this.documentoService.filtrarDocumentosPaginado(
+      row.numeroFactura,
+      row.nit,
+      null,
+      '0',
+      '50'
+    ).subscribe({
+      next: (res: any) => {
+        this.soportesFactura = res.content || [];
+        this.tabSeleccionada = 1;
+      },
+      error: (err) => {
+        console.error('Error al consultar soportes:', err);
+        alert('No se pudieron consultar los soportes de esta factura.');
+      }
+    });
+  }
+
+  cargarSoporteEnVisor(doc: Documento): void {
+    this.documentoActivo = doc.nombreOriginal;
+
+    this.documentoService.getDocumentoBlob(doc.id).subscribe({
+      next: (blob: Blob) => {
+        const fileUrl = URL.createObjectURL(blob);
+        this.pdfUrlSafe = this.sanitizer.bypassSecurityTrustResourceUrl(fileUrl);
+      },
+      error: (err) => {
+        console.error('Error al cargar la vista previa:', err);
+        alert('Este archivo no se puede previsualizar en el navegador.');
+      }
+    });
+  }
+
+  regresarABandeja(): void {
+    this.tabSeleccionada = 0;
+    this.facturaSeleccionada = null;
+    this.pdfUrlSafe = null;
+    this.documentoActivo = '';
   }
 
   /**
@@ -229,6 +292,14 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
               model.observacion = model.observacionId;
             }
 
+            // 👤 Captura segura del usuario de Keycloak sin romper la ejecución
+            try {
+              model.usuario = this.keycloakService.getUsername() || 'SISTEMA';
+            } catch (error) {
+              console.warn('No se pudo obtener el username de Keycloak. Se asigna valor por defecto:', error);
+              model.usuario = 'GESTOR_SISTEMA';
+            }
+
             return this.service.procesarTransicionFase(row.id, 1, model);
           }
         }
@@ -251,19 +322,6 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
     this.service.buscar(texto).subscribe(response => {
       this.lista = this.mapearFaseNombre(response);
       this.totalRegistros = response.length;
-    });
-  }
-
-  verDocumentos(row: Factura): void {
-    console.log('Soportes cargados:', row.documentos);
-  }
-
-  deletedAt(row: Factura): void {
-    if (!confirm(`¿Desea anular la factura No. ${row.numeroFactura}?`)) return;
-
-    this.service.deletedAt(row.id).subscribe({
-      next: () => this.cargarDatosPaginados(),
-      error: (err) => console.error('Error al anular:', err)
     });
   }
 }

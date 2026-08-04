@@ -43,20 +43,23 @@ public class Factura {
     @Column(name = "valor_total")
     private BigDecimal valorTotal;
     
+    // =========================================================================
+    // 📌 ESTADO ACTUAL Y ULTIMA CAUSACIÓN (Para consultas rápidas en Grillas)
+    // =========================================================================
     @Column(length = 50)
     private String estado;
+
+    @Column(name = "fase_id")
+    private Long faseId;
 
     @Column(length = 1000)
     private String observacion;
 
-    @Column(name = "fase_id")
-    private Long faseId;
-    
     @Column(name = "causal_devolucion_id")
     private Long causalDevolucionId;
-    
-    @Column(name = "tipo_registro_contable", length = 10) // FC, GV, ORC, NI, TB
-    private String tipoRegistroContable;
+
+    @Column(name = "tipo_registro_contable_id", length = 10) // FC, GV, ORC, NI, TB
+    private Long tipoRegistroContableId;
 
     @Column(name = "numero_causacion", length = 50)
     private String numeroCausacion;
@@ -72,19 +75,37 @@ public class Factura {
     private LocalDate deletedAt;
 
     // =========================================================================
-    // RELACIÓN OPTIMIZADA: Bidireccional mapeada por la entidad Documento
+    // RELACIÓN 1: Documentos (XML, PDF Factura, Soporte Causación, TB, Pago)
     // =========================================================================
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @SQLRestriction("deleted_at IS NULL")
     private List<Documento> documentos = new ArrayList<>();
 
-    // Método helper optimizado
+    // =========================================================================
+    // RELACIÓN 2: Historial de Gestión (Auditoría/Trazabilidad Completa)
+    // =========================================================================
+    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @OrderBy("createdAt DESC") // Muestra siempre de la gestión más reciente a la más antigua
+    @SQLRestriction("deleted_at IS NULL")
+    private List<Gestion> gestiones = new ArrayList<>();
+
+    // Helper para documentos
     public void addDocumento(Documento documento) {
         if (this.documentos == null) {
             this.documentos = new ArrayList<>();
         }
         this.documentos.add(documento);
-        documento.setFactura(this); // 👈 Asigna la relación padre para la clave foránea
+        documento.setFactura(this);
+    }
+
+    // Helper para historial de gestiones
+    public void addGestion(Gestion gestion) {
+        if (this.gestiones == null) {
+            this.gestiones = new ArrayList<>();
+        }
+        this.gestiones.add(gestion);
+        gestion.setFactura(this);
     }
 }

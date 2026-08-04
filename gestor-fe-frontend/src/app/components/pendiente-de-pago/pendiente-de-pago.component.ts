@@ -93,7 +93,10 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
   private evaluarRolesUsuario(): void {
     const roles = this.keycloakService.getUserRoles();
     this.esGestorF4 = roles.includes('gestor-fe-admin') ||
-                      roles.includes('gestor-fe-f4-pp');
+                      roles.includes('gestor-fe-f4-pp') ||
+                      roles.includes('gestor-fe-f1-g') ||
+                      roles.includes('gestor-fe-f2-rc') ||
+                      roles.includes('gestor-fe-f3-imp');
   }
 
   private cargarFases(): void {
@@ -312,7 +315,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
                 archivoTb = inputsFile[0].files?.[0];
               }
 
-              // Validaciones defensivas por fallback si vienen en el modelo
+              // Fallbacks por si vienen mapeados en el modelo dinámico
               if (!archivoTb && model.soporteTb) {
                 archivoTb = model.soporteTb instanceof File ? model.soporteTb : model.soporteTb[0];
               }
@@ -325,8 +328,14 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
                 return throwError(() => new Error('Los archivos de pago son obligatorios.'));
               }
 
+              // Extrae el ID numérico si existe en el modelo o en la fila seleccionada
+              const tipoRegistroIdNum = model.tipoRegistroContableId 
+                ? Number(model.tipoRegistroContableId) 
+                : (row.tipoRegistroContableId ? Number(row.tipoRegistroContableId) : undefined);
+
               return this.service.procesarPagoFase4(
                 row.id,
+                tipoRegistroIdNum,
                 model.numeroCausacion,
                 archivoTb,
                 archivoComprobante

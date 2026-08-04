@@ -23,6 +23,10 @@ public class FacturaController {
         this.service = service;
     }
 
+    // =========================================================================
+    // 📋 CONSULTAS Y BANDEJAS DE LECTURA (PAGINADAS Y ORDENADAS POR ID DESC)
+    // =========================================================================
+
     // 📋 Bandeja Prestador
     @GetMapping("/prestador/{nit}")
     public ResponseEntity<?> findByNit(@PathVariable("nit") String nit, Pageable pageable) {
@@ -51,35 +55,40 @@ public class FacturaController {
         return ResponseEntity.ok(service.findByDeletedAtIsNull(sorted));
     }
 
-    // ⚙️ ENDPOINT UNIFICADO CORREGIDO CON NOMBRES EXPLÍCITOS EN @PathVariable
+    // =========================================================================
+    // ⚙️ ENDPOINTS DE TRANSICIÓN Y GESTIÓN DE ETAPAS
+    // =========================================================================
+
+    // ⚙️ Transición estándar por JSON/DTO (Fases 1, 2, 3 y 4 sin adjuntos o rechazos)
     @PutMapping("/{id}/procesar-fase/{faseId}")
     public ResponseEntity<Factura> procesarTransicion(
-            @PathVariable("id") Long id,              // 👈 Nombre explícito agregado
-            @PathVariable("faseId") Long faseId,      // 👈 Nombre explícito agregado
+            @PathVariable("id") Long id,
+            @PathVariable("faseId") Long faseId,
             @RequestBody GestionDto dto) {
 
         return ResponseEntity.ok(service.procesarTransicionFase(id, faseId, dto));
     }
-    
-    // 🏦 ENDPOINT FASE 2: PROCESAR CAUSACIÓN CON ARCHIVO ADJUNTO
+
+    // 🏦 ENDPOINT FASE 2: Procesar causación con archivo PDF adjunto
     @PostMapping(value = "/{id}/causacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Factura> procesarCausacionFase2(
             @PathVariable("id") Long id,
-            @RequestParam("tipoRegistroContable") String tipoRegistroContable,
+            @RequestParam("tipoRegistroContableId") Long tipoRegistroContableId, // 👈 Actualizado a Long
             @RequestParam("numeroCausacion") String numeroCausacion,
             @RequestParam(value = "archivo", required = false) MultipartFile archivo) {
 
-        return ResponseEntity.ok(service.procesarCausacionFase2(id, tipoRegistroContable, numeroCausacion, archivo));
+        return ResponseEntity.ok(service.procesarCausacionFase2(id, tipoRegistroContableId, numeroCausacion, archivo));
     }
-    
- // 💸 ENDPOINT FASE 4: REGISTRAR PAGO Y CARGAR SOPORTES (TB + COMPROBANTE)
+
+    // 💸 ENDPOINT FASE 4: Registrar pago y cargar soportes (Documento TB + Comprobante)
     @PostMapping(value = "/{id}/pago", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Factura> procesarPagoFase4(
             @PathVariable("id") Long id,
+            @RequestParam(value = "tipoRegistroContableId", required = false) Long tipoRegistroContableId, // 👈 Actualizado a Long
             @RequestParam(value = "numeroCausacion", required = false) String numeroCausacion,
             @RequestParam(value = "soporteTb", required = false) MultipartFile soporteTb,
             @RequestParam(value = "comprobantePago", required = false) MultipartFile comprobantePago) {
 
-        return ResponseEntity.ok(service.procesarPagoFase4(id, numeroCausacion, soporteTb, comprobantePago));
+        return ResponseEntity.ok(service.procesarPagoFase4(id, tipoRegistroContableId, numeroCausacion, soporteTb, comprobantePago));
     }
 }

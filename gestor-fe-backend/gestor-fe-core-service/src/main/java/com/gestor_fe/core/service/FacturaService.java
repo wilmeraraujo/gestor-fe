@@ -27,8 +27,7 @@ public interface FacturaService {
     List<String> findExistingCufes(List<String> cufes);
     List<String> findExistingNitFacturas(List<String> nitFacturas);
     
- // FacturaService.java
-    Factura procesarCausacionFase2(Long id, String tipoRegistroContable, String numeroCausacion, MultipartFile archivoCausacion);
+    Factura procesarCausacionFase2(Long id, Long tipoRegistroContableId, String numeroCausacion, MultipartFile archivoCausacion);
     
-    Factura procesarPagoFase4(Long id, String numeroCausacion, MultipartFile soporteTb, MultipartFile comprobantePago);
+    Factura procesarPagoFase4(Long id, Long tipoRegistroContableId, String numeroCausacion, MultipartFile soporteTb, MultipartFile comprobantePago);
 }
