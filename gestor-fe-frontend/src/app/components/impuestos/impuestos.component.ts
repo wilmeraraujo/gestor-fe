@@ -25,7 +25,7 @@ import { FaseService } from '../../services/fase.service';
   selector: 'app-impuestos',
   standalone: true,
   imports: [
-    CommonModule, 
+    CommonModule,
     DataTableComponent,
     MatTabsModule,
     MatCardModule,
@@ -92,8 +92,8 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
 
   private evaluarRolesUsuario(): void {
     const roles = this.keycloakService.getUserRoles();
-    this.esGestorF3 = roles.includes('gestor-fe-f3-i') || 
-                      roles.includes('gestor-fe-f3-imp') || 
+    this.esGestorF3 = roles.includes('admin') || roles.includes('gestor-fe-f3-i') ||
+                      roles.includes('gestor-fe-f3-imp') ||
                       roles.includes('gestor-fe-admin') ||
                       roles.includes('default-roles-fe');
   }

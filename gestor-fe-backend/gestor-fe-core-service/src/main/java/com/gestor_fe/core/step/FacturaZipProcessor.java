@@ -1,6 +1,7 @@
 package com.gestor_fe.core.step;
 
 import java.io.File;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.infrastructure.item.ItemProcessor;
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
 import com.gestor_fe.core.dto.FacturaZipWrapperDto;
 import com.gestor_fe.core.entity.Documento;
@@ -56,7 +58,7 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
             return null;
         }
 
-        // 1. Extraer datos del XML
+        // 1. Extraer datos del XML principal (AttachedDocument o Invoice directo)
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         dbFactory.setNamespaceAware(false);
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -65,12 +67,53 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
 
         XPath xPath = XPathFactory.newInstance().newXPath();
 
-        String nitEmisor = (String) xPath.compile("//SenderParty//CompanyID/text()").evaluate(doc, XPathConstants.STRING);
-        String razonSocial = (String) xPath.compile("//SenderParty//RegistrationName/text()").evaluate(doc, XPathConstants.STRING);
+        // 🔍 Extraer CDATA embebido en caso de ser un contenedor DIAN (AttachedDocument)
+        String cdataEmbebido = (String) xPath.compile("//Attachment/ExternalReference/Description/text()").evaluate(doc, XPathConstants.STRING);
+
+        Document docFactura = doc; // Por defecto asumimos que es el XML directo
+
+        // Si existe CDATA con la Invoice/Factura embebida, la parseamos como un nuevo Document
+        if (cdataEmbebido != null && !cdataEmbebido.isBlank()) {
+            try {
+                DocumentBuilder builderEmbebido = dbFactory.newDocumentBuilder();
+                docFactura = builderEmbebido.parse(new InputSource(new StringReader(cdataEmbebido.trim())));
+                docFactura.getDocumentElement().normalize();
+            } catch (Exception e) {
+                LOGGER.warn("⚠️ No se pudo parsear el CDATA interno del AttachedDocument [{}], se procederá sobre el nodo principal: {}", xmlFile.getName(), e.getMessage());
+            }
+        }
+
+        // Extracción de datos soportando estructura de Invoice interna o etiquetas de AttachedDocument
+        String nitEmisor = (String) xPath.compile("//AccountingSupplierParty//CompanyID/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (nitEmisor == null || nitEmisor.isBlank()) {
+            nitEmisor = (String) xPath.compile("//SenderParty//CompanyID/text()").evaluate(doc, XPathConstants.STRING);
+        }
+
+        String razonSocial = (String) xPath.compile("//AccountingSupplierParty//RegistrationName/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (razonSocial == null || razonSocial.isBlank()) {
+            razonSocial = (String) xPath.compile("//SenderParty//RegistrationName/text()").evaluate(doc, XPathConstants.STRING);
+        }
+
         String numeroFactura = (String) xPath.compile("//ParentDocumentID/text()").evaluate(doc, XPathConstants.STRING);
-        String cufe = (String) xPath.compile("//UUID/text()").evaluate(doc, XPathConstants.STRING);
-        String fechaStr = (String) xPath.compile("//IssueDate/text()").evaluate(doc, XPathConstants.STRING);
-        String valorStr = (String) xPath.compile("//LegalMonetaryTotal/PayableAmount/text()").evaluate(doc, XPathConstants.STRING);
+        if (numeroFactura == null || numeroFactura.isBlank()) {
+            numeroFactura = (String) xPath.compile("//Invoice/ID/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+
+        String cufe = (String) xPath.compile("//UUID/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (cufe == null || cufe.isBlank()) {
+            cufe = (String) xPath.compile("//UUID/text()").evaluate(doc, XPathConstants.STRING);
+        }
+
+        String fechaStr = (String) xPath.compile("//IssueDate/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (fechaStr == null || fechaStr.isBlank()) {
+            fechaStr = (String) xPath.compile("//IssueDate/text()").evaluate(doc, XPathConstants.STRING);
+        }
+
+        // 💵 Extracción del Valor Total (evalúa PayableAmount y como fallback LineExtensionAmount)
+        String valorStr = (String) xPath.compile("//LegalMonetaryTotal/PayableAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (valorStr == null || valorStr.isBlank()) {
+            valorStr = (String) xPath.compile("//LegalMonetaryTotal/LineExtensionAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
 
         // ===================================================================================
         // ⚡ FASE 1: VALIDACIONES PRIMARIAS (LOCALES Y ESTRUCTURALES DEL ARCHIVO / ZIP)
