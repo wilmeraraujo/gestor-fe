@@ -25,7 +25,7 @@ import { FaseService } from '../../services/fase.service';
   selector: 'app-gestion-inicial',
   standalone: true,
   imports: [
-    CommonModule, 
+    CommonModule,
     DataTableComponent,
     MatTabsModule,
     MatCardModule,
@@ -40,7 +40,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
   override titulo = 'Gestión Inicial de Facturas (Etapa 1)';
 
   // Control de pestañas y visores
-  tabSeleccionada: number = 0; 
+  tabSeleccionada: number = 0;
   facturaSeleccionada: Factura | null = null;
   soportesFactura: Documento[] = [];
   pdfUrlSafe: SafeResourceUrl | null = null;
@@ -98,7 +98,8 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
    */
   private evaluarRolesUsuario(): void {
     const roles = this.keycloakService.getUserRoles();
-    this.esGestorF1 = roles.includes('gestor-fe-f1-g') || 
+    this.esGestorF1 = roles.includes('admin') ||
+                      roles.includes('gestor-fe-f1-g') ||
                       roles.includes('gestor-fe-admin') ||
                       roles.includes('default-roles-fe');
   }

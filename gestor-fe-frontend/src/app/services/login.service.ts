@@ -8,8 +8,8 @@ export class LoginService {
   private keycloakService = inject(KeycloakService);
 
   // 👥 Definición de roles requeridos
-  readonly adminRoles: string[] = ['cm-noreps-admin'];
-  readonly prestadorRoles: string[] = ['cm-noreps-prestador'];
+  readonly adminRoles: string[] = ['admin'];
+  readonly prestadorRoles: string[] = ['prestador'];
 
   // 🚩 Flags de permisos
   isAdmin: boolean = false;
@@ -52,7 +52,7 @@ export class LoginService {
   getUserRoles(): string[] {
     try {
       const roles = this.keycloakService.getUserRoles();
-      
+
       this.isAdmin = roles.some(role => this.adminRoles.includes(role));
       this.isPrestador = roles.some(role => this.prestadorRoles.includes(role));
 

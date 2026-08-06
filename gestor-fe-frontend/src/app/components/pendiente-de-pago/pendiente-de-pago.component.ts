@@ -26,7 +26,7 @@ import { FaseService } from '../../services/fase.service';
   selector: 'app-pendiente-de-pago',
   standalone: true,
   imports: [
-    CommonModule, 
+    CommonModule,
     DataTableComponent,
     MatTabsModule,
     MatCardModule,
@@ -40,7 +40,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
 
   override titulo = 'Pendiente de Pago - Tesorería (Etapa 4)';
 
-  tabSeleccionada: number = 0; 
+  tabSeleccionada: number = 0;
   facturaSeleccionada: Factura | null = null;
   soportesFactura: Documento[] = [];
   pdfUrlSafe: SafeResourceUrl | null = null;
@@ -92,7 +92,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
 
   private evaluarRolesUsuario(): void {
     const roles = this.keycloakService.getUserRoles();
-    this.esGestorF4 = roles.includes('gestor-fe-admin') ||
+    this.esGestorF4 = roles.includes('admin') || roles.includes('gestor-fe-admin') ||
                       roles.includes('gestor-fe-f4-pp') ||
                       roles.includes('gestor-fe-f1-g') ||
                       roles.includes('gestor-fe-f2-rc') ||
@@ -304,7 +304,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
 
               // 🎯 CAPTURA DIRECTA DE ARCHIVOS DESDE LOS INPUTS FILE DEL DOM
               const inputsFile = Array.from(document.querySelectorAll('input[type="file"]')) as HTMLInputElement[];
-              
+
               let archivoTb: File | undefined = undefined;
               let archivoComprobante: File | undefined = undefined;
 
@@ -329,8 +329,8 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
               }
 
               // Extrae el ID numérico si existe en el modelo o en la fila seleccionada
-              const tipoRegistroIdNum = model.tipoRegistroContableId 
-                ? Number(model.tipoRegistroContableId) 
+              const tipoRegistroIdNum = model.tipoRegistroContableId
+                ? Number(model.tipoRegistroContableId)
                 : (row.tipoRegistroContableId ? Number(row.tipoRegistroContableId) : undefined);
 
               return this.service.procesarPagoFase4(
