@@ -130,6 +130,9 @@ inner join gestor.factura fac on car.id = fac.identificador_cargue
 inner join gestor.documento doc on fac.id = doc.factura_id;
 
 select * from departamento d order by id desc;
+select * from municipio m order by id desc;
+select * from municipio m where descripcion  ilike '%pasto%'order by id desc;
+
 
 INSERT INTO admin.departamento (codigo, descripcion, created_at) VALUES
 ('05', 'ANTIOQUIA', NOW()),
