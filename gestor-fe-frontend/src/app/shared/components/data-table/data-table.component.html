@@ -4,13 +4,12 @@
   <mat-card-header class="card-header-custom">
     <div class="header-content-stacked">
 
-      <!-- 1️⃣ TÍTULO DE PRIMERO -->
+      <!-- 1️⃣ TÍTULO -->
       <h1 class="titulo-tabla">{{ titulo }}</h1>
 
       <!-- 2️⃣ BUSCADOR Y BOTONES ABAJO A LA IZQUIERDA -->
       <div class="acciones-header-left">
 
-        <!-- CAMPO BUSCADOR GLOBAL -->
         <mat-form-field appearance="fill" class="buscador-field">
           <mat-label>Buscar</mat-label>
           <input
@@ -21,10 +20,9 @@
             (input)="txtBuscar.value === '' ? onBuscar('') : null" />
         </mat-form-field>
 
-        <!-- GRUPO DE BOTONES PRINCIPALES -->
         <div class="botones-container">
 
-          <!-- 🔍 BOTÓN BUSCAR (#1DA6BA) -->
+          <!-- 🔍 BOTÓN BUSCAR GLOBAL -->
           <button
             type="button"
             class="btn-icon-theme btn-search"
@@ -34,20 +32,8 @@
             <span>Buscar</span>
           </button>
 
-          <!-- 🎯 BOTÓN FILTROS (GRIS) -->
+          <!-- 🧹 BOTÓN LIMPIAR FILTROS (SIEMPRE VISIBLE) -->
           <button
-            type="button"
-            class="btn-icon-theme btn-filter"
-            [class.active-filter]="mostrarFiltrosColumnas"
-            (click)="toggleFiltros()"
-            [matTooltip]="mostrarFiltrosColumnas ? 'Ocultar filtros de columna' : 'Activar filtros por columna'">
-            <mat-icon>filter_list</mat-icon>
-            <span>{{ mostrarFiltrosColumnas ? 'Ocultar Filtros' : 'Filtros' }}</span>
-          </button>
-
-          <!-- 🧹 BOTÓN LIMPIAR (ROJO) -->
-          <button
-            *ngIf="mostrarFiltrosColumnas"
             type="button"
             class="btn-icon-theme btn-clear-filter"
             (click)="limpiarFiltrosColumnas()"
@@ -56,15 +42,15 @@
             <span>Limpiar</span>
           </button>
 
-          <!-- ➕ BOTÓN ADICIONAR (AZUL OSCURO) -->
+          <!-- ➕ BOTÓN ADICIONAR / CARGAR PERSONALIZABLE -->
           <button
             *ngIf="mostrarAgregar"
             type="button"
             class="btn-icon-theme btn-add"
             (click)="agregar.emit()"
-            matTooltip="Adicionar nuevo registro">
+            [matTooltip]="tooltipAgregar">
             <mat-icon>add</mat-icon>
-            <span>Adicionar</span>
+            <span>{{ textoBotonAgregar }}</span>
           </button>
 
         </div>
@@ -74,10 +60,9 @@
     </div>
   </mat-card-header>
 
-  <!-- TABLA Y CONTENIDO RESPONSIVO -->
+  <!-- CONTENIDO DE LA TABLA -->
   <mat-card-content class="card-content-custom">
 
-    <!-- 📟 PAGINADOR SUPERIOR -->
     <mat-paginator
       class="paginator-superior"
       [length]="totalRegistros"
@@ -120,14 +105,16 @@
           </th>
           <td mat-cell *matCellDef="let row" class="text-nowrap">
             
-            <!-- 🏷️ SI LA COLUMNA ES 'estado', RENDERIZAR COMO BADGE OVALADO -->
-            <ng-container *ngIf="col.field === 'estado'; else celdaTextoNormal">
+            <!-- 🏷️ BADGES DE ESTADO -->
+            <ng-container *ngIf="col.field === 'estado' || col.field === 'estadoNombre'; else celdaTextoNormal">
               <span [class]="obtenerClaseEstado(row[col.field])">
-                {{ row[col.field] }}
+                <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'PROCESANDO'">sync</mat-icon>
+                <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'CARGADO' || row[col.field] === 'CARGUE FINALIZADO'">check</mat-icon>
+                <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'CON ERRORES' || row[col.field] === 'RECHAZADO'">close</mat-icon>
+                <span>{{ row[col.field] }}</span>
               </span>
             </ng-container>
 
-            <!-- 📝 DEMÁS CELDAS DE TEXTO ESTÁNDAR -->
             <ng-template #celdaTextoNormal>
               {{ row[col.field] }}
             </ng-template>
@@ -135,7 +122,7 @@
           </td>
         </ng-container>
 
-        <!-- ACCIONES CON ESTILO MEJORADO -->
+        <!-- ACCIONES CON SPINNER Y BOTONES -->
         <ng-container matColumnDef="acciones" stickyEnd>
           <th mat-header-cell *matHeaderCellDef class="text-center cell-sticky-acciones">
             Acciones
@@ -144,9 +131,16 @@
 
             <div class="acciones-cell">
               
-              <!-- ✏️ EDITAR (CONDICIONAL) -->
+              <!-- 🔄 SPINNER EN PROCESAMIENTO -->
+              <mat-spinner
+                *ngIf="row.estadoNombre === 'PROCESANDO' || (!row.jobExecutionId && !row.exiteError)"
+                diameter="24"
+                matTooltip="Procesando lote en segundo plano...">
+              </mat-spinner>
+
+              <!-- ✏️ EDITAR -->
               <button
-                *ngIf="mostrarEditar"
+                *ngIf="mostrarEditar && row.estadoNombre !== 'PROCESANDO'"
                 mat-icon-button
                 class="btn-action btn-action-edit"
                 (click)="onEditar(row)"
@@ -156,7 +150,7 @@
 
               <!-- 🧾 GESTIONAR FACTURA -->
               <button
-                *ngIf="mostrarGestionarFactura"
+                *ngIf="mostrarGestionarFactura && row.estadoNombre !== 'PROCESANDO'"
                 mat-icon-button
                 class="btn-action btn-action-invoice"
                 (click)="onGestionarFactura(row)"
@@ -176,7 +170,7 @@
 
               <!-- 👁️ VER DETALLE -->
               <button
-                *ngIf="mostrarDetalle"
+                *ngIf="mostrarDetalle && row.estadoNombre !== 'PROCESANDO'"
                 mat-icon-button
                 class="btn-action btn-action-view"
                 (click)="onVerDetalle(row)"
@@ -184,7 +178,7 @@
                 <mat-icon>visibility</mat-icon>
               </button>
 
-              <!-- 📜 NUEVO BOTÓN: VER HISTORIAL / TRAZABILIDAD (ℹ️/history) -->
+              <!-- 📜 HISTORIAL -->
               <button
                 *ngIf="mostrarHistorial"
                 mat-icon-button
@@ -195,7 +189,7 @@
                 <mat-icon>history</mat-icon>
               </button>
 
-              <!-- 🗑️ ELIMINAR (CONDICIONAL) -->
+              <!-- 🗑️ ELIMINAR -->
               <button
                 *ngIf="mostrarEliminar"
                 mat-icon-button
@@ -214,6 +208,7 @@
           <th mat-header-cell *matHeaderCellDef class="filter-header-cell"></th>
         </ng-container>
 
+        <!-- FILTROS POR COLUMNA (PERMANENTES) -->
         <ng-container *ngFor="let col of columnas" [matColumnDef]="'filter-' + col.field">
           <th mat-header-cell *matHeaderCellDef class="filter-header-cell">
             <mat-form-field
@@ -235,11 +230,12 @@
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns" class="encabezado-tabla"></tr>
 
+        <!-- 🎯 LA FILA DE FILTROS AHORA PERMANECE VISIBLE SIEMPRE (display: table-row) -->
         <tr
           mat-header-row
           *matHeaderRowDef="filterColumns"
           class="row-filtros"
-          [style.display]="mostrarFiltrosColumnas ? 'table-row' : 'none'">
+          style="display: table-row;">
         </tr>
 
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
@@ -247,12 +243,10 @@
       </table>
     </div>
 
-    <!-- MENSAJE SIN REGISTROS -->
     <div class="alert-info text-center" *ngIf="datos.length === 0">
       No hay registros en el sistema
     </div>
 
-    <!-- 📟 PAGINADOR INFERIOR -->
     <mat-paginator
       #paginatorInferior
       [length]="totalRegistros"

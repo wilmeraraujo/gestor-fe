@@ -38,6 +38,11 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Input() totalRegistros = 0;
   @Input() totalPorPagina = 5;
   @Input() pageSizeOptions: number[] = [5, 10, 20, 50, 100];
+  
+  // 🎯 NUEVOS INPUTS PARA PERSONALIZAR EL BOTÓN ADICIONAR
+  @Input() textoBotonAgregar: string = 'Adicionar';
+  @Input() tooltipAgregar: string = 'Adicionar nuevo registro';
+
   @Input() mostrarAgregar = true;
   @Input() mostrarAcciones = true;
   @Input() mostrarDescargaErrores = false;
@@ -65,7 +70,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   displayedColumns: string[] = [];
   filterColumns: string[] = [];
 
-  mostrarFiltrosColumnas: boolean = false;
+  mostrarFiltrosColumnas: boolean = true;
   filtrosPorColumna: { [key: string]: string } = {};
 
   selection = new SelectionModel<any>(true, []);
@@ -92,7 +97,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   ngAfterViewInit(): void {
     if (this.paginatorInferior) {
       this.paginatorInferior._intl.itemsPerPageLabel = 'Registros por página:';
-      // 🎯 SI NO HAY TOTAL DE REGISTROS SERVIDOR, ASIGNAR PAGINADOR CLIENTE
       if (!this.totalRegistros || this.totalRegistros === this.datos.length) {
         this.dataSource.paginator = this.paginatorInferior;
       }
@@ -188,6 +192,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     this.selection.select(...this.dataSource.data);
   }
 
+  /**
+   * 🏷️ Asigna estilos CSS redondeados para los diferentes estados
+   */
   obtenerClaseEstado(valorEstado: any): string {
     if (!valorEstado) return 'badge-estado badge-default';
 
@@ -197,6 +204,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
       case 'ANULADO':
       case 'RECHAZADO':
       case 'FACTURA NO CONFORME':
+      case 'CON ERRORES':
         return 'badge-estado badge-rojo';
 
       case 'RADICADO':
@@ -207,18 +215,41 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
       case 'EN GESTIÓN':
       case 'EN GESTION':
       case 'EN PROCESO':
+      case 'PROCESANDO':
         return 'badge-estado badge-azul';
 
       case 'VALIDADO':
       case 'APROBADO':
       case 'CAUSADO':
       case 'PAGADO':
+      case 'CARGADO':
+      case 'CARGUE FINALIZADO':
       case 'IMPUESTOS VERIFICADOS':
         return 'badge-estado badge-verde';
 
       default:
         return 'badge-estado badge-default';
     }
+  }
+
+  /**
+   * 🎨 Devuelve el ícono correspondiente para el badge
+   */
+  obtenerIconoEstado(valorEstado: any): string {
+    if (!valorEstado) return 'help_outline';
+
+    const estadoUpper = String(valorEstado).trim().toUpperCase();
+
+    if (estadoUpper === 'CARGADO' || estadoUpper === 'CARGUE FINALIZADO') {
+      return 'check';
+    }
+    if (estadoUpper === 'CON ERRORES' || estadoUpper === 'RECHAZADO') {
+      return 'close';
+    }
+    if (estadoUpper === 'PROCESANDO') {
+      return 'sync';
+    }
+    return 'info';
   }
 
   onBuscar(valor: string): void {

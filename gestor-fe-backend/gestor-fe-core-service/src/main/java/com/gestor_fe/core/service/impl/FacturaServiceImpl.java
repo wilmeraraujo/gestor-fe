@@ -85,6 +85,7 @@ public class FacturaServiceImpl implements FacturaService {
                     factura.setObservacion(null);
                     factura.setCausalDevolucionId(null);
                 } else {
+                    // ⛔ ÚNICA ETAPA DONDE SE ANULA DEFINITIVAMENTE
                     factura.setEstado("ANULADO");
                     factura.setFaseId(1L);
                     factura.setCausalDevolucionId(dto.getCausalDevolucionId());
@@ -95,10 +96,10 @@ public class FacturaServiceImpl implements FacturaService {
                 }
                 break;
 
-            case 2: // 🏦 ETAPA 2: RECONOCIMIENTO CONTABLE (Flujo alterno sin archivo)
+            case 2: // 🏦 ETAPA 2: RECONOCIMIENTO CONTABLE
                 if (esAprobado) {
                     factura.setEstado("CAUSADO");
-                    factura.setTipoRegistroContableId(dto.getTipoRegistroContableId()); // Long ID
+                    factura.setTipoRegistroContableId(dto.getTipoRegistroContableId());
                     factura.setNumeroCausacion(dto.getNumeroCausacion());
                     factura.setFaseId(3L);
                     factura.setObservacion(null);
@@ -107,7 +108,9 @@ public class FacturaServiceImpl implements FacturaService {
                     gestion.setTipoRegistroContableId(dto.getTipoRegistroContableId());
                     gestion.setNumeroCausacion(dto.getNumeroCausacion());
                 } else {
-                    factura.setEstado("ANULADO");
+                    // 🔄 RECHAZADO: REGRESA A FASE 1 (GESTIÓN INICIAL)
+                    factura.setEstado("RECHAZADO");
+                    factura.setFaseId(1L);
                     factura.setCausalDevolucionId(dto.getCausalDevolucionId());
                     factura.setObservacion(dto.getObservacion());
 
@@ -123,7 +126,9 @@ public class FacturaServiceImpl implements FacturaService {
                     factura.setObservacion(null);
                     factura.setCausalDevolucionId(null);
                 } else {
-                    factura.setEstado("ANULADO");
+                    // 🔄 RECHAZADO: REGRESA A FASE 2 (RECONOCIMIENTO CONTABLE)
+                    factura.setEstado("RECHAZADO");
+                    factura.setFaseId(2L);
                     factura.setCausalDevolucionId(dto.getCausalDevolucionId());
                     factura.setObservacion(dto.getObservacion());
 
@@ -132,7 +137,7 @@ public class FacturaServiceImpl implements FacturaService {
                 }
                 break;
 
-            case 4: // 💸 ETAPA 4: TESORERÍA (Flujo alterno sin archivo)
+            case 4: // 💸 ETAPA 4: TESORERÍA
                 if (esAprobado) {
                     factura.setEstado("PAGADO");
                     factura.setTipoRegistroContableId(dto.getTipoRegistroContableId());
@@ -143,7 +148,9 @@ public class FacturaServiceImpl implements FacturaService {
                     gestion.setTipoRegistroContableId(dto.getTipoRegistroContableId());
                     gestion.setNumeroCausacion(dto.getNumeroCausacion());
                 } else {
-                    factura.setEstado("ANULADO");
+                    // 🔄 RECHAZADO: REGRESA A FASE 3 (IMPUESTOS)
+                    factura.setEstado("RECHAZADO");
+                    factura.setFaseId(3L);
                     factura.setCausalDevolucionId(dto.getCausalDevolucionId());
                     factura.setObservacion(dto.getObservacion());
 
@@ -157,7 +164,7 @@ public class FacturaServiceImpl implements FacturaService {
         }
 
         gestion.setEstadoResultado(factura.getEstado());
-        factura.addGestion(gestion); // Guarda automáticamente en la tabla gestor.gestion por CascadeType.ALL
+        factura.addGestion(gestion); // Guarda automáticamente en el historial (gestor.gestion)
 
         return repository.save(factura);
     }

@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import { CommonService } from './common.service';
 import { Cargue } from '../models/cargue';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { BECORE } from '../config/app';
 import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
-export class CargueService extends CommonService<Cargue>{
+export class CargueService extends CommonService<Cargue> {
 
   protected override endPointBase = BECORE + '/api/v1/cargue';
   
@@ -17,10 +17,24 @@ export class CargueService extends CommonService<Cargue>{
   }
 
   /**
-   * Envía el archivo ZIP y el nombre de usuario al servidor para iniciar el Batch asíncrono
-   * @param file Archivo ZIP seleccionado por el usuario
-   * @param usuario Nombre o identificador del usuario que realiza el cargue
+   * 🎯 Paginable para activos enviando usuario y sus roles para discriminación
    */
+  public getPaginableActivosConRoles(page: string, size: string, usuario: string, roles: string[]): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size)
+      .set('usuario', usuario);
+
+    // Adjuntar roles como lista de parámetros
+    if (roles && roles.length > 0) {
+      roles.forEach(rol => {
+        params = params.append('roles', rol);
+      });
+    }
+
+    return this.http.get<any>(`${this.endPointBase}/paginable/activos`, { params });
+  }
+
   public cargarZip(file: File, usuario: string): Observable<Cargue> {
     const formData = new FormData();
     formData.append('file', file);
@@ -29,13 +43,31 @@ export class CargueService extends CommonService<Cargue>{
     return this.http.post<Cargue>(url, formData);
   }
 
-  /**
-   * Descarga el archivo Excel de errores personalizado asociado al ID del cargue
-   * @param cargueId ID de la tabla gestor.cargue
-   */
   public descargarExcelErrores(cargueId: number): Observable<Blob> {
     const url = `${this.endPointBase}/error-cargue/${cargueId}`;
     return this.http.get(url, { responseType: 'blob' });
+  }
+
+  /**
+   * Crea un canal SSE con el servidor para recibir notificaciones en tiempo real
+   */
+  public conectarSSE(usuario: string): Observable<any> {
+    return new Observable(observer => {
+      const eventSource = new EventSource(`${this.endPointBase}/sse/subscribir/${usuario}`);
+
+      eventSource.addEventListener('FIN_CARGUE', (event: any) => {
+        const data = JSON.parse(event.data);
+        observer.next(data);
+      });
+
+      eventSource.onerror = (error) => {
+        console.warn('⚠️ Conexión SSE interrumpida. Reconectando...', error);
+      };
+
+      return () => {
+        eventSource.close();
+      };
+    });
   }
 
 }

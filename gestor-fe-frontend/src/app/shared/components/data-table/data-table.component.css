@@ -136,8 +136,8 @@
 
 /* 🧹 3. Botón Limpiar Filtros (Rojo suave) */
 .btn-clear-filter {
-  background-color: #ef4444 !important;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3) !important;
+  background-color: #555454ef !important;
+  box-shadow: 0 2px 6px rgba(19, 18, 18, 0.3) !important;
 }
 
 .btn-clear-filter:hover {
