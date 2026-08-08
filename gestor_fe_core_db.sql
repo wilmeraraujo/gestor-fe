@@ -99,6 +99,10 @@ select * from public.batch_job_instance bji;
 select * from public.batch_step_execution bse;--ver 
 select * from public.batch_step_execution_context bsec;
 
+--insertar prestador
+insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
+values ('2026-07-24 15:10:19.336','Calle 15 # 24-50','facturacion@clinicasoluciones.com',0,123,'CLINICA SOLUCIONES SALUD S.A.S','3001234567');
+
 --pasar a fase 1
 update gestor.factura 
 set estado = 'RADICADO' ,observacion = null , fase_id = 1 , 
@@ -125,3 +129,174 @@ select * from gestor.cargue car
 inner join gestor.factura fac on car.id = fac.identificador_cargue 
 inner join gestor.documento doc on fac.id = doc.factura_id;
 
+select * from departamento d order by id desc;
+select * from municipio m order by id desc;
+select * from municipio m where descripcion  ilike '%pasto%'order by id desc;
+
+
+INSERT INTO admin.departamento (codigo, descripcion, created_at) VALUES
+('05', 'ANTIOQUIA', NOW()),
+('08', 'ATLÁNTICO', NOW()),
+('11', 'BOGOTÁ, D.C.', NOW()),
+('13', 'BOLÍVAR', NOW()),
+('15', 'BOYACÁ', NOW()),
+('17', 'CALDAS', NOW()),
+('18', 'CAQUETÁ', NOW()),
+('19', 'CAUCA', NOW()),
+('20', 'CESAR', NOW()),
+('23', 'CÓRDOBA', NOW()),
+('25', 'CUNDINAMARCA', NOW()),
+('27', 'CHOCO', NOW()),
+('41', 'HUILA', NOW()),
+('44', 'LA GUAJIRA', NOW()),
+('47', 'MAGDALENA', NOW()),
+('50', 'META', NOW()),
+('52', 'NARIÑO', NOW()),
+('54', 'NORTE DE SANTANDER', NOW()),
+('63', 'QUINDÍO', NOW()),
+('66', 'RISARALDA', NOW()),
+('68', 'SANTANDER', NOW()),
+('70', 'SUCRE', NOW()),
+('73', 'TOLIMA', NOW()),
+('76', 'VALLE DEL CAUCA', NOW()),
+('81', 'ARAUCA', NOW()),
+('85', 'CASANARE', NOW()),
+('86', 'PUTUMAYO', NOW()),
+('88', 'SAN ANDRÉS Y PROVIDENCIA', NOW()),
+('91', 'AMAZONAS', NOW()),
+('94', 'GUAINÍA', NOW()),
+('97', 'VAUPÉS', NOW()),
+('99', 'VICHADA', NOW());
+
+
+
+INSERT INTO admin.municipio (codigo, descripcion, departamento_id, created_at) VALUES
+-- Antioquia
+('05001', 'MEDELLÍN', (SELECT id FROM admin.departamento WHERE codigo = '05'), NOW()),
+('05088', 'BELLO', (SELECT id FROM admin.departamento WHERE codigo = '05'), NOW()),
+('05266', 'ENVIGADO', (SELECT id FROM admin.departamento WHERE codigo = '05'), NOW()),
+('05360', 'ITAGÜÍ', (SELECT id FROM admin.departamento WHERE codigo = '05'), NOW()),
+('05615', 'RIONEGRO', (SELECT id FROM admin.departamento WHERE codigo = '05'), NOW()),
+
+-- Atlántico
+('08001', 'BARRANQUILLA', (SELECT id FROM admin.departamento WHERE codigo = '08'), NOW()),
+('08758', 'SOLEDAD', (SELECT id FROM admin.departamento WHERE codigo = '08'), NOW()),
+('08520', 'PUERTO COLOMBIA', (SELECT id FROM admin.departamento WHERE codigo = '08'), NOW()),
+
+-- Bogotá D.C.
+('11001', 'BOGOTÁ, D.C.', (SELECT id FROM admin.departamento WHERE codigo = '11'), NOW()),
+
+-- Bolívar
+('13001', 'CARTAGENA DE INDIAS', (SELECT id FROM admin.departamento WHERE codigo = '13'), NOW()),
+('13430', 'MAGANGUÉ', (SELECT id FROM admin.departamento WHERE codigo = '13'), NOW()),
+
+-- Boyacá
+('15001', 'TUNJA', (SELECT id FROM admin.departamento WHERE codigo = '15'), NOW()),
+('15238', 'DUITAMA', (SELECT id FROM admin.departamento WHERE codigo = '15'), NOW()),
+('15759', 'SOGAMOSO', (SELECT id FROM admin.departamento WHERE codigo = '15'), NOW()),
+
+-- Caldas
+('17001', 'MANIZALES', (SELECT id FROM admin.departamento WHERE codigo = '17'), NOW()),
+('17380', 'LA DORADA', (SELECT id FROM admin.departamento WHERE codigo = '17'), NOW()),
+
+-- Caquetá
+('18001', 'FLORENCIA', (SELECT id FROM admin.departamento WHERE codigo = '18'), NOW()),
+
+-- Cauca
+('19001', 'POPAYÁN', (SELECT id FROM admin.departamento WHERE codigo = '19'), NOW()),
+('19698', 'SANTANDER DE QUILICHAO', (SELECT id FROM admin.departamento WHERE codigo = '19'), NOW()),
+
+-- Cesar
+('20001', 'VALLEDUPAR', (SELECT id FROM admin.departamento WHERE codigo = '20'), NOW()),
+('20011', 'AGUACHICA', (SELECT id FROM admin.departamento WHERE codigo = '20'), NOW()),
+
+-- Córdoba
+('23001', 'MONTERÍA', (SELECT id FROM admin.departamento WHERE codigo = '23'), NOW()),
+
+-- Cundinamarca
+('25175', 'CHÍA', (SELECT id FROM admin.departamento WHERE codigo = '25'), NOW()),
+('25269', 'FACATATIVÁ', (SELECT id FROM admin.departamento WHERE codigo = '25'), NOW()),
+('25290', 'FUSAGASUGÁ', (SELECT id FROM admin.departamento WHERE codigo = '25'), NOW()),
+('25754', 'SOACHA', (SELECT id FROM admin.departamento WHERE codigo = '25'), NOW()),
+('25899', 'ZIPAQUIRÁ', (SELECT id FROM admin.departamento WHERE codigo = '25'), NOW()),
+
+-- Chocó
+('27001', 'QUIBDÓ', (SELECT id FROM admin.departamento WHERE codigo = '27'), NOW()),
+
+-- Huila
+('41001', 'NEIVA', (SELECT id FROM admin.departamento WHERE codigo = '41'), NOW()),
+('41551', 'PITALITO', (SELECT id FROM admin.departamento WHERE codigo = '41'), NOW()),
+
+-- La Guajira
+('44001', 'RIOHACHA', (SELECT id FROM admin.departamento WHERE codigo = '44'), NOW()),
+('44430', 'MAICAO', (SELECT id FROM admin.departamento WHERE codigo = '44'), NOW()),
+
+-- Magdalena
+('47001', 'SANTA MARTA', (SELECT id FROM admin.departamento WHERE codigo = '47'), NOW()),
+
+-- Meta
+('50001', 'VILLAVICENCIO', (SELECT id FROM admin.departamento WHERE codigo = '50'), NOW()),
+
+-- Nariño
+('52001', 'PASTO', (SELECT id FROM admin.departamento WHERE codigo = '52'), NOW()),
+('52356', 'IPIALES', (SELECT id FROM admin.departamento WHERE codigo = '52'), NOW()),
+('52838', 'TÚQUERRES', (SELECT id FROM admin.departamento WHERE codigo = '52'), NOW()),
+('52835', 'TUMACO', (SELECT id FROM admin.departamento WHERE codigo = '52'), NOW()),
+
+-- Norte de Santander
+('54001', 'CÚCUTA', (SELECT id FROM admin.departamento WHERE codigo = '54'), NOW()),
+('54498', 'OCAÑA', (SELECT id FROM admin.departamento WHERE codigo = '54'), NOW()),
+('54518', 'PAMPLONA', (SELECT id FROM admin.departamento WHERE codigo = '54'), NOW()),
+
+-- Quindío
+('63001', 'ARMENIA', (SELECT id FROM admin.departamento WHERE codigo = '63'), NOW()),
+
+-- Risaralda
+('66001', 'PEREIRA', (SELECT id FROM admin.departamento WHERE codigo = '66'), NOW()),
+('66170', 'DOSQUEBRADAS', (SELECT id FROM admin.departamento WHERE codigo = '66'), NOW()),
+
+-- Santander
+('68001', 'BUCARAMANGA', (SELECT id FROM admin.departamento WHERE codigo = '68'), NOW()),
+('68081', 'BARRANCABERMEJA', (SELECT id FROM admin.departamento WHERE codigo = '68'), NOW()),
+('68276', 'FLORIDABLANCA', (SELECT id FROM admin.departamento WHERE codigo = '68'), NOW()),
+('68307', 'GIRÓN', (SELECT id FROM admin.departamento WHERE codigo = '68'), NOW()),
+('68547', 'PIEDECUESTA', (SELECT id FROM admin.departamento WHERE codigo = '68'), NOW()),
+
+-- Sucre
+('70001', 'SINCELEJO', (SELECT id FROM admin.departamento WHERE codigo = '70'), NOW()),
+
+-- Tolima
+('73001', 'IBAGUÉ', (SELECT id FROM admin.departamento WHERE codigo = '73'), NOW()),
+('73268', 'ESPINAL', (SELECT id FROM admin.departamento WHERE codigo = '73'), NOW()),
+
+-- Valle del Cauca
+('76001', 'CALI', (SELECT id FROM admin.departamento WHERE codigo = '76'), NOW()),
+('76109', 'BUENAVENTURA', (SELECT id FROM admin.departamento WHERE codigo = '76'), NOW()),
+('76111', 'GUADALAJARA DE BUGA', (SELECT id FROM admin.departamento WHERE codigo = '76'), NOW()),
+('76520', 'PALMIRA', (SELECT id FROM admin.departamento WHERE codigo = '76'), NOW()),
+('76834', 'TULUÁ', (SELECT id FROM admin.departamento WHERE codigo = '76'), NOW()),
+
+-- Arauca
+('81001', 'ARAUCA', (SELECT id FROM admin.departamento WHERE codigo = '81'), NOW()),
+
+-- Casanare
+('85001', 'YOPAL', (SELECT id FROM admin.departamento WHERE codigo = '85'), NOW()),
+
+-- Putumayo
+('86001', 'MOCOA', (SELECT id FROM admin.departamento WHERE codigo = '86'), NOW()),
+('86568', 'PUERTO ASÍS', (SELECT id FROM admin.departamento WHERE codigo = '86'), NOW()),
+
+-- San Andrés y Providencia
+('88001', 'SAN ANDRÉS', (SELECT id FROM admin.departamento WHERE codigo = '88'), NOW()),
+
+-- Amazonas
+('91001', 'LETICIA', (SELECT id FROM admin.departamento WHERE codigo = '91'), NOW()),
+
+-- Guainía
+('94001', 'INÍRIDA', (SELECT id FROM admin.departamento WHERE codigo = '94'), NOW()),
+
+-- Vaupés
+('97001', 'MITÚ', (SELECT id FROM admin.departamento WHERE codigo = '97'), NOW()),
+
+-- Vichada
+('99001', 'PUERTO CARREÑO', (SELECT id FROM admin.departamento WHERE codigo = '99'), NOW());
