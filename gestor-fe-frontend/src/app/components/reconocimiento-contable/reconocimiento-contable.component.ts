@@ -26,7 +26,7 @@ import { FaseService } from '../../services/fase.service';
   selector: 'app-reconocimiento-contable',
   standalone: true,
   imports: [
-    CommonModule, 
+    CommonModule,
     DataTableComponent,
     MatTabsModule,
     MatCardModule,
@@ -40,7 +40,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
 
   override titulo = 'Reconocimiento Contable (Etapa 2)';
 
-  tabSeleccionada: number = 0; 
+  tabSeleccionada: number = 0;
   facturaSeleccionada: Factura | null = null;
   soportesFactura: Documento[] = [];
   pdfUrlSafe: SafeResourceUrl | null = null;
@@ -100,9 +100,8 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
 
   private evaluarRolesUsuario(): void {
     const roles = this.keycloakService.getUserRoles();
-    this.esGestorF2 = roles.includes('gestor-fe-f2-rc') || 
-                      roles.includes('gestor-fe-admin') ||
-                      roles.includes('default-roles-fe');
+    this.esGestorF2 = roles.includes('admin') || roles.includes('gestor-fe-f2-rc') ||
+                      roles.includes('gestor-fe-admin') || roles.includes('default-roles-fe');
   }
 
   private cargarFases(): void {
