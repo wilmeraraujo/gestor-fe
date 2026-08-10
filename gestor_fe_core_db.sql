@@ -300,3 +300,46 @@ INSERT INTO admin.municipio (codigo, descripcion, departamento_id, created_at) V
 
 -- Vichada
 ('99001', 'PUERTO CARREÑO', (SELECT id FROM admin.departamento WHERE codigo = '99'), NOW());
+
+
+
+
+INSERT INTO admin.causal_devolucion (id, codigo, created_at, deleted_at, descripcion, updated_at) VALUES
+(1, '01', '2026-07-30 20:57:10.592', NULL, 'Errores en la factura como identificación', NULL),
+(2, '02', '2026-07-30 21:01:31.247', NULL, 'Devolución del producto', NULL),
+(3, '03', '2026-07-30 21:01:43.240', NULL, 'Garantía del producto', NULL),
+(4, '04', '2026-07-30 21:01:55.919', NULL, 'Desacuerdo en el precio o acuerdos comerciales', NULL),
+(5, '05', '2026-07-30 21:02:10.446', NULL, 'Por diferencias en la cantidad de productos facturados o recibidos', NULL);
+
+INSERT INTO admin.clasificacion (id, codigo, created_at, deleted_at, descripcion, updated_at) VALUES
+(1, 'FC', '2026-07-20 23:23:42.614', NULL, 'FACTURA DE COMPRA', NULL),
+(2, 'GV', '2026-07-20 23:23:59.774', NULL, 'GASTOS DE VIATICOS', NULL),
+(3, 'ORC', '2026-07-20 23:24:13.637', NULL, 'OTROS REGISTROS', NULL),
+(4, 'NI', '2026-07-20 23:24:23.837', NULL, 'NOTA INTERNA', NULL);
+
+INSERT INTO admin.fase (id, codigo, created_at, deleted_at, descripcion, updated_at) VALUES
+(1, '01', '2026-07-06 23:06:44.958', NULL, 'RADICACION', NULL),
+(2, '02', '2026-07-06 23:17:39.347', NULL, 'RECONOCIMIENTO CONTABLE', NULL),
+(3, '02', '2026-07-20 23:05:40.481', '2026-07-20 23:05:40.481', 'RECONOCIMIENTO CONTABLE', NULL),
+(4, '03', '2026-07-20 23:05:56.335', NULL, 'IMPUESTOS', NULL),
+(5, '04', '2026-07-20 23:06:14.287', NULL, 'PENDIENTE PAGO - TESORERIA', NULL),
+(6, '05', '2026-07-20 23:06:28.470', NULL, 'SEGUIMIENTO DE FACTURAS', NULL),
+(7, '06', '2026-07-20 23:06:43.631', NULL, 'REPORTES', NULL);
+
+INSERT INTO admin.tipo (id, codigo, created_at, deleted_at, descripcion, updated_at) VALUES
+(1, '01', '2026-07-06 23:15:58.093', NULL, 'RUT', NULL),
+(2, '02', '2026-07-15 19:52:23.496', NULL, 'CAMARA DE COMERCIO', NULL),
+(3, '03', '2026-07-20 23:04:34.782', NULL, 'CERTIFICACION BANCARIA', NULL),
+(4, '04', '2026-07-20 23:22:38.135', NULL, 'CONTRATO', NULL),
+(5, '05', '2026-07-20 23:22:57.469', NULL, 'PDF DE FACTURA', NULL),
+(6, '06', '2026-07-20 23:23:09.334', NULL, 'XML DE FACTURA', NULL),
+(7, '07', '2026-07-28 17:49:34.669', NULL, 'OTROS', NULL),
+(8, '08', '2026-08-02 18:47:30.036', NULL, 'PDF Soporte de Causación', NULL);
+
+INSERT INTO admin.observacion (id, codigo, created_at, deleted_at, descripcion, updated_at) VALUES
+(1, '01', '2026-07-30 21:08:11.099', NULL, 'Factura no conforme', NULL),
+(2, '02', '2026-07-30 21:09:18.399', NULL, 'Devolver factura electrónica', NULL),
+(3, '03', '2026-07-30 21:09:58.560', NULL, 'Devolución', NULL),
+(4, '04', '2026-07-30 21:11:10.132', '2026-08-02 16:24:12.432', 'otro', NULL);
+
+
