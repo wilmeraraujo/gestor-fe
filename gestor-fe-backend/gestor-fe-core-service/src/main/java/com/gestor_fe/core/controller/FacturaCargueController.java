@@ -3,6 +3,7 @@ package com.gestor_fe.core.controller;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,14 +15,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.gestor_fe.core.entity.Cargue;
 import com.gestor_fe.core.service.CargueService;
+import com.gestor_fe.core.service.SseNotificationService;
 
 @RestController
 @RequestMapping("/api/v1/cargue")
@@ -30,6 +34,9 @@ public class FacturaCargueController {
 
     @Autowired
     private CargueService cargueService;
+    
+    @Autowired
+    private SseNotificationService sseNotificationService;
 
     @Value("${ruta.storage}")
     private String rutaStorage;
@@ -39,7 +46,6 @@ public class FacturaCargueController {
             @RequestParam("file") MultipartFile multipartFile,
             @RequestParam("usuario") String usuario
     ) {
-        // 1. Validaciones iniciales defensivas del archivo recibido
         if (multipartFile == null || multipartFile.isEmpty()) {
             return ResponseEntity.badRequest().body("Debe adjuntar un archivo válido.");
         }
@@ -51,7 +57,6 @@ public class FacturaCargueController {
         }
 
         try {
-            // 2. Guardar físicamente el ZIP recibido en la ruta de almacenamiento configurada
             String originalFileName = multipartFile.getOriginalFilename();
             File carpetaDestino = new File(rutaStorage);
             if (!carpetaDestino.exists()) {
@@ -61,20 +66,17 @@ public class FacturaCargueController {
             File zipToImport = new File(carpetaDestino, originalFileName);
             multipartFile.transferTo(zipToImport);
 
-            // 3. Crear el registro maestro inicial en estado pendiente/procesando
             Cargue cargue = new Cargue();
             cargue.setNombreArchivo(originalFileName);
             cargue.setUsuario(usuario);
             cargue.setCreatedAt(LocalDateTime.now());
-            cargue.setExiteError(false); // Inicialmente sin error confirmado
-            cargue.setNumeroRegistro(0);  // El Listener actualizará esto al finalizar
+            cargue.setExiteError(false);
+            cargue.setNumeroRegistro(0);
 
             Cargue savedCargue = cargueService.save(cargue);
 
-            // 4. Disparar el motor de Spring Batch en un hilo independiente
             cargueService.runBatchJobAsynchronously(zipToImport, savedCargue);
 
-            // 5. Responder de inmediato al Frontend (Angular) en menos de 1 segundo
             return ResponseEntity.status(HttpStatus.CREATED).body(savedCargue);
 
         } catch (IOException e) {
@@ -84,14 +86,29 @@ public class FacturaCargueController {
     }
     
     @GetMapping("/paginable/activos")
-	public ResponseEntity<?> listAll(Pageable pageable) {
+    public ResponseEntity<?> listAll(
+            @RequestParam(value = "usuario", required = false, defaultValue = "") String usuario,
+            @RequestParam(value = "roles", required = false) List<String> roles,
+            Pageable pageable
+    ) {
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "id"));
 
-	    Pageable sortedPageable = PageRequest.of(
-	            pageable.getPageNumber(),
-	            pageable.getPageSize(),
-	            Sort.by(Sort.Direction.DESC, "id"));
+        if (roles == null || roles.isEmpty()) {
+            // Si no se envían roles, retorna el comportamiento predeterminado completo
+            return ResponseEntity.ok(cargueService.findByDeletedAtIsNull(sortedPageable));
+        }
 
-	    return ResponseEntity.ok()
-	            .body(cargueService.findByDeletedAtIsNull(sortedPageable));
-	}
+        return ResponseEntity.ok(cargueService.findCarguesSegunRol(usuario, roles, sortedPageable));
+    }
+    
+    /**
+     * 📡 Suscripción en tiempo real desde Angular vía Server-Sent Events
+     */
+    @GetMapping(value = "/sse/subscribir/{usuario}", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribirNotificaciones(@PathVariable("usuario") String usuario) {
+        return sseNotificationService.crearConexion(usuario);
+    }
 }

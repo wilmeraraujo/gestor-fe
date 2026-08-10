@@ -43,7 +43,7 @@ public class CargueServiceImpl implements CargueService {
     }
 
     @Override
-    @Async("taskExecutor") // <--- Conexión con tu AsyncConfig
+    @Async("taskExecutor")
     public void runBatchJobAsynchronously(File fileToImport, Cargue cargue) {
         try {
             LOGGER.info("=== 🚀 Hilo secundario arrancando Job de Spring Batch de forma asíncrona ===");
@@ -53,7 +53,7 @@ public class CargueServiceImpl implements CargueService {
                     .addLong("identificadorCargue", cargue.getId())
                     .addString("nombreArchivo", cargue.getNombreArchivo())
                     .addString("usuario", cargue.getUsuario())
-                    .addLong("timestamp", System.currentTimeMillis()) // Evita duplicidad de parámetros en ejecuciones
+                    .addLong("timestamp", System.currentTimeMillis())
                     .toJobParameters();
 
             jobLauncher.run(procesarLoteFacturasJob, jobParameters);
@@ -63,14 +63,34 @@ public class CargueServiceImpl implements CargueService {
         }
     }
 
-	@Override
-	public Page<Cargue> findByDeletedAtIsNull(Pageable pageable) {
-		return cargueRepository.findByDeletedAtIsNull(pageable);
-	}
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Cargue> findByDeletedAtIsNull(Pageable pageable) {
+        return cargueRepository.findByDeletedAtIsNull(pageable);
+    }
 
-	@Override
-	@Transactional(readOnly = true)
-	public List<Cargue> findByNitPrestador(String desc) {
-		return cargueRepository.findByNitPrestador(desc);
-	}
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Cargue> findCarguesSegunRol(String usuario, List<String> roles, Pageable pageable) {
+        // Verificar si es un rol Administrador o Gestor Global
+        boolean esAdmin = roles.stream().anyMatch(rol -> 
+            rol.equalsIgnoreCase("admin") || 
+            rol.equalsIgnoreCase("gestor-fe-admin") || 
+            rol.equalsIgnoreCase("gestor-fe-cargue")
+        );
+
+        if (esAdmin) {
+            // El Administrador ve todos los cargues registrados
+            return cargueRepository.findByDeletedAtIsNull(pageable);
+        } else {
+            // El Prestador ve todos los exitosos y sólo su último cargue fallido
+            return cargueRepository.findCarguesVisiblesPrestador(usuario, pageable);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Cargue> findByNitPrestador(String desc) {
+        return cargueRepository.findByNitPrestador(desc);
+    }
 }

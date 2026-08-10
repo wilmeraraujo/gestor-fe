@@ -1,11 +1,14 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
 import { Cargue } from '../../models/cargue';
 import { CargueService } from '../../services/cargue.service';
-import { AlertService } from '../../services/alert.service'; // 👈 Inyección del AlertService
-import { Router } from '@angular/router';
+import { AlertService } from '../../services/alert.service';
+import { LoginService } from '../../services/login.service';
 
 @Component({
   selector: 'app-cargue',
@@ -14,64 +17,140 @@ import { Router } from '@angular/router';
   templateUrl: './cargue.component.html',
   styleUrl: './cargue.component.css'
 })
-export class CargueComponent extends CommonListarComponent<Cargue, CargueService> implements OnInit {
+export class CargueComponent extends CommonListarComponent<Cargue, CargueService> implements OnInit, OnDestroy {
 
   override titulo = 'Cargue de soportes';
+  textoBotonAgregar = 'Cargar ZIP';
+  tooltipAgregar = 'Cargar archivo zip de facturas';
 
-  // Referencia local al input de archivos oculto
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
-  usuarioActivo: string = 'weap'; // Lógica de autenticación
+  usuarioActivo: string = '';
+  rolesUsuario: string[] = [];
 
+  esAdmin: boolean = false;
+  esPrestador: boolean = false;
+
+  private sseSubscription?: Subscription;
+
+  // 📝 Mapeo de columnas agregando la propiedad calculada 'estadoNombre'
   columnas = [
-    { field: 'id', header: 'ID', filtrable: false },
+    { field: 'id', header: 'Id', filtrable: false },
     { field: 'nombreArchivo', header: 'Nombre del Archivo', filtrable: true },
     { field: 'numeroRegistro', header: 'Facturas Procesadas', filtrable: true },
-    { field: 'exiteError', header: '¿Existe Error?', filtrable: true },
+    { field: 'estadoNombre', header: 'Estado', filtrable: true },
     { field: 'usuario', header: 'Usuario', filtrable: true },
-    { field: 'jobExecutionId', header: 'ID Ejecución (Batch)', filtrable: false },
     { field: 'createdAt', header: 'Fecha de Creación', filtrable: true }
   ];
 
   constructor(
     service: CargueService,
     private router: Router,
-    private alertService: AlertService // 👈 Inyectado en el constructor
+    private alertService: AlertService,
+    private loginService: LoginService
   ) {
     super(service);
   }
 
   ngOnInit(): void {
+    this.cargarDatosSesion();
     this.calcularRangos();
+    this.iniciarSuscripcionSSE();
   }
 
-  // 1. Abre el selector de archivos nativo
+  ngOnDestroy(): void {
+    if (this.sseSubscription) {
+      this.sseSubscription.unsubscribe();
+    }
+  }
+
+  private cargarDatosSesion(): void {
+    this.usuarioActivo = this.loginService.getUserName();
+    this.rolesUsuario = this.loginService.getUserRoles() || [];
+
+    this.esAdmin = this.loginService.isAdmin || this.loginService.isGAdmin || this.loginService.isGCargue;
+    this.esPrestador = this.loginService.isPrestador;
+  }
+
+  /**
+   * 📡 Suscripción SSE para actualizar la grilla en tiempo real al finalizar Spring Batch
+   */
+  private iniciarSuscripcionSSE(): void {
+    if (!this.usuarioActivo) return;
+
+    this.sseSubscription = this.service.conectarSSE(this.usuarioActivo).subscribe({
+      next: (evento) => {
+        this.calcularRangos();
+
+        if (evento.exiteError) {
+          this.alertService.advertencia(
+            `El cargue finalizó con errores. Revisa el reporte de inconsistencias.`,
+            'Cargue con Errores'
+          );
+        } else {
+          this.alertService.exito(
+            `El cargue finalizó exitosamente. Facturas procesadas: ${evento.numeroRegistro}`,
+            'Cargue Exitoso'
+          );
+        }
+      },
+      error: (err) => console.error('Error en conexión SSE:', err)
+    });
+  }
+
+  /**
+   * 🏷️ Transforma los flags de la BD a texto descriptivo de Estado
+   */
+  private procesarEstados(cargues: Cargue[]): any[] {
+    return (cargues || []).map(c => {
+      let estadoTxt = 'PROCESANDO';
+
+      // Si el Job ya finalizó en Spring Batch (jobExecutionId != null)
+      if (c.jobExecutionId) {
+        estadoTxt = c.exiteError ? 'CON ERRORES' : 'CARGADO';
+      }
+
+      return {
+        ...c,
+        estadoNombre: estadoTxt
+      };
+    });
+  }
+
+  override calcularRangos(): void {
+    this.usuarioActivo = this.loginService.getUserName();
+
+    this.service.getPaginableActivosConRoles(
+      this.paginaActual.toString(),
+      this.totalPorPagina.toString(),
+      this.usuarioActivo,
+      this.rolesUsuario
+    ).subscribe({
+      next: (res: any) => {
+        this.lista = this.procesarEstados(res.content);
+        this.totalRegistros = res.totalElements || 0;
+      },
+      error: (err) => console.error('Error al consultar lista de cargues:', err)
+    });
+  }
+
   agregar(): void {
     if (this.fileInput) {
       this.fileInput.nativeElement.click();
     }
   }
 
-  verFacturas(row: Cargue): void {
-    this.router.navigate(['/dashboard/factura'], {
-      queryParams: { cargueId: row.id }
-    });
-  }
-
-  // 2. Gestiona el archivo ZIP e inicia la carga asíncrona
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
 
-      // Validación de extensión en el Frontend
       if (file.name.split('.').pop()?.toLowerCase() !== 'zip') {
-        this.alertService.advertencia('Formato inválido. Por favor, selecciona un archivo comprimido .zip', 'Formato no permitido');
+        this.alertService.advertencia('Formato inválido. Selecciona un archivo comprimido .zip', 'Formato no permitido');
         this.resetFileInput();
         return;
       }
 
-      // Confirmación modal previa a la carga
       this.alertService.confirmar(
         `¿Desea iniciar el procesamiento asíncrono para: ${file.name}?`,
         'Confirmar Cargue Masivo',
@@ -79,25 +158,23 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
       ).then((result) => {
         if (result.isConfirmed) {
 
-          // Muestra spinner de carga mientras se sube el archivo al servidor
+          const usuarioEnvio = this.loginService.getUserName();
           this.alertService.cargando('Subiendo archivo ZIP...', 'Procesando archivo');
 
-          this.service.cargarZip(file, this.usuarioActivo).subscribe({
+          this.service.cargarZip(file, usuarioEnvio).subscribe({
             next: (response) => {
               this.alertService.exito(
                 `Archivo recibido correctamente. Cargue ID asignado: ${response.id}. Procesando lote...`,
                 'Cargue Exitoso'
               );
-              this.calcularRangos(); // Refresca la tabla
+              this.calcularRangos();
             },
             error: (err) => {
               console.error('Error al subir el archivo:', err);
               const mensajeError = err.error?.message || err.error || err.message || 'Ocurrió un error inesperado';
               this.alertService.error(`Error al iniciar el cargue masivo: ${mensajeError}`);
             },
-            complete: () => {
-              this.resetFileInput();
-            }
+            complete: () => this.resetFileInput()
           });
         } else {
           this.resetFileInput();
@@ -112,7 +189,6 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
     }
   }
 
-  // 3. Descarga el reporte de errores en Excel (.xlsx)
   descargarExcelErrores(row: Cargue): void {
     if (!row.id) return;
 
@@ -120,8 +196,7 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
 
     this.service.descargarExcelErrores(row.id).subscribe({
       next: (blob: Blob) => {
-        this.alertService.cerrar(); // Cierra la alerta de cargando
-
+        this.alertService.cerrar();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -145,12 +220,11 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
     }
 
     this.service.buscar(texto).subscribe(response => {
-      this.lista = response;
+      this.lista = this.procesarEstados(response);
       this.totalRegistros = response.length;
     });
   }
 
-  // 4. Eliminación de historial
   deletedAt(row: Cargue): void {
     this.alertService.confirmar(
       `¿Desea eliminar el historial del cargue #${row.id}?`,

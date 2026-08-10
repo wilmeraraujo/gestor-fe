@@ -1,4 +1,4 @@
-<!-- Input nativo de archivos oculto de uso exclusivo para el Cargue ZIP -->
+<!-- Input nativo oculto para la selección del archivo ZIP -->
 <input 
   type="file" 
   #fileInput 
@@ -13,13 +13,19 @@
   [totalRegistros]="totalRegistros"
   [totalPorPagina]="totalPorPagina"
   [pageSizeOptions]="pageSizeOptions"
+  
+  [textoBotonAgregar]="textoBotonAgregar"
+  [tooltipAgregar]="tooltipAgregar"
+  
   [mostrarAcciones]="true"
-  [mostrarDetalle]="true"
+  [mostrarDetalle]="false"
+  [mostrarEditar]="false"
   [mostrarDescargaErrores]="true"
+  [mostrarEliminar]="esAdmin"
+  
   (paginar)="paginar($event)"
   (descargarErrores)="descargarExcelErrores($event)"
   (agregar)="agregar()"
-  (verDetalle)="verFacturas($event)"
   (buscar)="buscar($event)"
   (eliminar)="deletedAt($event)"
 >
