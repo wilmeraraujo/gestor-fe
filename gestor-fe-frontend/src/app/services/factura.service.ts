@@ -62,7 +62,47 @@ export class FacturaService extends CommonService<Factura> {
   }
 
   /**
-   * ⚙️ 5. MÉTODO UNIFICADO DE TRANSICIÓN DE FASE (JSON / DTO)
+   * 🔍 5. BÚSQUEDA DINÁMICA CRITERIA (Envía el DTO de filtros por BODY)
+   */
+  public buscarConCriteria(filtro: any, page: number = 0, size: number = 10): Observable<any> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    return this.http.post<any>(`${this.endPointBase}/buscar-criteria`, filtro || {}, { params });
+  }
+
+  /**
+   * 📊 6. TRAZABILIDAD Y SEGUIMIENTO SEGÚN ROLES
+   * - Para el Prestador: Restringe automáticamente por su NIT.
+   * - Para Gestores / Admin: Permite consulta global con Criteria.
+   */
+  public buscarTrazabilidadSegunRol(
+    nitPrestador?: string,
+    roles: string[] = [],
+    filtro?: any,
+    page: number = 0,
+    size: number = 10
+  ): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    if (nitPrestador) {
+      params = params.set('nitPrestador', nitPrestador);
+    }
+
+    if (roles && roles.length > 0) {
+      roles.forEach(rol => {
+        params = params.append('roles', rol);
+      });
+    }
+
+    return this.http.post<any>(`${this.endPointBase}/trazabilidad/buscar`, filtro || {}, { params });
+  }
+
+  /**
+   * ⚙️ 7. MÉTODO UNIFICADO DE TRANSICIÓN DE FASE (JSON / DTO)
    */
   public procesarTransicionFase(id: number, faseId: number, dto: any): Observable<Factura> {
     return this.http.put<Factura>(
@@ -73,13 +113,13 @@ export class FacturaService extends CommonService<Factura> {
   }
 
   /**
-   * 🏦 6. MÉTODO DE CAUSACIÓN MULTIPART (FASE 2)
+   * 🏦 8. MÉTODO DE CAUSACIÓN MULTIPART (FASE 2)
    */
   public procesarCausacionFase2(
     id: number,
-    tipoRegistroContableId: number, // 👈 Se envía como ID numérico
+    tipoRegistroContableId: number,
     numeroCausacion: string,
-    archivo?: any 
+    archivo?: any
   ): Observable<Factura> {
     const formData = new FormData();
     formData.append('tipoRegistroContableId', tipoRegistroContableId ? tipoRegistroContableId.toString() : '');
@@ -94,11 +134,11 @@ export class FacturaService extends CommonService<Factura> {
   }
 
   /**
-   * 💸 7. MÉTODO DE PAGO MULTIPART (FASE 4 - TESORERÍA)
+   * 💸 9. MÉTODO DE PAGO MULTIPART (FASE 4 - TESORERÍA)
    */
   public procesarPagoFase4(
     id: number,
-    tipoRegistroContableId?: number, // 👈 Opcional ID numérico
+    tipoRegistroContableId?: number,
     numeroCausacion?: string,
     soporteTb?: any,
     comprobantePago?: any

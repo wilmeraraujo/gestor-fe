@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,6 +8,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { KeycloakService } from 'keycloak-angular';
+import { PageEvent } from '@angular/material/paginator';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
@@ -35,7 +38,7 @@ import { FaseService } from '../../services/fase.service';
   templateUrl: './gestion-inicial.component.html',
   styleUrl: './gestion-inicial.component.css'
 })
-export class GestionInicialComponent extends CommonListarComponent<Factura, FacturaService> implements OnInit {
+export class GestionInicialComponent extends CommonListarComponent<Factura, FacturaService> implements OnInit, OnDestroy {
 
   override titulo = 'Gestión Inicial de Facturas (Etapa 1)';
 
@@ -53,6 +56,13 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
   opcionesCausal: { value: any, label: string }[] = [];
   opcionesObservacion: { value: any, label: string }[] = [];
   mapaFases: { [key: number]: string } = {};
+
+  // 🎯 SUBJECT Y SUBSCRIPCIÓN PARA RETARDO (DEBOUNCE 400ms)
+  private filtroSubject = new Subject<{ [key: string]: string }>();
+  private filtroSubscription?: Subscription;
+
+  // DTO activo para la API con contexto de Fase 1 por defecto
+  filtrosActivos: any = { faseId: 1 };
 
   // Configuración de columnas
   columnas = [
@@ -91,6 +101,52 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
     this.evaluarRolesUsuario();
     this.cargarFases();
     this.cargarListasMaestras();
+    this.configurarDebounceFiltros();
+  }
+
+  ngOnDestroy(): void {
+    if (this.filtroSubscription) {
+      this.filtroSubscription.unsubscribe();
+    }
+  }
+
+  /**
+   * ⏱️ Manejo del retardo (debounce) de 400ms tras la última tecla pulsada
+   */
+  private configurarDebounceFiltros(): void {
+    this.filtroSubscription = this.filtroSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+    ).subscribe(filtrosColumnas => {
+      this.paginaActual = 0; // Reinicia la página al filtrar
+      this.procesarFiltrosYConsultar(filtrosColumnas);
+    });
+  }
+
+  /**
+   * 📥 Captura las emisiones de filtros provenientes de DataTableComponent
+   */
+  onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
+    this.filtroSubject.next(filtrosColumnas);
+  }
+
+  /**
+   * 🛠️ Mapea los campos filtrables al DTO que procesará JPA Criteria en el Backend
+   */
+  private procesarFiltrosYConsultar(filtrosColumnas: { [key: string]: string }): void {
+    this.filtrosActivos = {
+      faseId: 1, // Mantiene fija la Fase 1
+      id: filtrosColumnas['id'] ? Number(filtrosColumnas['id']) : null,
+      nit: filtrosColumnas['nit'] || filtrosColumnas['nitEmisor'] || null,
+      numeroFactura: filtrosColumnas['numeroFactura'] || null,
+      razonSocialEmisor: filtrosColumnas['razonSocialEmisor'] || null,
+      cufe: filtrosColumnas['cufe'] || null,
+      estado: filtrosColumnas['estado'] || null,
+      observacion: filtrosColumnas['observacion'] || null,
+      textoBusquedaGlobal: this.filtrosActivos.textoBusquedaGlobal || null
+    };
+
+    this.cargarDatosPaginados();
   }
 
   /**
@@ -124,13 +180,18 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
   }
 
   /**
-   * 📋 Carga exclusivamente las facturas en Fase 1
+   * 📋 Carga exclusivamente las facturas en Fase 1 mediante Criteria
    */
   cargarDatosPaginados(): void {
-    this.service.getFase1(this.paginaActual, this.totalPorPagina)
-      .subscribe(res => {
-        this.lista = this.mapearFaseNombre(res.content);
-        this.totalRegistros = res.totalElements;
+    this.service.buscarConCriteria(this.filtrosActivos, this.paginaActual, this.totalPorPagina)
+      .subscribe({
+        next: (res: any) => {
+          this.lista = this.mapearFaseNombre(res.content || []);
+          this.totalRegistros = res.totalElements || 0;
+        },
+        error: (err) => {
+          console.error('Error al consultar lista por Criteria:', err);
+        }
       });
   }
 
@@ -293,7 +354,6 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
               model.observacion = model.observacionId;
             }
 
-            // 👤 Captura segura del usuario de Keycloak sin romper la ejecución
             try {
               model.usuario = this.keycloakService.getUsername() || 'SISTEMA';
             } catch (error) {
@@ -309,20 +369,27 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
 
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado) {
+        this.regresarABandeja();
         this.cargarDatosPaginados();
       }
     });
   }
 
+  /**
+   * 🔎 Búsqueda global superior
+   */
   buscar(texto: string): void {
-    if (!texto || texto.trim() === '') {
-      this.cargarDatosPaginados();
-      return;
-    }
+    this.filtrosActivos.textoBusquedaGlobal = texto && texto.trim() !== '' ? texto.trim() : null;
+    this.paginaActual = 0;
+    this.cargarDatosPaginados();
+  }
 
-    this.service.buscar(texto).subscribe(response => {
-      this.lista = this.mapearFaseNombre(response);
-      this.totalRegistros = response.length;
-    });
+  /**
+   * 📟 Evento de paginación
+   */
+  override paginar(event: PageEvent): void {
+    this.paginaActual = event.pageIndex;
+    this.totalPorPagina = event.pageSize;
+    this.cargarDatosPaginados();
   }
 }

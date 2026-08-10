@@ -1,10 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { KeycloakService } from 'keycloak-angular';
+import { PageEvent } from '@angular/material/paginator';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
@@ -29,18 +33,29 @@ import { FaseService } from '../../services/fase.service';
   templateUrl: './seguimiento-facturas.component.html',
   styleUrl: './seguimiento-facturas.component.css'
 })
-export class SeguimientoFacturasComponent extends CommonListarComponent<Factura, FacturaService> implements OnInit {
+export class SeguimientoFacturasComponent extends CommonListarComponent<Factura, FacturaService> implements OnInit, OnDestroy {
 
   override titulo = 'Módulo de Seguimiento y Trazabilidad Global';
 
   tabSeleccionada: number = 0; 
   facturaSeleccionada: Factura | null = null;
   soportesFactura: Documento[] = [];
-  historialFacturaSeleccionada: any[] = []; // 👈 Guardará el historial para la Pestaña 3
+  historialFacturaSeleccionada: any[] = [];
   pdfUrlSafe: SafeResourceUrl | null = null;
   documentoActivo: string = '';
 
   mapaFases: { [key: number]: string } = {};
+
+  // 👤 Datos de Sesión para discriminación de roles
+  nitPrestadorActivo: string = '';
+  rolesUsuario: string[] = [];
+
+  // 🎯 SUBJECT Y SUBSCRIPCIÓN PARA RETARDO DE FILTROS (DEBOUNCE 400ms)
+  private filtroSubject = new Subject<{ [key: string]: string }>();
+  private filtroSubscription?: Subscription;
+
+  // DTO activo para la API de Criteria
+  filtrosActivos: any = {};
 
   columnas = [
     { field: 'id', header: 'ID' },
@@ -77,13 +92,74 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     service: FacturaService,
     private documentoService: DocumentoService,
     private faseService: FaseService,
+    private keycloakService: KeycloakService,
     private sanitizer: DomSanitizer
   ) {
     super(service);
   }
 
   ngOnInit(): void {
+    this.obtenerDatosSesion();
     this.cargarFases();
+    this.configurarDebounceFiltros();
+  }
+
+  ngOnDestroy(): void {
+    if (this.filtroSubscription) {
+      this.filtroSubscription.unsubscribe();
+    }
+  }
+
+  /**
+   * 👤 Extrae el usuario y los roles asignados desde Keycloak
+   */
+  private obtenerDatosSesion(): void {
+    try {
+      this.rolesUsuario = this.keycloakService.getUserRoles() || [];
+      this.nitPrestadorActivo = this.keycloakService.getUsername() || '';
+    } catch (e) {
+      console.warn('No se pudo obtener información de sesión Keycloak:', e);
+    }
+  }
+
+  /**
+   * ⏱️ Configura la espera de 400ms para diferir las peticiones HTTP
+   */
+  private configurarDebounceFiltros(): void {
+    this.filtroSubscription = this.filtroSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+    ).subscribe(filtrosColumnas => {
+      this.paginaActual = 0;
+      this.procesarFiltrosYConsultar(filtrosColumnas);
+    });
+  }
+
+  /**
+   * 📥 Captura las emisiones de filtros provenientes de DataTableComponent
+   */
+  onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
+    this.filtroSubject.next(filtrosColumnas);
+  }
+
+  /**
+   * 🛠️ Mapea los filtros para Criteria
+   */
+  private procesarFiltrosYConsultar(filtrosColumnas: { [key: string]: string }): void {
+    this.filtrosActivos = {
+      id: filtrosColumnas['id'] ? Number(filtrosColumnas['id']) : null,
+      nit: filtrosColumnas['nit'] || filtrosColumnas['nitEmisor'] || null,
+      numeroFactura: filtrosColumnas['numeroFactura'] || null,
+      razonSocialEmisor: filtrosColumnas['razonSocialEmisor'] || null,
+      cufe: filtrosColumnas['cufe'] || null,
+      estado: filtrosColumnas['estado'] || null,
+      numeroCausacion: filtrosColumnas['numeroCausacion'] || null,
+      tipoRegistroContableId: filtrosColumnas['tipoRegistroContableId'] ? Number(filtrosColumnas['tipoRegistroContableId']) : null,
+      observacion: filtrosColumnas['observacion'] || null,
+      textoBusquedaGlobal: this.filtrosActivos.textoBusquedaGlobal || null
+    };
+
+    this.cargarDatosPaginados();
   }
 
   private cargarFases(): void {
@@ -105,12 +181,25 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     });
   }
 
+  /**
+   * 📋 Carga facturas mediante la API de trazabilidad con diferenciación de roles
+   */
   cargarDatosPaginados(): void {
-    this.service.getSeguimiento(this.paginaActual, this.totalPorPagina)
-      .subscribe(res => {
-        this.lista = this.mapearFaseNombre(res.content);
-        this.totalRegistros = res.totalElements;
-      });
+    this.service.buscarTrazabilidadSegunRol(
+      this.nitPrestadorActivo,
+      this.rolesUsuario,
+      this.filtrosActivos,
+      this.paginaActual,
+      this.totalPorPagina
+    ).subscribe({
+      next: (res: any) => {
+        this.lista = this.mapearFaseNombre(res.content || []);
+        this.totalRegistros = res.totalElements || 0;
+      },
+      error: (err) => {
+        console.error('Error al consultar trazabilidad por Criteria:', err);
+      }
+    });
   }
 
   private mapearFaseNombre(facturas: Factura[]): any[] {
@@ -147,8 +236,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
       createdAt: g.createdAt ? (typeof g.createdAt === 'string' ? g.createdAt.replace('T', ' ').substring(0, 19) : g.createdAt) : 'N/A'
     }));
 
-    // Navegar a la Pestaña 3
-    this.tabSeleccionada = 2;
+    this.tabSeleccionada = 2; // Pestaña 3
   }
 
   verSoportesFactura(row: Factura): void {
@@ -165,7 +253,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     ).subscribe({
       next: (res: any) => {
         this.soportesFactura = res.content || [];
-        this.tabSeleccionada = 1; // Navegar a la Pestaña 2
+        this.tabSeleccionada = 1; // Pestaña 2
       },
       error: (err) => {
         console.error('Error al consultar expedientes:', err);
@@ -197,15 +285,21 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     this.historialFacturaSeleccionada = [];
   }
 
+  /**
+   * 🔎 Búsqueda global superior
+   */
   buscar(texto: string): void {
-    if (!texto || texto.trim() === '') {
-      this.cargarDatosPaginados();
-      return;
-    }
+    this.filtrosActivos.textoBusquedaGlobal = texto && texto.trim() !== '' ? texto.trim() : null;
+    this.paginaActual = 0;
+    this.cargarDatosPaginados();
+  }
 
-    this.service.buscar(texto).subscribe(response => {
-      this.lista = this.mapearFaseNombre(response);
-      this.totalRegistros = response.length;
-    });
+  /**
+   * 📟 Evento de paginación
+   */
+  override paginar(event: PageEvent): void {
+    this.paginaActual = event.pageIndex;
+    this.totalPorPagina = event.pageSize;
+    this.cargarDatosPaginados();
   }
 }

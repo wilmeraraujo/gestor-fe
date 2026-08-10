@@ -1,5 +1,7 @@
 package com.gestor_fe.core.controller;
 
+import java.util.List;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -8,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.gestor_fe.core.dto.FacturaFilterDto;
 import com.gestor_fe.core.dto.GestionDto;
 import com.gestor_fe.core.entity.Factura;
 import com.gestor_fe.core.service.FacturaService;
@@ -56,6 +59,35 @@ public class FacturaController {
     }
 
     // =========================================================================
+    // 🔍 NUEVOS ENDPOINTS DE BÚSQUEDA DINÁMICA CRITERIA Y TRAZABILIDAD
+    // =========================================================================
+
+    /**
+     * 🔍 Búsqueda dinámicamente filtrada con JPA Criteria por Body JSON
+     */
+    @PostMapping("/buscar-criteria")
+    public ResponseEntity<?> buscarConCriteria(@RequestBody FacturaFilterDto filtro, Pageable pageable) {
+        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
+        return ResponseEntity.ok(service.buscarConCriteria(filtro, sorted));
+    }
+
+    /**
+     * 📊 Trazabilidad Global (Fase 5 / Seguimiento) con filtro de roles:
+     * - Si el usuario es Prestador (envía su NIT), filtra SOLO sus facturas.
+     * - Si es Administrador / Gestor Global, consulta TODAS las facturas del sistema.
+     */
+    @PostMapping("/trazabilidad/buscar")
+    public ResponseEntity<?> buscarTrazabilidadSegunRol(
+            @RequestParam(value = "nitPrestador", required = false) String nitPrestador,
+            @RequestParam(value = "roles", required = false) List<String> roles,
+            @RequestBody(required = false) FacturaFilterDto filtro,
+            Pageable pageable) {
+
+        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
+        return ResponseEntity.ok(service.buscarTrazabilidadSegunRol(nitPrestador, roles, filtro, sorted));
+    }
+
+    // =========================================================================
     // ⚙️ ENDPOINTS DE TRANSICIÓN Y GESTIÓN DE ETAPAS
     // =========================================================================
 
@@ -73,7 +105,7 @@ public class FacturaController {
     @PostMapping(value = "/{id}/causacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Factura> procesarCausacionFase2(
             @PathVariable("id") Long id,
-            @RequestParam("tipoRegistroContableId") Long tipoRegistroContableId, // 👈 Actualizado a Long
+            @RequestParam("tipoRegistroContableId") Long tipoRegistroContableId,
             @RequestParam("numeroCausacion") String numeroCausacion,
             @RequestParam(value = "archivo", required = false) MultipartFile archivo) {
 
@@ -84,7 +116,7 @@ public class FacturaController {
     @PostMapping(value = "/{id}/pago", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Factura> procesarPagoFase4(
             @PathVariable("id") Long id,
-            @RequestParam(value = "tipoRegistroContableId", required = false) Long tipoRegistroContableId, // 👈 Actualizado a Long
+            @RequestParam(value = "tipoRegistroContableId", required = false) Long tipoRegistroContableId,
             @RequestParam(value = "numeroCausacion", required = false) String numeroCausacion,
             @RequestParam(value = "soporteTb", required = false) MultipartFile soporteTb,
             @RequestParam(value = "comprobantePago", required = false) MultipartFile comprobantePago) {

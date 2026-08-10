@@ -26,6 +26,7 @@
           [mostrarHistorial]="true"
           [mostrarGestionarFactura]="false"
           
+          (filtrosChange)="onFiltrosChange($event)"
           (paginar)="paginar($event)"
           (verDetalle)="verSoportesFactura($event)"
           (verHistorial)="verHistorialGestion($event)"
@@ -93,7 +94,7 @@
               <mat-card-header class="bg-dark text-white p-2 border-bottom rounded-top">
                 <mat-card-title class="fs-6 d-flex align-items-center w-100 m-0">
                   <mat-icon class="me-2 text-danger">picture_as_pdf</mat-icon>
-                  Vista Previa: <span class="ms-2 fs-6" style="color: #17889b;">{{ documentoActivo || 'Ningún archivo seleccionado' }}</span>
+                  Vista Previa: <span class="ms-2 fs-6" style="color: #1DA6BA;">{{ documentoActivo || 'Ningún archivo seleccionado' }}</span>
                 </mat-card-title>
               </mat-card-header>
               

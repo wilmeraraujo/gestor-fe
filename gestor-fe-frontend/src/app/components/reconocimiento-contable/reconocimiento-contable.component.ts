@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,7 +8,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { KeycloakService } from 'keycloak-angular';
-import { throwError } from 'rxjs';
+import { PageEvent } from '@angular/material/paginator';
+import { Subject, Subscription, throwError } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
@@ -36,10 +38,11 @@ import { FaseService } from '../../services/fase.service';
   templateUrl: './reconocimiento-contable.component.html',
   styleUrl: './reconocimiento-contable.component.css'
 })
-export class ReconocimientoContableComponent extends CommonListarComponent<Factura, FacturaService> implements OnInit {
+export class ReconocimientoContableComponent extends CommonListarComponent<Factura, FacturaService> implements OnInit, OnDestroy {
 
   override titulo = 'Reconocimiento Contable (Etapa 2)';
 
+  // Control de pestañas y visores
   tabSeleccionada: number = 0;
   facturaSeleccionada: Factura | null = null;
   soportesFactura: Documento[] = [];
@@ -51,6 +54,13 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   opcionesCausal: { value: any, label: string }[] = [];
   opcionesObservacion: { value: any, label: string }[] = [];
   mapaFases: { [key: number]: string } = {};
+
+  // 🎯 SUBJECT Y SUBSCRIPCIÓN PARA RETARDO DE FILTROS (DEBOUNCE 400ms)
+  private filtroSubject = new Subject<{ [key: string]: string }>();
+  private filtroSubscription?: Subscription;
+
+  // DTO activo para la API con contexto de Fase 2
+  filtrosActivos: any = { faseId: 2 };
 
   // Opciones de Tipo de Registro Contable mapeadas con sus IDs numéricos
   opcionesTipoRegistro = [
@@ -96,12 +106,68 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     this.evaluarRolesUsuario();
     this.cargarFases();
     this.cargarListasMaestras();
+    this.configurarDebounceFiltros();
   }
 
+  ngOnDestroy(): void {
+    if (this.filtroSubscription) {
+      this.filtroSubscription.unsubscribe();
+    }
+  }
+
+  /**
+   * ⏱️ Manejo del retardo (debounce) de 400ms tras la última tecla pulsada
+   */
+  private configurarDebounceFiltros(): void {
+    this.filtroSubscription = this.filtroSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+    ).subscribe(filtrosColumnas => {
+      this.paginaActual = 0; // Reinicia la página al filtrar
+      this.procesarFiltrosYConsultar(filtrosColumnas);
+    });
+  }
+
+  /**
+   * 📥 Captura las emisiones de filtros provenientes de DataTableComponent
+   */
+  onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
+    this.filtroSubject.next(filtrosColumnas);
+  }
+
+  /**
+   * 🛠️ Mapea los campos filtrables al DTO que procesará JPA Criteria en el Backend
+   */
+  private procesarFiltrosYConsultar(filtrosColumnas: { [key: string]: string }): void {
+    this.filtrosActivos = {
+      faseId: 2, // Mantiene fija la Fase 2
+      id: filtrosColumnas['id'] ? Number(filtrosColumnas['id']) : null,
+      nit: filtrosColumnas['nit'] || filtrosColumnas['nitEmisor'] || null,
+      numeroFactura: filtrosColumnas['numeroFactura'] || null,
+      razonSocialEmisor: filtrosColumnas['razonSocialEmisor'] || null,
+      cufe: filtrosColumnas['cufe'] || null,
+      estado: filtrosColumnas['estado'] || null,
+      observacion: filtrosColumnas['observacion'] || null,
+      textoBusquedaGlobal: this.filtrosActivos.textoBusquedaGlobal || null
+    };
+
+    this.cargarDatosPaginados();
+  }
+
+  /**
+   * 🔑 Evaluación flexible de roles con comprobación en minúsculas
+   */
   private evaluarRolesUsuario(): void {
-    const roles = this.keycloakService.getUserRoles();
-    this.esGestorF2 = roles.includes('admin') || roles.includes('gestor-fe-f2-rc') ||
-                      roles.includes('gestor-fe-admin') || roles.includes('default-roles-fe');
+    try {
+      const roles = (this.keycloakService.getUserRoles() || []).map(r => r.toLowerCase());
+
+      this.esGestorF2 = roles.some(rol => 
+        ['admin', 'gestor-fe-f2-rc', 'gestor-fe-admin', 'default-roles-fe', 'uma_authorization'].includes(rol)
+      );
+    } catch (e) {
+      console.warn('Error evaluando roles en Fase 2:', e);
+      this.esGestorF2 = true;
+    }
   }
 
   private cargarFases(): void {
@@ -117,17 +183,25 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         this.cargarDatosPaginados();
       },
       error: (err) => {
-        console.error('Error al cargar fases:', err);
+        console.error('Error al cargar catálogo de fases:', err);
         this.cargarDatosPaginados();
       }
     });
   }
 
+  /**
+   * 📋 Carga exclusivamente las facturas activas en Fase 2 mediante Criteria
+   */
   cargarDatosPaginados(): void {
-    this.service.getFaseActiva(2, this.paginaActual, this.totalPorPagina)
-      .subscribe(res => {
-        this.lista = this.mapearFaseNombre(res.content);
-        this.totalRegistros = res.totalElements;
+    this.service.buscarConCriteria(this.filtrosActivos, this.paginaActual, this.totalPorPagina)
+      .subscribe({
+        next: (res: any) => {
+          this.lista = this.mapearFaseNombre(res.content || []);
+          this.totalRegistros = res.totalElements || 0;
+        },
+        error: (err) => {
+          console.error('Error al consultar lista por Criteria en Fase 2:', err);
+        }
       });
   }
 
@@ -159,6 +233,9 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     });
   }
 
+  /**
+   * 👁️ Carga los soportes documentales de la factura y pasa a Pestaña 2
+   */
   verSoportesFactura(row: Factura): void {
     this.facturaSeleccionada = row;
     this.pdfUrlSafe = null;
@@ -233,7 +310,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         }
       },
       {
-        name: 'tipoRegistroContableId', // 👈 Mapeado como ID numérico
+        name: 'tipoRegistroContableId',
         label: 'Tipo de Registro Contable',
         type: 'select',
         options: this.opcionesTipoRegistro,
@@ -305,7 +382,6 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         formData: { id: row.id },
         service: {
           editar: (model: any) => {
-            // 👤 Inyectar nombre del usuario para el historial de auditoría
             try {
               model.usuario = this.keycloakService.getUsername() || 'SISTEMA';
             } catch (error) {
@@ -314,8 +390,6 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
             }
 
             if (model.estadoAccion === 'APROBADO') {
-
-              // 🎯 CAPTURA DEL ARCHIVO DESDE EL INPUT DEL DOM
               let archivoFile: File | undefined = undefined;
 
               const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -330,7 +404,6 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
                 }
               }
 
-              // 🛑 VALIDACIÓN ESTRICTA
               if (!archivoFile) {
                 alert('⚠️ Debe adjuntar obligatoriamente el archivo PDF con el Soporte de Causación.');
                 return throwError(() => new Error('El archivo soporte de causación es obligatorio.'));
@@ -338,7 +411,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
 
               return this.service.procesarCausacionFase2(
                 row.id,
-                Number(model.tipoRegistroContableId), // 👈 Mapeado como ID numérico
+                Number(model.tipoRegistroContableId),
                 model.numeroCausacion,
                 archivoFile
               );
@@ -366,15 +439,21 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     });
   }
 
+  /**
+   * 🔎 Búsqueda global superior
+   */
   buscar(texto: string): void {
-    if (!texto || texto.trim() === '') {
-      this.cargarDatosPaginados();
-      return;
-    }
+    this.filtrosActivos.textoBusquedaGlobal = texto && texto.trim() !== '' ? texto.trim() : null;
+    this.paginaActual = 0;
+    this.cargarDatosPaginados();
+  }
 
-    this.service.buscar(texto).subscribe(response => {
-      this.lista = this.mapearFaseNombre(response);
-      this.totalRegistros = response.length;
-    });
+  /**
+   * 📟 Evento de paginación
+   */
+  override paginar(event: PageEvent): void {
+    this.paginaActual = event.pageIndex;
+    this.totalPorPagina = event.pageSize;
+    this.cargarDatosPaginados();
   }
 }

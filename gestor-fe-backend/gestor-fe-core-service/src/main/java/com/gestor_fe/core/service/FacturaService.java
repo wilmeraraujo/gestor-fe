@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.gestor_fe.core.dto.FacturaFilterDto;
 import com.gestor_fe.core.dto.GestionDto;
 import com.gestor_fe.core.entity.Factura;
 
@@ -30,4 +31,9 @@ public interface FacturaService {
     Factura procesarCausacionFase2(Long id, Long tipoRegistroContableId, String numeroCausacion, MultipartFile archivoCausacion);
     
     Factura procesarPagoFase4(Long id, Long tipoRegistroContableId, String numeroCausacion, MultipartFile soporteTb, MultipartFile comprobantePago);
+
+    // 🔍 NUEVOS MÉTODOS DE BÚSQUEDA DINÁMICA CRITERIA
+    Page<Factura> buscarConCriteria(FacturaFilterDto filtro, Pageable pageable);
+
+    Page<Factura> buscarTrazabilidadSegunRol(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro, Pageable pageable);
 }

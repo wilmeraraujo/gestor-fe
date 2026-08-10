@@ -39,7 +39,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Input() totalPorPagina = 5;
   @Input() pageSizeOptions: number[] = [5, 10, 20, 50, 100];
   
-  // 🎯 NUEVOS INPUTS PARA PERSONALIZAR EL BOTÓN ADICIONAR
   @Input() textoBotonAgregar: string = 'Adicionar';
   @Input() tooltipAgregar: string = 'Adicionar nuevo registro';
 
@@ -53,6 +52,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Input() mostrarEliminar = true;
   @Input() mostrarHistorial: boolean = false;
 
+  @Output() filtrosChange = new EventEmitter<{ [key: string]: string }>();
   @Output() verHistorial = new EventEmitter<any>();
   @Output() agregar = new EventEmitter<void>();
   @Output() editar = new EventEmitter<any>();
@@ -78,7 +78,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   ngOnInit(): void {
     this.configurarColumnas();
     this.actualizarDataSource();
-    this.configurarFiltroCustom();
 
     this.selection.changed.subscribe(() => {
       this.selecciononChange.emit(this.selection.selected);
@@ -90,7 +89,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
       this.configurarColumnas();
       this.actualizarDataSource();
       this.selection.clear();
-      this.aplicarFiltrosColumnas();
     }
   }
 
@@ -133,49 +131,35 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     }
   }
 
-  configurarFiltroCustom(): void {
-    this.dataSource.filterPredicate = (data: any, filter: string) => {
-      const searchTerms = JSON.parse(filter);
-      let isMatch = true;
-
-      for (const col of Object.keys(searchTerms)) {
-        const val = data[col] !== null && data[col] !== undefined ? String(data[col]).toLowerCase() : '';
-        const searchVal = searchTerms[col].toLowerCase();
-        if (searchVal && !val.includes(searchVal)) {
-          isMatch = false;
-          break;
-        }
-      }
-      return isMatch;
-    };
-  }
-
-  toggleFiltros(): void {
-    this.mostrarFiltrosColumnas = !this.mostrarFiltrosColumnas;
-    if (!this.mostrarFiltrosColumnas) {
-      this.limpiarFiltrosColumnas();
-    }
-  }
-
+  /**
+   * 📤 Evalúa los campos filtrables y emite el objeto hacia el componente padre
+   */
   aplicarFiltrosColumnas(): void {
     const camposFiltrables = this.columnas
-      .filter(c => c.filtrable !== false)
+      .filter(c => c && c.filtrable !== false)
       .map(c => c.field);
 
     const filtrosValidos: { [key: string]: string } = {};
 
     for (const key of Object.keys(this.filtrosPorColumna)) {
-      if (camposFiltrables.includes(key) && this.filtrosPorColumna[key]) {
-        filtrosValidos[key] = this.filtrosPorColumna[key];
+      const val = this.filtrosPorColumna[key];
+      if (camposFiltrables.includes(key) && val !== null && val !== undefined) {
+        const texto = String(val).trim();
+        if (texto !== '') {
+          filtrosValidos[key] = texto;
+        }
       }
     }
 
-    this.dataSource.filter = JSON.stringify(filtrosValidos);
+    this.filtrosChange.emit(filtrosValidos);
   }
 
+  /**
+   * 🧹 Limpia los filtros e informa al backend
+   */
   limpiarFiltrosColumnas(): void {
     this.filtrosPorColumna = {};
-    this.dataSource.filter = '';
+    this.filtrosChange.emit({});
   }
 
   isAllSelected(): boolean {
@@ -192,9 +176,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     this.selection.select(...this.dataSource.data);
   }
 
-  /**
-   * 🏷️ Asigna estilos CSS redondeados para los diferentes estados
-   */
   obtenerClaseEstado(valorEstado: any): string {
     if (!valorEstado) return 'badge-estado badge-default';
 
@@ -232,9 +213,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     }
   }
 
-  /**
-   * 🎨 Devuelve el ícono correspondiente para el badge
-   */
   obtenerIconoEstado(valorEstado: any): string {
     if (!valorEstado) return 'help_outline';
 

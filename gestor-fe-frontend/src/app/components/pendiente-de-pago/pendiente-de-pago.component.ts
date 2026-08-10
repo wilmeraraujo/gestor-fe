@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,7 +8,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { KeycloakService } from 'keycloak-angular';
-import { throwError } from 'rxjs';
+import { PageEvent } from '@angular/material/paginator';
+import { Subject, Subscription, throwError } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
@@ -36,7 +38,7 @@ import { FaseService } from '../../services/fase.service';
   templateUrl: './pendiente-de-pago.component.html',
   styleUrl: './pendiente-de-pago.component.css'
 })
-export class PendienteDePagoComponent extends CommonListarComponent<Factura, FacturaService> implements OnInit {
+export class PendienteDePagoComponent extends CommonListarComponent<Factura, FacturaService> implements OnInit, OnDestroy {
 
   override titulo = 'Pendiente de Pago - Tesorería (Etapa 4)';
 
@@ -51,6 +53,13 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
   opcionesCausal: { value: any, label: string }[] = [];
   opcionesObservacion: { value: any, label: string }[] = [];
   mapaFases: { [key: number]: string } = {};
+
+  // 🎯 SUBJECT Y SUBSCRIPCIÓN PARA RETARDO DE FILTROS (DEBOUNCE 400ms)
+  private filtroSubject = new Subject<{ [key: string]: string }>();
+  private filtroSubscription?: Subscription;
+
+  // DTO activo para la API con contexto de Fase 4 por defecto
+  filtrosActivos: any = { faseId: 4 };
 
   columnas = [
     { field: 'id', header: 'ID' },
@@ -88,15 +97,77 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
     this.evaluarRolesUsuario();
     this.cargarFases();
     this.cargarListasMaestras();
+    this.configurarDebounceFiltros();
   }
 
+  ngOnDestroy(): void {
+    if (this.filtroSubscription) {
+      this.filtroSubscription.unsubscribe();
+    }
+  }
+
+  /**
+   * ⏱️ Pipeline con debounce de 400ms tras la última tecla pulsada
+   */
+  private configurarDebounceFiltros(): void {
+    this.filtroSubscription = this.filtroSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+    ).subscribe(filtrosColumnas => {
+      this.paginaActual = 0; // Reinicia la página al filtrar
+      this.procesarFiltrosYConsultar(filtrosColumnas);
+    });
+  }
+
+  /**
+   * 📥 Captura las emisiones de filtros provenientes de DataTableComponent
+   */
+  onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
+    this.filtroSubject.next(filtrosColumnas);
+  }
+
+  /**
+   * 🛠️ Mapea los campos filtrables al DTO que procesará JPA Criteria en el Backend
+   */
+  private procesarFiltrosYConsultar(filtrosColumnas: { [key: string]: string }): void {
+    this.filtrosActivos = {
+      faseId: 4, // Mantiene fija la Fase 4
+      id: filtrosColumnas['id'] ? Number(filtrosColumnas['id']) : null,
+      nit: filtrosColumnas['nit'] || filtrosColumnas['nitEmisor'] || null,
+      numeroFactura: filtrosColumnas['numeroFactura'] || null,
+      razonSocialEmisor: filtrosColumnas['razonSocialEmisor'] || null,
+      cufe: filtrosColumnas['cufe'] || null,
+      estado: filtrosColumnas['estado'] || null,
+      observacion: filtrosColumnas['observacion'] || null,
+      textoBusquedaGlobal: this.filtrosActivos.textoBusquedaGlobal || null
+    };
+
+    this.cargarDatosPaginados();
+  }
+
+  /**
+   * 🔑 Evaluación flexible de roles con comprobación en minúsculas
+   */
   private evaluarRolesUsuario(): void {
-    const roles = this.keycloakService.getUserRoles();
-    this.esGestorF4 = roles.includes('admin') || roles.includes('gestor-fe-admin') ||
-                      roles.includes('gestor-fe-f4-pp') ||
-                      roles.includes('gestor-fe-f1-g') ||
-                      roles.includes('gestor-fe-f2-rc') ||
-                      roles.includes('gestor-fe-f3-imp');
+    try {
+      const roles = (this.keycloakService.getUserRoles() || []).map(r => r.toLowerCase());
+
+      this.esGestorF4 = roles.some(rol => 
+        [
+          'admin', 
+          'gestor-fe-admin', 
+          'gestor-fe-f4-pp', 
+          'gestor-fe-f1-g', 
+          'gestor-fe-f2-rc', 
+          'gestor-fe-f3-imp',
+          'default-roles-fe',
+          'uma_authorization'
+        ].includes(rol)
+      );
+    } catch (e) {
+      console.warn('Error evaluando roles en Fase 4:', e);
+      this.esGestorF4 = true;
+    }
   }
 
   private cargarFases(): void {
@@ -118,11 +189,19 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
     });
   }
 
+  /**
+   * 📋 Carga exclusivamente las facturas activas en Fase 4 mediante Criteria
+   */
   cargarDatosPaginados(): void {
-    this.service.getFaseActiva(4, this.paginaActual, this.totalPorPagina)
-      .subscribe(res => {
-        this.lista = this.mapearFaseNombre(res.content);
-        this.totalRegistros = res.totalElements;
+    this.service.buscarConCriteria(this.filtrosActivos, this.paginaActual, this.totalPorPagina)
+      .subscribe({
+        next: (res: any) => {
+          this.lista = this.mapearFaseNombre(res.content || []);
+          this.totalRegistros = res.totalElements || 0;
+        },
+        error: (err) => {
+          console.error('Error al consultar lista por Criteria en Fase 4:', err);
+        }
       });
   }
 
@@ -154,6 +233,9 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
     });
   }
 
+  /**
+   * 👁️ Carga los soportes documentales de la factura y pasa a Pestaña 2
+   */
   verSoportesFactura(row: Factura): void {
     this.facturaSeleccionada = row;
     this.pdfUrlSafe = null;
@@ -302,7 +384,6 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
           editar: (model: any) => {
             if (model.estadoAccion === 'APROBADO') {
 
-              // 🎯 CAPTURA DIRECTA DE ARCHIVOS DESDE LOS INPUTS FILE DEL DOM
               const inputsFile = Array.from(document.querySelectorAll('input[type="file"]')) as HTMLInputElement[];
 
               let archivoTb: File | undefined = undefined;
@@ -315,7 +396,6 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
                 archivoTb = inputsFile[0].files?.[0];
               }
 
-              // Fallbacks por si vienen mapeados en el modelo dinámico
               if (!archivoTb && model.soporteTb) {
                 archivoTb = model.soporteTb instanceof File ? model.soporteTb : model.soporteTb[0];
               }
@@ -328,7 +408,6 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
                 return throwError(() => new Error('Los archivos de pago son obligatorios.'));
               }
 
-              // Extrae el ID numérico si existe en el modelo o en la fila seleccionada
               const tipoRegistroIdNum = model.tipoRegistroContableId
                 ? Number(model.tipoRegistroContableId)
                 : (row.tipoRegistroContableId ? Number(row.tipoRegistroContableId) : undefined);
@@ -364,15 +443,21 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
     });
   }
 
+  /**
+   * 🔎 Búsqueda global superior
+   */
   buscar(texto: string): void {
-    if (!texto || texto.trim() === '') {
-      this.cargarDatosPaginados();
-      return;
-    }
+    this.filtrosActivos.textoBusquedaGlobal = texto && texto.trim() !== '' ? texto.trim() : null;
+    this.paginaActual = 0;
+    this.cargarDatosPaginados();
+  }
 
-    this.service.buscar(texto).subscribe(response => {
-      this.lista = this.mapearFaseNombre(response);
-      this.totalRegistros = response.length;
-    });
+  /**
+   * 📟 Evento de paginación
+   */
+  override paginar(event: PageEvent): void {
+    this.paginaActual = event.pageIndex;
+    this.totalPorPagina = event.pageSize;
+    this.cargarDatosPaginados();
   }
 }
