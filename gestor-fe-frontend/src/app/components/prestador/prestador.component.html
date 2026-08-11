@@ -1,9 +1,9 @@
 <div class="container-fluid mt-3">
 
-  <!-- 🔍 TARJETA DE BÚSQUEDA DE PRESTADOR (Cerrada correctamente) -->
-  <div class="card shadow-sm mb-4">
+  <!--  TARJETA DE BÚSQUEDA DE PRESTADOR (VISIBILIDAD CONTROLADA POR ROL) -->
+  <div *ngIf="!esUsuarioPrestador" class="card shadow-sm mb-4">
     <div class="card-header bg-theme text-white font-weight-bold d-flex align-items-center">
-      <mat-icon class="mr-2">search</mat-icon> Gestión de Soportes por Prestador
+      <mat-icon class="mr-2">search</mat-icon> Búsqueda de Soportes por Prestador
     </div>
     <div class="card-body">
       <div class="d-flex align-items-center">
@@ -35,9 +35,9 @@
         </button>
       </div>
     </div>
-  </div> <!-- 👈 AQUÍ FALTABA CERRAR ESTE DIV -->
+  </div>
 
-  <!-- 👤 CABECERA CON DATOS DEL PRESTADOR ENCONTRADO (Ahora es una tarjeta independiente) -->
+  <!--  CABECERA CON DATOS DEL PRESTADOR ENCONTRADO O AUTOCARGADO -->
   <div *ngIf="prestadorActual" class="card shadow-sm mb-4">
     <div class="card-body bg-light border-left-theme">
       <div class="row align-items-center">
@@ -58,10 +58,10 @@
     </div>
   </div>
 
-  <!-- 📋 TARJETAS DINÁMICAS DE SOPORTES GENERALES -->
+  <!--  TARJETAS DINÁMICAS DE SOPORTES GENERALES -->
   <div *ngIf="prestadorActual">
     <h5 class="mb-3 font-weight-bold text-secondary d-flex align-items-center">
-      <mat-icon class="mr-2">folder_shared</mat-icon> Soportes Documentales
+      <mat-icon class="mr-2">folder_shared</mat-icon> Soportes Documentales Empresariales
     </h5>
 
     <div class="row">
@@ -131,10 +131,16 @@
     </div>
   </div>
 
-  <!-- ⚠️ MENSAJE INICIAL ANTES DE BUSCAR -->
-  <div *ngIf="!prestadorActual" class="text-center text-muted my-5">
+  <!-- MENSAJE INICIAL ANTES DE BUSCAR (Sólo para Admin / Gestores) -->
+  <div *ngIf="!prestadorActual && !esUsuarioPrestador" class="text-center text-muted my-5">
     <mat-icon class="icon-large mb-2 text-secondary">badge</mat-icon>
-    <p>Digite el NIT del prestador (por ejemplo <code>123</code>) en el campo superior y haga clic en el botón de búsqueda para cargar sus datos y gestionar los soportes.</p>
+    <p>Digite el NIT del prestador en el campo superior y haga clic en el botón de búsqueda para gestionar sus soportes.</p>
+  </div>
+
+  <!-- MENSAJE DE CARGA / ERROR PARA EL PRESTADOR -->
+  <div *ngIf="!prestadorActual && esUsuarioPrestador && cargando" class="text-center text-muted my-5">
+    <mat-icon class="icon-large mb-2 text-primary">sync</mat-icon>
+    <p>Cargando sus soportes documentales...</p>
   </div>
 
 </div>

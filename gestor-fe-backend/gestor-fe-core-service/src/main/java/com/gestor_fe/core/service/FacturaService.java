@@ -12,7 +12,7 @@ import java.util.List;
 
 public interface FacturaService {
 
-    // 📋 Consultas de Bandejas por Rol / Fase
+    //Consultas de Bandejas por Rol / Fase
     Page<Factura> findByNitAndDeletedAtIsNull(String nit, Pageable pageable);
     
     Page<Factura> findByFaseIdAndDeletedAtIsNull(Long faseId, Pageable pageable);
@@ -21,10 +21,10 @@ public interface FacturaService {
     
     Page<Factura> findByDeletedAtIsNull(Pageable pageable);
 
-    // ⚙️ MÉTODO UNIFICADO DE TRANSICIÓN DE FASE (Maneja las 4 Etapas)
+    //MÉTODO UNIFICADO DE TRANSICIÓN DE FASE (Maneja las 4 Etapas)
     Factura procesarTransicionFase(Long id, Long faseActualId, GestionDto dto);
 
-    // 🔍 Métodos auxiliares de validación
+    //Métodos auxiliares de validación
     List<String> findExistingCufes(List<String> cufes);
     List<String> findExistingNitFacturas(List<String> nitFacturas);
     
@@ -32,8 +32,9 @@ public interface FacturaService {
     
     Factura procesarPagoFase4(Long id, Long tipoRegistroContableId, String numeroCausacion, MultipartFile soporteTb, MultipartFile comprobantePago);
 
-    // 🔍 NUEVOS MÉTODOS DE BÚSQUEDA DINÁMICA CRITERIA
+    //BÚSQUEDA DINÁMICA CRITERIA
     Page<Factura> buscarConCriteria(FacturaFilterDto filtro, Pageable pageable);
 
     Page<Factura> buscarTrazabilidadSegunRol(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro, Pageable pageable);
+    
 }

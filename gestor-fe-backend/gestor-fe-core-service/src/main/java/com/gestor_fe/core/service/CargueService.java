@@ -19,4 +19,6 @@ public interface CargueService {
     Page<Cargue> findCarguesSegunRol(String usuario, List<String> roles, Pageable pageable);
 
     List<Cargue> findByNitPrestador(String desc);
+    
+	Cargue eliminarLogico(Long cargueId);
 }

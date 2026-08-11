@@ -5,9 +5,13 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -16,7 +20,7 @@ import javax.xml.xpath.XPathFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.infrastructure.item.ItemProcessor;
+import org.springframework.batch.item.ItemProcessor;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -24,6 +28,7 @@ import com.gestor_fe.core.dto.FacturaZipWrapperDto;
 import com.gestor_fe.core.entity.Documento;
 import com.gestor_fe.core.entity.ErrorCargue;
 import com.gestor_fe.core.entity.Factura;
+import com.gestor_fe.core.repository.DocumentoRepository;
 import com.gestor_fe.core.service.ErrorCargueService;
 import com.gestor_fe.core.service.FacturaService;
 
@@ -34,31 +39,41 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
     private final Long identificadorCargue;
     private final FacturaService facturaService;
     private final ErrorCargueService errorCargueService;
-    
+    private final DocumentoRepository documentoRepository;
+
     private long currentLine = 0;
 
-    // 🧠 Caché en memoria durante la ejecución del Job para detectar repetidos DENTRO del mismo ZIP
     private final Set<String> cufesInBatch = new HashSet<>();
     private final Set<String> nitFacturasInBatch = new HashSet<>();
 
-    public FacturaZipProcessor(Long identificadorCargue, 
-                               FacturaService facturaService, 
-                               ErrorCargueService errorCargueService) {
+    // Map de Tipos Obligatorios para validación estricta de bloqueo:
+    // 1L = RUT (01), 2L = CÁMARA DE COMERCIO (02), 3L = CERTIFICACIÓN BANCARIA (03), 4L = CONTRATO (04)
+    private static final Map<Long, String> TIPOS_OBLIGATORIOS = Map.of(
+        1L, "RUT (01)",
+        2L, "Cámara de Comercio (02)",
+        3L, "Certificación Bancaria (03)",
+        4L, "Contrato (04)"
+    );
+
+    public FacturaZipProcessor(Long identificadorCargue,
+                               FacturaService facturaService,
+                               ErrorCargueService errorCargueService,
+                               DocumentoRepository documentoRepository) {
         this.identificadorCargue = identificadorCargue;
         this.facturaService = facturaService;
         this.errorCargueService = errorCargueService;
+        this.documentoRepository = documentoRepository;
     }
 
     @Override
     public Factura process(FacturaZipWrapperDto item) throws Exception {
         currentLine++;
-        
+
         File xmlFile = item.getArchivoXml();
         if (xmlFile == null || !xmlFile.exists()) {
             return null;
         }
 
-        // 1. Extraer datos del XML principal (AttachedDocument o Invoice directo)
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         dbFactory.setNamespaceAware(false);
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -67,23 +82,19 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
 
         XPath xPath = XPathFactory.newInstance().newXPath();
 
-        // 🔍 Extraer CDATA embebido en caso de ser un contenedor DIAN (AttachedDocument)
         String cdataEmbebido = (String) xPath.compile("//Attachment/ExternalReference/Description/text()").evaluate(doc, XPathConstants.STRING);
+        Document docFactura = doc;
 
-        Document docFactura = doc; // Por defecto asumimos que es el XML directo
-
-        // Si existe CDATA con la Invoice/Factura embebida, la parseamos como un nuevo Document
         if (cdataEmbebido != null && !cdataEmbebido.isBlank()) {
             try {
                 DocumentBuilder builderEmbebido = dbFactory.newDocumentBuilder();
                 docFactura = builderEmbebido.parse(new InputSource(new StringReader(cdataEmbebido.trim())));
                 docFactura.getDocumentElement().normalize();
             } catch (Exception e) {
-                LOGGER.warn("⚠️ No se pudo parsear el CDATA interno del AttachedDocument [{}], se procederá sobre el nodo principal: {}", xmlFile.getName(), e.getMessage());
+                LOGGER.warn("⚠️ No se pudo parsear CDATA interno: {}", e.getMessage());
             }
         }
 
-        // Extracción de datos soportando estructura de Invoice interna o etiquetas de AttachedDocument
         String nitEmisor = (String) xPath.compile("//AccountingSupplierParty//CompanyID/text()").evaluate(docFactura, XPathConstants.STRING);
         if (nitEmisor == null || nitEmisor.isBlank()) {
             nitEmisor = (String) xPath.compile("//SenderParty//CompanyID/text()").evaluate(doc, XPathConstants.STRING);
@@ -100,39 +111,20 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         }
 
         String cufe = (String) xPath.compile("//UUID/text()").evaluate(docFactura, XPathConstants.STRING);
-        if (cufe == null || cufe.isBlank()) {
-            cufe = (String) xPath.compile("//UUID/text()").evaluate(doc, XPathConstants.STRING);
-        }
-
         String fechaStr = (String) xPath.compile("//IssueDate/text()").evaluate(docFactura, XPathConstants.STRING);
-        if (fechaStr == null || fechaStr.isBlank()) {
-            fechaStr = (String) xPath.compile("//IssueDate/text()").evaluate(doc, XPathConstants.STRING);
-        }
-
-        // 💵 Extracción del Valor Total (evalúa PayableAmount y como fallback LineExtensionAmount)
         String valorStr = (String) xPath.compile("//LegalMonetaryTotal/PayableAmount/text()").evaluate(docFactura, XPathConstants.STRING);
-        if (valorStr == null || valorStr.isBlank()) {
-            valorStr = (String) xPath.compile("//LegalMonetaryTotal/LineExtensionAmount/text()").evaluate(docFactura, XPathConstants.STRING);
-        }
 
-        // ===================================================================================
-        // ⚡ FASE 1: VALIDACIONES PRIMARIAS (LOCALES Y ESTRUCTURALES DEL ARCHIVO / ZIP)
-        // ===================================================================================
-
-        // 1.1 Verificación de etiquetas obligatorias no vacías en el XML
+        // =========================================================================
+        // ⚡ VALIDACIÓN 1: ETIQUETAS ESTRUCTURALES OBLIGATORIAS EN XML
+        // =========================================================================
         if (nitEmisor == null || nitEmisor.isBlank()) {
-            registrarError("CAMPO_OBLIGATORIO_VACIO", "NIT_EMISOR", 
-                String.format("El archivo XML [%s] no contiene la etiqueta del NIT del emisor.", xmlFile.getName()), xmlFile.getName());
+            registrarError("CAMPO_OBLIGATORIO_VACIO", "NIT_EMISOR", "El XML no contiene la etiqueta del NIT del emisor.", xmlFile.getName());
         }
-
         if (numeroFactura == null || numeroFactura.isBlank()) {
-            registrarError("CAMPO_OBLIGATORIO_VACIO", "NUMERO_FACTURA", 
-                String.format("El archivo XML [%s] no contiene la etiqueta del número de factura.", xmlFile.getName()), xmlFile.getName());
+            registrarError("CAMPO_OBLIGATORIO_VACIO", "NUMERO_FACTURA", "El XML no contiene el número de factura.", xmlFile.getName());
         }
-
         if (cufe == null || cufe.isBlank()) {
-            registrarError("CAMPO_OBLIGATORIO_VACIO", "CUFE", 
-                String.format("El archivo XML [%s] no contiene la etiqueta del CUFE / UUID.", xmlFile.getName()), xmlFile.getName());
+            registrarError("CAMPO_OBLIGATORIO_VACIO", "CUFE", "El XML no contiene el CUFE / UUID.", xmlFile.getName());
         }
 
         String nitClean = nitEmisor.trim();
@@ -140,41 +132,53 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         String cufeClean = cufe.trim();
         String llaveNitFactura = nitClean + "_" + numFacturaClean;
 
-        // 1.2 Verificación de duplicidad interna dentro del propio archivo ZIP (en memoria RAM)
-        if (cufesInBatch.contains(cufeClean)) {
-            registrarError("CUFE_DUPLICADO_ZIP", "CUFE", 
-                String.format("El CUFE [%s] está duplicado dentro del mismo archivo ZIP cargado.", cufeClean), cufeClean);
-        }
+        // =========================================================================
+        // 🛑 VALIDACIÓN 2: VERIFICACIÓN DE LOS 4 SOPORTES OBLIGATORIOS ACTIVOS
+        // =========================================================================
+        List<Documento> soportesPrestador = documentoRepository.findSoportesPrestadorByNit(nitClean);
         
-        if (nitFacturasInBatch.contains(llaveNitFactura)) {
-            registrarError("FACTURA_DUPLICADA_ZIP", "NIT_NUMERO_FACTURA", 
-                String.format("La combinación NIT [%s] y Factura [%s] está duplicada dentro del mismo archivo ZIP.", nitClean, numFacturaClean), llaveNitFactura);
+        Set<Long> tiposCargados = soportesPrestador.stream()
+                .filter(d -> d.getTipoId() != null && d.getDeletedAt() == null) // Solo soportes activos
+                .map(Documento::getTipoId)
+                .collect(Collectors.toSet());
+
+        List<String> faltantes = new ArrayList<>();
+        TIPOS_OBLIGATORIOS.forEach((tipoId, nombreTipo) -> {
+            if (!tiposCargados.contains(tipoId)) {
+                faltantes.add(nombreTipo);
+            }
+        });
+
+        if (!faltantes.isEmpty()) {
+            String errorMsg = String.format("El prestador con NIT [%s] no puede radicar la factura [%s]. Soportes empresariales obligatorios pendientes por cargar: %s",
+                    nitClean, numFacturaClean, String.join(", ", faltantes));
+            registrarError("SOPORTES_PRESTADOR_INCOMPLETOS", "SOPORTES_EMPRESARIALES", errorMsg, nitClean);
         }
 
-        // ===================================================================================
-        // 🗄️ FASE 2: VALIDACIONES SECUNDARIAS (PREEXISTENCIA EN LA BASE DE DATOS)
-        // Se ejecutan ÚNICAMENTE si el archivo superó todas las validaciones primarias de la Fase 1
-        // ===================================================================================
-        
-        // 2.1 Validar existencia de CUFE en PostgreSQL
+        // =========================================================================
+        // ⚡ VALIDACIÓN 3: DUPLICIDAD DENTRO DEL LOTE Y BASE DE DATOS
+        // =========================================================================
+        if (cufesInBatch.contains(cufeClean)) {
+            registrarError("CUFE_DUPLICADO_ZIP", "CUFE", String.format("El CUFE [%s] está duplicado dentro del mismo archivo ZIP.", cufeClean), cufeClean);
+        }
+        if (nitFacturasInBatch.contains(llaveNitFactura)) {
+            registrarError("FACTURA_DUPLICADA_ZIP", "NIT_NUMERO_FACTURA", String.format("La factura [%s] del NIT [%s] está duplicada en el mismo ZIP.", numFacturaClean, nitClean), llaveNitFactura);
+        }
+
         List<String> cufesExistentesBD = facturaService.findExistingCufes(List.of(cufeClean));
         if (!cufesExistentesBD.isEmpty()) {
-            registrarError("CUFE_EXISTENTE_BD", "CUFE", 
-                String.format("El CUFE [%s] ya existe registrado previamente en la base de datos.", cufeClean), cufeClean);
+            registrarError("CUFE_EXISTENTE_BD", "CUFE", String.format("El CUFE [%s] ya existe en la base de datos.", cufeClean), cufeClean);
         }
 
-        // 2.2 Validar existencia de NIT + Número de Factura en PostgreSQL
         List<String> nitFacturasExistentesBD = facturaService.findExistingNitFacturas(List.of(llaveNitFactura));
         if (!nitFacturasExistentesBD.isEmpty()) {
-            registrarError("FACTURA_EXISTENTE_BD", "NIT_NUMERO_FACTURA", 
-                String.format("La factura número [%s] del NIT [%s] ya existe en la base de datos.", numFacturaClean, nitClean), llaveNitFactura);
+            registrarError("FACTURA_EXISTENTE_BD", "NIT_NUMERO_FACTURA", String.format("La factura [%s] del NIT [%s] ya existe en la base de datos.", numFacturaClean, nitClean), llaveNitFactura);
         }
 
-        // Si pasó las dos fases exitosamente, guardamos en la memoria RAM del lote actual
         cufesInBatch.add(cufeClean);
         nitFacturasInBatch.add(llaveNitFactura);
 
-        // Mapear objeto Factura
+        // Mapeo de la entidad Factura
         Factura factura = new Factura();
         factura.setNit(nitClean);
         factura.setRazonSocialEmisor(razonSocial != null ? razonSocial.trim() : "DESCONOCIDO");
@@ -189,29 +193,29 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         if (valorStr != null && !valorStr.isBlank()) {
             factura.setValorTotal(new BigDecimal(valorStr.trim()));
         }
-        
+
         factura.setEstado("RADICADO");
         factura.setFaseId(1L);
         factura.setObservacion("");
 
-        // Mapear XML
+        // Documento XML de la Factura (Tipo 6 - FAC_XML)
         Documento docXml = new Documento();
         docXml.setNombreOriginal(xmlFile.getName());
         docXml.setTamano(xmlFile.length());
-        docXml.setEstadoId(1L);    
-        docXml.setExtensionId(1L); 
-        docXml.setTipoId(1L);      
+        docXml.setEstadoId(1L);
+        docXml.setExtensionId(1L);
+        docXml.setTipoId(6L);
         docXml.setArchivoTemporal(xmlFile);
         factura.addDocumento(docXml);
 
-        // Mapear PDF
+        // Documento PDF de la Factura (Tipo 5 - FAC_PDF)
         if (item.getArchivoPdf() != null && item.getArchivoPdf().exists()) {
             Documento docPdf = new Documento();
             docPdf.setNombreOriginal(item.getArchivoPdf().getName());
             docPdf.setTamano(item.getArchivoPdf().length());
             docPdf.setEstadoId(1L);
-            docPdf.setExtensionId(2L); 
-            docPdf.setTipoId(2L);
+            docPdf.setExtensionId(2L);
+            docPdf.setTipoId(5L);
             docPdf.setArchivoTemporal(item.getArchivoPdf());
             factura.addDocumento(docPdf);
         }
@@ -228,11 +232,9 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         error.setError(descripcion);
         error.setValorAsociado(valor);
         error.setCreatedAt(LocalDateTime.now());
-        
-        // Persistir en tabla independiente de auditoría de errores
+
         errorCargueService.saveAll(List.of(error));
-        
-        LOGGER.error("❌ ERROR DETECTADO: {}", descripcion);
-        throw new IllegalStateException(descripcion); // Corta la ejecución de inmediato
+        LOGGER.error("❌ ERROR DETECTADO EN BATCH: {}", descripcion);
+        throw new IllegalStateException(descripcion);
     }
 }

@@ -103,6 +103,9 @@ select * from public.batch_step_execution_context bsec;
 insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
 values ('2026-07-24 15:10:19.336','Calle 15 # 24-50','facturacion@clinicasoluciones.com',0,123,'CLINICA SOLUCIONES SALUD S.A.S','3001234567');
 
+insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
+values ('2026-07-24 15:10:19.336','Calle 15 # 24-50','facturacion@clinicasoluciones.com',0,901323081,'CLINICA SOLUCIONES SALUD S.A.S','3001234567');
+
 --pasar a fase 1
 update gestor.factura 
 set estado = 'RADICADO' ,observacion = null , fase_id = 1 , 

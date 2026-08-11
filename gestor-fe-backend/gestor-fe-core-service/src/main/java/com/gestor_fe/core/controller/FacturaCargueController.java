@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -110,5 +111,16 @@ public class FacturaCargueController {
     @GetMapping(value = "/sse/subscribir/{usuario}", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribirNotificaciones(@PathVariable("usuario") String usuario) {
         return sseNotificationService.crearConexion(usuario);
+    }
+    
+    @PutMapping("/deleted-at/{id}")
+    public ResponseEntity<?> eliminarLogico(@PathVariable("id") Long id) {
+        try {
+            Cargue cargueEliminado = cargueService.eliminarLogico(id);
+            return ResponseEntity.ok(cargueEliminado);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al realizar el borrado lógico del cargue: " + e.getMessage());
+        }
     }
 }

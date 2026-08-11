@@ -28,12 +28,12 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
   usuarioActivo: string = '';
   rolesUsuario: string[] = [];
 
-  esAdmin: boolean = false;
+  // Permisos de interfaz
+  esAdminOPerfilAdmin: boolean = false;
   esPrestador: boolean = false;
 
   private sseSubscription?: Subscription;
 
-  // 📝 Mapeo de columnas agregando la propiedad calculada 'estadoNombre'
   columnas = [
     { field: 'id', header: 'Id', filtrable: false },
     { field: 'nombreArchivo', header: 'Nombre del Archivo', filtrable: true },
@@ -68,23 +68,24 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
     this.usuarioActivo = this.loginService.getUserName();
     this.rolesUsuario = this.loginService.getUserRoles() || [];
 
-    this.esAdmin = this.loginService.isAdmin || this.loginService.isGAdmin || this.loginService.isGCargue;
+    // Habilita visibilidad y borrado para Administradores
+    this.esAdminOPerfilAdmin = this.loginService.isAdmin || this.loginService.isGAdmin || this.loginService.isGCargue;
     this.esPrestador = this.loginService.isPrestador;
   }
 
   /**
-   * 📡 Suscripción SSE para actualizar la grilla en tiempo real al finalizar Spring Batch
+   * 📡 Suscripción SSE para refrescar la grilla en tiempo real al terminar Spring Batch
    */
   private iniciarSuscripcionSSE(): void {
     if (!this.usuarioActivo) return;
 
     this.sseSubscription = this.service.conectarSSE(this.usuarioActivo).subscribe({
       next: (evento) => {
-        this.calcularRangos();
+        this.calcularRangos(); // Refresca grilla tras notificación
 
         if (evento.exiteError) {
           this.alertService.advertencia(
-            `El cargue finalizó con errores. Revisa el reporte de inconsistencias.`,
+            'El cargue finalizó con errores. Revisa el reporte de inconsistencias.',
             'Cargue con Errores'
           );
         } else {
@@ -99,13 +100,12 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
   }
 
   /**
-   * 🏷️ Transforma los flags de la BD a texto descriptivo de Estado
+   * 🏷️ Asigna el texto descriptivo del estado
    */
   private procesarEstados(cargues: Cargue[]): any[] {
     return (cargues || []).map(c => {
       let estadoTxt = 'PROCESANDO';
 
-      // Si el Job ya finalizó en Spring Batch (jobExecutionId != null)
       if (c.jobExecutionId) {
         estadoTxt = c.exiteError ? 'CON ERRORES' : 'CARGADO';
       }
@@ -225,21 +225,28 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
     });
   }
 
+  /**
+   * 🗑️ Elimina lógicamente el registro del cargue y sus dependencias en el Backend
+   */
   deletedAt(row: Cargue): void {
+    const detalleTxt = row.exiteError ? 'con errores' : 'exitoso y sus facturas/documentos asociados';
+
     this.alertService.confirmar(
-      `¿Desea eliminar el historial del cargue #${row.id}?`,
+      `¿Desea eliminar lógicamente el historial del cargue #${row.id} (${detalleTxt})?`,
       '¿Eliminar Historial?',
       'Sí, eliminar'
     ).then((result) => {
       if (result.isConfirmed) {
 
+        this.alertService.cargando('Eliminando registro...', 'Un momento');
+
         this.service.deletedAt(row.id).subscribe({
           next: () => {
-            this.alertService.exito('El historial del cargue ha sido eliminado.', 'Registro Eliminado');
+            this.alertService.exito('El historial del cargue y sus dependencias han sido removidos.', 'Registro Eliminado');
             this.calcularRangos();
           },
           error: (err) => {
-            console.error(err);
+            console.error('Error al eliminar el cargue:', err);
             this.alertService.error('No se pudo eliminar el registro seleccionado.');
           }
         });
