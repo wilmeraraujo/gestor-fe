@@ -1,14 +1,14 @@
 package com.gestor_fe.core.config;
 
 import org.springframework.batch.core.configuration.annotation.StepScope;
-import org.springframework.batch.core.job.Job;
+import org.springframework.batch.core.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.batch.core.step.Step;
+import org.springframework.batch.core.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.infrastructure.item.ItemReader;
-import org.springframework.batch.infrastructure.item.ItemProcessor;
-import org.springframework.batch.infrastructure.item.ItemWriter;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +16,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import com.gestor_fe.core.dto.FacturaZipWrapperDto;
 import com.gestor_fe.core.entity.Factura;
+import com.gestor_fe.core.repository.DocumentoRepository;
 import com.gestor_fe.core.repository.FacturaRepository;
 import com.gestor_fe.core.service.ErrorCargueService;
 import com.gestor_fe.core.service.FacturaService;
@@ -29,6 +30,7 @@ public class JobLoteCargueConfig {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
     private final FacturaRepository facturaRepository;
+    private final DocumentoRepository documentoRepository;
     private final ErrorCargueService errorCargueService;
     private final FacturaService facturaService;
 
@@ -38,16 +40,17 @@ public class JobLoteCargueConfig {
     @Value("${ruta.storage.validos}")
     private String rutaStorageValidos;
 
-    // Inyección por constructor limpia y consistente
     public JobLoteCargueConfig(JobRepository jobRepository, 
                                PlatformTransactionManager transactionManager,
                                FacturaService facturaService,
                                FacturaRepository facturaRepository,
+                               DocumentoRepository documentoRepository,
                                ErrorCargueService errorCargueService) {
         this.jobRepository = jobRepository;
         this.transactionManager = transactionManager;
         this.facturaService = facturaService;
         this.facturaRepository = facturaRepository;
+        this.documentoRepository = documentoRepository;
         this.errorCargueService = errorCargueService;
     }
 
@@ -72,7 +75,6 @@ public class JobLoteCargueConfig {
           .writer(writer)
           .faultTolerant()
           .noSkip(IllegalStateException.class)
-          //.skip(Exception.class)
           .skipLimit(Integer.MAX_VALUE)
           .build();
     }
@@ -82,7 +84,6 @@ public class JobLoteCargueConfig {
     public ItemReader<FacturaZipWrapperDto> reader(
             @Value("#{jobParameters['fullPathFileName']}") String zipFilePath,
             @Value("#{jobParameters['identificadorCargue']}") Long identificadorCargue) { 
-        // CORREGIDO: Le pasamos el Servicio de errores en lugar del Repositorio
         return new FacturaZipItemReader(zipFilePath, errorCargueService, identificadorCargue); 
     }
 
@@ -90,14 +91,14 @@ public class JobLoteCargueConfig {
     @StepScope
     public ItemProcessor<FacturaZipWrapperDto, Factura> processor(
             @Value("#{jobParameters['identificadorCargue']}") Long identificadorCargue,
-            FacturaService facturaService) { // 👈 Inyectamos el servicio
-        return new FacturaZipProcessor(identificadorCargue, facturaService, errorCargueService);
+            FacturaService facturaService) { 
+        return new FacturaZipProcessor(identificadorCargue, facturaService, errorCargueService, documentoRepository);
     }
 
     @Bean
     @StepScope
     public ItemWriter<Factura> writer(
             @Value("#{jobParameters['identificadorCargue']}") Long identificadorCargue) {
-        return new FacturaZipWriter(facturaRepository, rutaStorageValidos, identificadorCargue);
+        return new FacturaZipWriter(facturaRepository, documentoRepository, rutaStorageValidos, identificadorCargue);
     }
 }

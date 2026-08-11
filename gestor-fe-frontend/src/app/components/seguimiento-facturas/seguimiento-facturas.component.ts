@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
@@ -18,6 +18,7 @@ import { Documento } from '../../models/documento';
 import { FacturaService } from '../../services/factura.service';
 import { DocumentoService } from '../../services/documento.service';
 import { FaseService } from '../../services/fase.service';
+import { LoginService } from '../../services/login.service'; // 👈 Inyección de LoginService
 
 @Component({
   selector: 'app-seguimiento-facturas',
@@ -46,9 +47,13 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
 
   mapaFases: { [key: number]: string } = {};
 
-  // 👤 Datos de Sesión para discriminación de roles
+  // 👤 Datos de Sesión y Control de Roles
   nitPrestadorActivo: string = '';
   rolesUsuario: string[] = [];
+  esPrestador: boolean = false; // 👈 Flag para ocultar el botón de historial al Prestador
+
+  // 🚀 Inyección de LoginService
+  private loginService = inject(LoginService);
 
   // 🎯 SUBJECT Y SUBSCRIPCIÓN PARA RETARDO DE FILTROS (DEBOUNCE 400ms)
   private filtroSubject = new Subject<{ [key: string]: string }>();
@@ -72,9 +77,9 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   ];
 
   columnasSoportes = [
-    { field: 'id', header: 'ID' },
+    //{ field: 'id', header: 'ID' },
     { field: 'nombreOriginal', header: 'Nombre Archivo' },
-    { field: 'tipoId', header: 'Tipo ID' }
+    //{ field: 'tipoId', header: 'Tipo ID' }
   ];
 
   columnasHistorial = [
@@ -111,14 +116,24 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   }
 
   /**
-   * 👤 Extrae el usuario y los roles asignados desde Keycloak
+   * 👤 Extrae el usuario y evalúa los roles asignados desde LoginService
    */
   private obtenerDatosSesion(): void {
     try {
-      this.rolesUsuario = this.keycloakService.getUserRoles() || [];
-      this.nitPrestadorActivo = this.keycloakService.getUsername() || '';
+      this.rolesUsuario = this.loginService.getUserRoles() || [];
+      this.nitPrestadorActivo = this.loginService.getUserName();
+
+      // Evalúa si el usuario es exclusivamente Prestador (y no Admin o Gestor)
+      this.esPrestador = this.loginService.isPrestador && 
+                         !this.loginService.isAdmin && 
+                         !this.loginService.isGAdmin;
+
+      // Si es Prestador, restringe el filtro de NIT a su sesión activa por defecto
+      if (this.esPrestador && this.nitPrestadorActivo) {
+        this.filtrosActivos.nit = this.nitPrestadorActivo;
+      }
     } catch (e) {
-      console.warn('No se pudo obtener información de sesión Keycloak:', e);
+      console.warn('Error obteniendo datos de sesión:', e);
     }
   }
 
@@ -143,12 +158,13 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   }
 
   /**
-   * 🛠️ Mapea los filtros para Criteria
+   * 🛠️ Mapea los filtros para Criteria garantizando la restricción del Prestador
    */
   private procesarFiltrosYConsultar(filtrosColumnas: { [key: string]: string }): void {
     this.filtrosActivos = {
       id: filtrosColumnas['id'] ? Number(filtrosColumnas['id']) : null,
-      nit: filtrosColumnas['nit'] || filtrosColumnas['nitEmisor'] || null,
+      // Si es Prestador mantiene su NIT, de lo contrario admite el filtro ingresado
+      nit: this.esPrestador ? this.nitPrestadorActivo : (filtrosColumnas['nit'] || filtrosColumnas['nitEmisor'] || null),
       numeroFactura: filtrosColumnas['numeroFactura'] || null,
       razonSocialEmisor: filtrosColumnas['razonSocialEmisor'] || null,
       cufe: filtrosColumnas['cufe'] || null,
@@ -182,7 +198,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   }
 
   /**
-   * 📋 Carga facturas mediante la API de trazabilidad con diferenciación de roles
+   * 📋 Carga facturas mediante la API de trazabilidad con discriminación de roles
    */
   cargarDatosPaginados(): void {
     this.service.buscarTrazabilidadSegunRol(
@@ -219,9 +235,11 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   }
 
   /**
-   * ℹ️ Redirecciona a la 3ª Pestaña de Trazabilidad y carga el historial completo
+   * ℹ️ Carga el historial completo (Acceso exclusivo para Gestores / Admin)
    */
   verHistorialGestion(row: Factura): void {
+    if (this.esPrestador) return;
+
     this.facturaSeleccionada = row;
 
     this.historialFacturaSeleccionada = (row.gestiones || []).map((g: any) => ({

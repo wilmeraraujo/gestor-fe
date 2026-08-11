@@ -31,4 +31,7 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
 
     @Query("SELECT CONCAT(f.nit, '_', f.numeroFactura) FROM Factura f WHERE f.deletedAt IS NULL AND CONCAT(f.nit, '_', f.numeroFactura) IN :nitFacturas")
     List<String> findExistingNitFacturas(@Param("nitFacturas") List<String> nitFacturas);
+    
+    // Recupera las facturas de un cargue específico que no hayan sido borradas
+    List<Factura> findByIdentificadorCargueAndDeletedAtIsNull(Long identificadorCargue);
 }

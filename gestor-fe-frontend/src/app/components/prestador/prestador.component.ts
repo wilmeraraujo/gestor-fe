@@ -11,7 +11,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TipoService } from '../../services/tipo.service';
 import { PrestadorService } from '../../services/prestador.service';
 import { DocumentoService } from '../../services/documento.service';
-import { AlertService } from '../../services/alert.service'; // 👈 Inyección del nuevo servicio
+import { AlertService } from '../../services/alert.service';
+import { LoginService } from '../../services/login.service'; // 👈 Inyectamos LoginService
 import { Tipo } from '../../models/tipo';
 import { Prestador } from '../../models/prestador';
 import { Documento } from '../../models/documento';
@@ -39,18 +40,42 @@ export class PrestadorComponent implements OnInit {
   public soportesCargados: Map<number, Documento> = new Map();
   public cargando: boolean = false;
 
+  // 🚩 Flags de vista según el rol del usuario
+  public esUsuarioPrestador: boolean = false;
+
   constructor(
     private tipoService: TipoService,
     private prestadorService: PrestadorService,
     private documentoService: DocumentoService,
-    private alertService: AlertService // 👈 Inyectado aquí
+    private alertService: AlertService,
+    private loginService: LoginService // 👈 Inyección de LoginService
   ) { }
 
   ngOnInit(): void {
     this.cargarTiposSoporte();
+    this.evaluarRolYAutocargar();
   }
 
-  // 1. Cargar catálogo de tipos
+  /**
+   * 🔑 Evalúa el rol del usuario autenticado desde LoginService
+   */
+  private evaluarRolYAutocargar(): void {
+    const roles = this.loginService.getUserRoles();
+    
+    // Si tiene rol de prestador y NO es admin/gestor
+    this.esUsuarioPrestador = this.loginService.isPrestador && !this.loginService.isAdmin && !this.loginService.isGAdmin;
+
+    if (this.esUsuarioPrestador) {
+      // 🎯 Tomamos directamente el username/NIT del usuario de la sesión Keycloak
+      const nitSesion = this.loginService.getUserName();
+      if (nitSesion && nitSesion !== 'GESTOR_SISTEMA') {
+        this.nitBusqueda = nitSesion;
+        this.buscarPrestadorConNit(nitSesion);
+      }
+    }
+  }
+
+  // 1. Cargar catálogo de tipos de soporte (excluye PDF/XML de factura)
   cargarTiposSoporte(): void {
     this.tipoService.listar().subscribe({
       next: (tipos: any[]) => {
@@ -64,15 +89,21 @@ export class PrestadorComponent implements OnInit {
     });
   }
 
-  // 2. Buscar prestador por NIT
+  // 2. Buscar prestador por el NIT del input manual (modo Admin/Gestor)
   buscarPrestador(): void {
     if (!this.nitBusqueda || this.nitBusqueda.trim() === '') {
       this.alertService.advertencia('Ingrese un NIT para realizar la búsqueda.');
       return;
     }
+    this.buscarPrestadorConNit(this.nitBusqueda.trim());
+  }
 
+  /**
+   * 🛠️ Método privado unificado para consulta de Prestador
+   */
+  private buscarPrestadorConNit(nit: string): void {
     this.cargando = true;
-    this.prestadorService.obtenerPorNit(this.nitBusqueda.trim()).subscribe({
+    this.prestadorService.obtenerPorNit(nit).subscribe({
       next: (prestador) => {
         this.prestadorActual = prestador;
         if (prestador.id !== undefined) {
@@ -84,12 +115,17 @@ export class PrestadorComponent implements OnInit {
         this.prestadorActual = null;
         this.soportesCargados.clear();
         this.cargando = false;
-        this.alertService.info(`No se encontró un prestador registrado con NIT: ${this.nitBusqueda}`, 'No encontrado');
+        
+        if (!this.esUsuarioPrestador) {
+          this.alertService.info(`No se encontró un prestador registrado con NIT: ${nit}`, 'No encontrado');
+        } else {
+          this.alertService.error(`No se encontró su registro de Prestador con NIT: ${nit}. Contacte al administrador.`);
+        }
       }
     });
   }
 
-  // 3. Cargar los soportes
+  // 3. Cargar los soportes empresariales activos
   cargarSoportesExistentes(prestadorId: number | string): void {
     this.prestadorService.listarSoportes(Number(prestadorId)).subscribe({
       next: (response) => {
@@ -106,8 +142,9 @@ export class PrestadorComponent implements OnInit {
     });
   }
 
-  // 🧹 Limpiar búsqueda
+  // 🧹 Limpiar búsqueda (Sólo visible para Administradores)
   limpiarFiltro(): void {
+    if (this.esUsuarioPrestador) return;
     this.nitBusqueda = '';
     this.prestadorActual = null;
     this.soportesCargados.clear();
@@ -129,7 +166,6 @@ export class PrestadorComponent implements OnInit {
 
     const extensionId = archivo.name.toLowerCase().endsWith('.pdf') ? 2 : 1;
 
-    // 🔄 Muestra alerta de carga
     this.alertService.cargando(`Cargando soporte ${tipo.descripcion || tipo.codigo}`, 'Subiendo archivo...');
 
     this.prestadorService.cargarSoporte(this.prestadorActual.nit, Number(tipo.id), extensionId, archivo).subscribe({
@@ -158,7 +194,6 @@ export class PrestadorComponent implements OnInit {
 
   // 6. Eliminar el soporte
   eliminarSoporte(tipoId: number | string, docId: number | string): void {
-    // ❓ Confirmación con SweetAlert desde el servicio
     this.alertService.confirmar('Se eliminará el soporte seleccionado.', '¿Está seguro?', 'Sí, eliminar')
       .then((result) => {
         if (result.isConfirmed) {

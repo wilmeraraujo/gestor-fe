@@ -87,7 +87,7 @@ select * from admin.tipo t;
 --consultas
 --
 select * from gestor.cargue c order by id desc limit 10;
-select * from gestor.documento d order by id desc limit 10;
+select * from gestor.documento d order by id desc limit 20;
 select * from gestor.prestador p order by id desc limit 10;
 select * from gestor.factura f order by id desc limit 10;
 select * from gestor.error_cargue ec order by id desc limit 10;
@@ -102,6 +102,9 @@ select * from public.batch_step_execution_context bsec;
 --insertar prestador
 insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
 values ('2026-07-24 15:10:19.336','Calle 15 # 24-50','facturacion@clinicasoluciones.com',0,123,'CLINICA SOLUCIONES SALUD S.A.S','3001234567');
+
+insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
+values ('2026-07-24 15:10:19.336','Calle 15 # 24-50','facturacion@clinicasoluciones.com',0,901323081,'CLINICA SOLUCIONES SALUD S.A.S','3001234567');
 
 --pasar a fase 1
 update gestor.factura 

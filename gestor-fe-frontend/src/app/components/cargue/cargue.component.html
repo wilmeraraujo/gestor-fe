@@ -1,4 +1,4 @@
-<!-- Input nativo oculto para la selección del archivo ZIP -->
+<!-- Input nativo oculto para seleccionar archivo ZIP -->
 <input 
   type="file" 
   #fileInput 
@@ -21,7 +21,7 @@
   [mostrarDetalle]="false"
   [mostrarEditar]="false"
   [mostrarDescargaErrores]="true"
-  [mostrarEliminar]="esAdmin"
+  [mostrarEliminar]="esAdminOPerfilAdmin"
   
   (paginar)="paginar($event)"
   (descargarErrores)="descargarExcelErrores($event)"
