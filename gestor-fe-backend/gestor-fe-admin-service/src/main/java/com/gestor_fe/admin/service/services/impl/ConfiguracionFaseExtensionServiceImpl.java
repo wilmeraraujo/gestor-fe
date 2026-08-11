@@ -32,4 +32,28 @@ public class ConfiguracionFaseExtensionServiceImpl extends GlobalServiceImpl<Con
     public List<ConfiguracionFaseExtension> findByFaseId(Long faseId) {
         return repository.findByFaseIdAndDeletedAtIsNull(faseId);
     }
+    
+    @Override
+    @Transactional
+    public ConfiguracionFaseExtension save(ConfiguracionFaseExtension entity) {
+        boolean existe;
+        
+        if (entity.getId() == null) {
+            // Creación: Verificar si la combinación fase_id + extension_id ya existe
+            existe = repository.existsByFaseIdAndExtensionIdAndDeletedAtIsNull(
+                entity.getFaseId(), entity.getExtensionId()
+            );
+        } else {
+            // Edición: Verificar que la combinación no pertenezca a OTRO registro distinto
+            existe = repository.existsByFaseIdAndExtensionIdAndIdNotAndDeletedAtIsNull(
+                entity.getFaseId(), entity.getExtensionId(), entity.getId()
+            );
+        }
+
+        if (existe) {
+            throw new IllegalArgumentException("Ya existe una regla configurada para esta extensión en la fase seleccionada.");
+        }
+
+        return super.save(entity);
+    }
 }

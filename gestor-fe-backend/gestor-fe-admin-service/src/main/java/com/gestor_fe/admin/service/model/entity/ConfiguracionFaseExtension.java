@@ -3,6 +3,8 @@ package com.gestor_fe.admin.service.model.entity;
 import com.service.common.entity.Global;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,4 +29,12 @@ public class ConfiguracionFaseExtension extends Global {
 
     @Column(name = "permite_multiple", nullable = false)
     private Boolean permiteMultiple = true;
+    
+    @PrePersist
+    @PreUpdate
+    public void autoCompletarCampos() {
+        if (this.getCodigo() == null || this.getCodigo().trim().isEmpty()) {
+            this.setCodigo(this.faseId + "-" + this.extensionId);
+        }
+    }
 }

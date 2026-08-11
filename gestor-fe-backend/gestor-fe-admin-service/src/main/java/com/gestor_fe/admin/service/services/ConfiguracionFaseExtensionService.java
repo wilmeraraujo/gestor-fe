@@ -13,4 +13,5 @@ public interface ConfiguracionFaseExtensionService extends GlobalService<Configu
     Page<ConfiguracionFaseExtension> findByDeletedAtIsNull(Pageable pageable);
     List<ConfiguracionFaseExtension> findByDescripcion(String desc);
     List<ConfiguracionFaseExtension> findByFaseId(Long faseId);
+    ConfiguracionFaseExtension save(ConfiguracionFaseExtension entity);
 }

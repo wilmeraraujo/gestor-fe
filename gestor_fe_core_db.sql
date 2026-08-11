@@ -92,6 +92,8 @@ select * from admin.observacion o order by id desc limit 10;
 select * from admin.tipo t order by id desc limit 10;
 select * from admin."extension" e order by id desc limit 10;
 select * from admin.fase f order by id desc limit 10;
+select * from admin.configuracion_sistema cs order by id desc limit 10;
+select * from admin.configuracion_fase_extension cfe order by id desc limit 10;
 
 --
 -- Reinicio masivo de tablas del esquema 'admin'
@@ -104,6 +106,7 @@ TRUNCATE TABLE admin.observacion RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin.tipo RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin."extension" RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin.fase RESTART IDENTITY CASCADE;
+TRUNCATE TABLE admin.configuracion_fase_extension RESTART IDENTITY CASCADE;
 
 TRUNCATE TABLE 
     --admin.departamento,
@@ -377,4 +380,18 @@ INSERT INTO admin.observacion (id, codigo, created_at, deleted_at, descripcion, 
 (3, '03', '2026-07-30 21:09:58.560', NULL, 'Devolución', NULL),
 (4, '04', '2026-07-30 21:11:10.132', NUll, 'Otro', NULL);
 
+INSERT INTO admin."extension" (id, codigo, created_at, deleted_at, descripcion, updated_at) VALUES
+(1, '01', '2026-07-30 21:08:11.099', NULL, 'xml', NULL),
+(2, '02', '2026-07-30 21:09:18.399', NULL, 'pdf', NULL),
+(3, '02', '2026-07-30 21:09:18.399', NULL, 'zip', NULL);
 
+
+INSERT INTO admin.configuracion_sistema (clave, valor, descripcion, categoria) VALUES
+('TAMANO_MAX_ZIP_CARGUE_MB', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 'CARGUE'),
+('MAX_FACTURAS_POR_ZIP', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 'CARGUE'),
+('ROLES_PERMITIDOS_BORRADO_LOGICO', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 'SEGURIDAD');
+
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_fase_extension_active 
+ON admin.configuracion_fase_extension (fase_id, extension_id) 
+WHERE deleted_at IS NULL;

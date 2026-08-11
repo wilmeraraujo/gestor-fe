@@ -19,9 +19,12 @@ import lombok.Data;
 import lombok.ToString;
 import org.hibernate.annotations.SQLRestriction;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Data
 @Entity
 @Table(name = "prestador", schema = "gestor")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Prestador {
 
     @Id

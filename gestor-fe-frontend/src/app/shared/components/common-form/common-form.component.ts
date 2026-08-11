@@ -64,24 +64,15 @@ export class CommonFormComponent implements OnInit {
       return;
     }
 
-    // Si hay archivo, podemos construir un FormData o adjuntarlo
-    const formDataPayload = new FormData();
     const formValues = { ...this.data, ...this.form.value };
 
-    Object.keys(formValues).forEach(key => {
-      if (formValues[key] !== null && formValues[key] !== undefined) {
-        formDataPayload.append(key, formValues[key]);
-      }
-    });
+    // ⚡ Normalizar IDs numéricos si vienen como String desde el <select>
+    if (formValues.faseId) formValues.faseId = Number(formValues.faseId);
+    if (formValues.extensionId) formValues.extensionId = Number(formValues.extensionId);
+    if (formValues.tamanoMaximoMb) formValues.tamanoMaximoMb = Number(formValues.tamanoMaximoMb);
 
-    // Adjuntar los archivos binarios reales si se cargaron
-    Object.keys(this.archivosSubidos).forEach(key => {
-      formDataPayload.append(key, this.archivosSubidos[key]);
-    });
-
-    // Nota: Si tu backend recibe JSON normal o FormData, pasamos el modelo estructurado
     const request = formValues.id
-      ? this.service.editar(formValues) // o formDataPayload según tu backend
+      ? this.service.editar(formValues)
       : this.service.crear(formValues);
 
     request.subscribe({
@@ -90,8 +81,8 @@ export class CommonFormComponent implements OnInit {
           icon: 'success',
           title: 'Éxito',
           text: formValues.id
-            ? 'Factura actualizada con éxito'
-            : 'Factura creada con éxito'
+            ? 'Regla actualizada con éxito'
+            : 'Regla creada con éxito'
         });
         this.dialogRef.close(true);
       },

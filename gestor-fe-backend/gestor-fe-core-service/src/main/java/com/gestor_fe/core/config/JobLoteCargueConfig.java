@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import com.gestor_fe.core.client.AdminFeignClient;
 import com.gestor_fe.core.dto.FacturaZipWrapperDto;
 import com.gestor_fe.core.entity.Factura;
 import com.gestor_fe.core.repository.DocumentoRepository;
@@ -89,10 +90,13 @@ public class JobLoteCargueConfig {
 
     @Bean
     @StepScope
-    public ItemProcessor<FacturaZipWrapperDto, Factura> processor(
+    public ItemProcessor<FacturaZipWrapperDto, Factura> itemProcessor(
             @Value("#{jobParameters['identificadorCargue']}") Long identificadorCargue,
-            FacturaService facturaService) { 
-        return new FacturaZipProcessor(identificadorCargue, facturaService, errorCargueService, documentoRepository);
+            FacturaService facturaService,
+            ErrorCargueService errorCargueService,
+            DocumentoRepository documentoRepository,
+            AdminFeignClient adminFeignClient) { // 👈 Inyección declarativa de Spring
+        return new FacturaZipProcessor(identificadorCargue, facturaService, errorCargueService, documentoRepository, adminFeignClient);
     }
 
     @Bean

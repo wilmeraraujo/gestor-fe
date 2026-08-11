@@ -19,4 +19,8 @@ public interface ConfiguracionFaseExtensionRepository extends JpaRepository<Conf
     List<ConfiguracionFaseExtension> findByDescripcion(String desc);
 
     List<ConfiguracionFaseExtension> findByFaseIdAndDeletedAtIsNull(Long faseId);
+    
+    boolean existsByFaseIdAndExtensionIdAndDeletedAtIsNull(Long faseId, Long extensionId);
+
+    boolean existsByFaseIdAndExtensionIdAndIdNotAndDeletedAtIsNull(Long faseId, Long extensionId, Long id);
 }
