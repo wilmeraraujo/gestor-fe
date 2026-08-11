@@ -18,6 +18,8 @@ import { ReconocimientoContableComponent } from './components/reconocimiento-con
 import { ImpuestosComponent } from './components/impuestos/impuestos.component';
 import { PendienteDePagoComponent } from './components/pendiente-de-pago/pendiente-de-pago.component';
 import { SeguimientoFacturasComponent } from './components/seguimiento-facturas/seguimiento-facturas.component';
+import { ConfiguracionSistemaComponent } from './components/admin/configuracion-sistema/configuracion-sistema.component';
+import { ConfiguracionFaseExtensionComponent } from './components/admin/configuracion-fase-extension/configuracion-fase-extension.component';
 
 
 export const routes: Routes = [
@@ -83,7 +85,9 @@ export const routes: Routes = [
           {
             path: 'observacion',
             component: ObservacionComponent
-          }
+          },
+          { path: 'configuracion-sistema', component: ConfiguracionSistemaComponent },
+          { path: 'configuracion-fase-extension', component: ConfiguracionFaseExtensionComponent }
 
         ]
       },
