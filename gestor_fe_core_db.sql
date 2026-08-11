@@ -87,7 +87,7 @@ select * from admin.tipo t;
 --consultas
 --
 select * from gestor.cargue c order by id desc limit 10;
-select * from gestor.documento d order by id desc limit 10;
+select * from gestor.documento d order by id desc limit 20;
 select * from gestor.prestador p order by id desc limit 10;
 select * from gestor.factura f order by id desc limit 10;
 select * from gestor.error_cargue ec order by id desc limit 10;
