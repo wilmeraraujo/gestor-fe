@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -39,7 +40,7 @@ public class FacturaServiceImpl implements FacturaService {
     private final FacturaRepository repository;
 
     @PersistenceContext
-    private EntityManager entityManager; // 👈 Inyectado directamente aquí para usar Criteria
+    private EntityManager entityManager;
 
     @Value("${ruta.storage.validos}")
     private String rutaStorageValidos;
@@ -63,6 +64,9 @@ public class FacturaServiceImpl implements FacturaService {
     @Override
     @Transactional(readOnly = true)
     public Page<Factura> findByFaseActiva(Long faseId, Pageable pageable) {
+        if (faseId != null && faseId == 4L) {
+            return repository.findByFaseCuatroPendientePago(faseId, pageable);
+        }
         return repository.findByFaseActiva(faseId, pageable);
     }
 
@@ -73,7 +77,7 @@ public class FacturaServiceImpl implements FacturaService {
     }
 
     // =========================================================================
-    // 🔍 BÚSQUEDA DINÁMICA CON JPA CRITERIA (DIRECTAMENTE EN EL SERVICE IMPL)
+    // 🔍 BÚSQUEDA CRITERIA
     // =========================================================================
 
     @Override
@@ -81,14 +85,12 @@ public class FacturaServiceImpl implements FacturaService {
     public Page<Factura> buscarConCriteria(FacturaFilterDto filtro, Pageable pageable) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
 
-        // 1. Consulta principal de datos
         CriteriaQuery<Factura> query = cb.createQuery(Factura.class);
         Root<Factura> root = query.from(Factura.class);
 
         List<Predicate> predicates = construirPredicados(cb, root, filtro);
         query.where(predicates.toArray(new Predicate[0]));
 
-        // Aplicar ordenamiento dinámico del Pageable
         if (pageable.getSort().isSorted()) {
             List<Order> orders = new ArrayList<>();
             pageable.getSort().forEach(sortOrder -> {
@@ -109,7 +111,6 @@ public class FacturaServiceImpl implements FacturaService {
 
         List<Factura> facturas = typedQuery.getResultList();
 
-        // 2. Consulta de conteo para la paginación
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<Factura> countRoot = countQuery.from(Factura.class);
 
@@ -135,7 +136,6 @@ public class FacturaServiceImpl implements FacturaService {
             rol.equalsIgnoreCase("default-roles-fe")
         );
 
-        // Si es Prestador, restringe obligatoriamente la consulta a su NIT
         if (!esAdminOGestor && nitPrestador != null && !nitPrestador.isBlank()) {
             filtro.setNit(nitPrestador);
         }
@@ -143,9 +143,6 @@ public class FacturaServiceImpl implements FacturaService {
         return buscarConCriteria(filtro, pageable);
     }
 
-    /**
-     * 🛠️ Helper privado que arma las condiciones dinámicas con Criteria
-     */
     private List<Predicate> construirPredicados(CriteriaBuilder cb, Root<Factura> root, FacturaFilterDto filtro) {
         List<Predicate> predicates = new ArrayList<>();
 
@@ -153,6 +150,12 @@ public class FacturaServiceImpl implements FacturaService {
 
         if (filtro == null) {
             return predicates;
+        }
+
+        if (filtro.getFaseId() != null && filtro.getFaseId() == 4L) {
+            if (filtro.getEstado() == null || filtro.getEstado().isBlank()) {
+                predicates.add(cb.notEqual(cb.upper(root.get("estado")), "PAGADO"));
+            }
         }
 
         if (filtro.getNit() != null && !filtro.getNit().isBlank()) {
@@ -219,7 +222,7 @@ public class FacturaServiceImpl implements FacturaService {
     }
 
     // =========================================================================
-    // ⚙️ MOTOR UNIFICADO DE TRANSICIÓN DE FASES CON GUARDADO DE HISTORIAL
+    // ⚙️ MOTOR UNIFICADO DE TRANSICIÓN DE FASES CON GUARDADO DE HISTORIAL Y USUARIO
     // =========================================================================
     @Override
     @Transactional
@@ -230,11 +233,16 @@ public class FacturaServiceImpl implements FacturaService {
         boolean esAprobado = "APROBADO".equalsIgnoreCase(dto.getEstadoAccion());
         int fase = faseActualId != null ? faseActualId.intValue() : 1;
 
+        // ⚡ VALIDACIÓN Y ASIGNACIÓN RIGUROSA DEL USUARIO
+        String usuarioAccion = (dto != null && dto.getUsuario() != null && !dto.getUsuario().isBlank()) 
+                               ? dto.getUsuario().trim() 
+                               : "SISTEMA";
+
         Gestion gestion = new Gestion();
         gestion.setFactura(factura);
         gestion.setFaseId(faseActualId);
         gestion.setAccion(dto.getEstadoAccion());
-        gestion.setUsuario(dto.getUsuario());
+        gestion.setUsuario(usuarioAccion); // 👈 Asigna el usuario a la entidad Gestion
 
         switch (fase) {
             case 1:
@@ -243,11 +251,13 @@ public class FacturaServiceImpl implements FacturaService {
                     factura.setFaseId(2L);
                     factura.setObservacion(null);
                     factura.setCausalDevolucionId(null);
+                    factura.setDeletedAt(null);
                 } else {
                     factura.setEstado("ANULADO");
                     factura.setFaseId(1L);
                     factura.setCausalDevolucionId(dto.getCausalDevolucionId());
                     factura.setObservacion(dto.getObservacion());
+                    factura.setDeletedAt(LocalDate.now());
 
                     gestion.setCausalDevolucionId(dto.getCausalDevolucionId());
                     gestion.setObservacion(dto.getObservacion());
@@ -324,9 +334,13 @@ public class FacturaServiceImpl implements FacturaService {
         return repository.save(factura);
     }
 
+    // =========================================================================
+    // ⚙️ CAUSACIÓN (FASE 2) Y PAGO (FASE 4) CON GUARDADO DE USUARIO OBLIGATORIO
+    // =========================================================================
+
     @Override
     @Transactional
-    public Factura procesarCausacionFase2(Long id, Long tipoRegistroContableId, String numeroCausacion, MultipartFile archivoCausacion) {
+    public Factura procesarCausacionFase2(Long id, Long tipoRegistroContableId, String numeroCausacion, String usuario, MultipartFile archivoCausacion) {
         Factura factura = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Factura no encontrada con el ID: " + id));
 
@@ -337,6 +351,9 @@ public class FacturaServiceImpl implements FacturaService {
         factura.setObservacion(null);
         factura.setCausalDevolucionId(null);
 
+        // ⚡ ASIGNACIÓN RIGUROSA DE USUARIO
+        String usuarioAccion = (usuario != null && !usuario.isBlank()) ? usuario.trim() : "SISTEMA";
+
         Gestion gestion = new Gestion();
         gestion.setFactura(factura);
         gestion.setFaseId(2L);
@@ -344,6 +361,7 @@ public class FacturaServiceImpl implements FacturaService {
         gestion.setEstadoResultado("CAUSADO");
         gestion.setTipoRegistroContableId(tipoRegistroContableId);
         gestion.setNumeroCausacion(numeroCausacion);
+        gestion.setUsuario(usuarioAccion); // 👈 CORRECCIÓN CRÍTICA: Se guarda el usuario en la auditoría
 
         factura.addGestion(gestion);
 
@@ -384,7 +402,7 @@ public class FacturaServiceImpl implements FacturaService {
 
     @Override
     @Transactional
-    public Factura procesarPagoFase4(Long id, Long tipoRegistroContableId, String numeroCausacion, MultipartFile soporteTb, MultipartFile comprobantePago) {
+    public Factura procesarPagoFase4(Long id, Long tipoRegistroContableId, String numeroCausacion, String usuario, MultipartFile soporteTb, MultipartFile comprobantePago) {
         Factura factura = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Factura no encontrada con el ID: " + id));
 
@@ -399,6 +417,9 @@ public class FacturaServiceImpl implements FacturaService {
         factura.setObservacion(null);
         factura.setCausalDevolucionId(null);
 
+        // ⚡ ASIGNACIÓN RIGUROSA DE USUARIO
+        String usuarioAccion = (usuario != null && !usuario.isBlank()) ? usuario.trim() : "SISTEMA";
+
         Gestion gestion = new Gestion();
         gestion.setFactura(factura);
         gestion.setFaseId(4L);
@@ -406,6 +427,7 @@ public class FacturaServiceImpl implements FacturaService {
         gestion.setEstadoResultado("PAGADO");
         gestion.setTipoRegistroContableId(tipoRegistroContableId);
         gestion.setNumeroCausacion(numeroCausacion);
+        gestion.setUsuario(usuarioAccion); // 👈 CORRECCIÓN CRÍTICA: Se guarda el usuario en la auditoría
 
         factura.addGestion(gestion);
 

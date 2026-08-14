@@ -9,8 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobExecutionListener;
+import org.springframework.batch.core.JobParameters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +27,7 @@ public class JobLoteFacturasListener implements JobExecutionListener {
     private CargueRepository cargueRepository;
 
     @Autowired
-    private SseNotificationService sseNotificationService; // 👈 Servicio para emitir eventos en tiempo real
+    private SseNotificationService sseNotificationService;
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
@@ -40,9 +40,8 @@ public class JobLoteFacturasListener implements JobExecutionListener {
         JobParameters parameters = jobExecution.getJobParameters();
         Long identificadorCargue = parameters.getLong("identificadorCargue");
         String rutaZipOriginal = parameters.getString("fullPathFileName");
-        String usuario = parameters.getString("usuario"); // 👈 Usuario que inició el cargue
+        String usuario = parameters.getString("usuario");
         
-        // Capturamos el ID asignado por el motor de Spring Batch
         Long jobExecutionId = jobExecution.getId();
 
         LOGGER.info("=== 🏁 [afterJob] El Job para el cargue ID: {} finalizó con estado: {} ===", 
@@ -65,14 +64,12 @@ public class JobLoteFacturasListener implements JobExecutionListener {
         
         if (cargueOpt.isPresent()) {
             Cargue cargue = cargueOpt.get();
-            
             cargue.setJobExecutionId(jobExecutionId);
 
             if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
                 LOGGER.info("✅ Cargue finalizado de forma exitosa.");
                 cargue.setExiteError(false);
                 
-                // Mapear métricas de lectura total del Step de Spring Batch
                 long totalProcesados = jobExecution.getStepExecutions().stream()
                         .mapToLong(se -> se.getWriteCount())
                         .sum();
@@ -83,7 +80,8 @@ public class JobLoteFacturasListener implements JobExecutionListener {
                 cargue.setExiteError(true);
             }
 
-            Cargue cargueGuardado = cargueRepository.save(cargue);
+            // ⚡ Usamos saveAndFlush para garantizar que el update se confirme inmediatamente en PostgreSQL
+            Cargue cargueGuardado = cargueRepository.saveAndFlush(cargue);
             LOGGER.info("💾 Registro maestro del cargue actualizado con éxito en la BD. Vinculado a job_execution_id: {}.", jobExecutionId);
 
             // ⚡ 3. NOTIFICACIÓN SSE EN TIEMPO REAL A ANGULAR

@@ -1,7 +1,7 @@
 <div class="container-fluid p-2">
 
   <mat-tab-group [(selectedIndex)]="tabSeleccionada" animationDuration="200ms">
-    
+
     <!-- =========================================================================
          📌 PESTAÑA 1: BANDEJA DE FACTURAS (ETAPA 4 - PENDIENTE DE PAGO)
          ========================================================================= -->
@@ -18,13 +18,13 @@
           [totalRegistros]="totalRegistros"
           [totalPorPagina]="totalPorPagina"
           [pageSizeOptions]="pageSizeOptions"
-          
+
           [mostrarAgregar]="false"
           [mostrarEditar]="false"
           [mostrarEliminar]="false"
           [mostrarDetalle]="true"
           [mostrarGestionarFactura]="esGestorF4"
-          
+
           (filtrosChange)="onFiltrosChange($event)"
           (paginar)="paginar($event)"
           (verDetalle)="verSoportesFactura($event)"
@@ -39,12 +39,12 @@
          ========================================================================= -->
     <mat-tab [disabled]="!facturaSeleccionada">
       <ng-template mat-tab-label>
-        <mat-icon class="me-2 text-primary">find_in_page</mat-icon> 
+        <mat-icon class="me-2 text-primary">find_in_page</mat-icon>
         Visor de Soportes: {{ facturaSeleccionada ? facturaSeleccionada.numeroFactura : '(Seleccione Factura)' }}
       </ng-template>
 
       <div class="pt-3" *ngIf="facturaSeleccionada">
-        
+
         <!-- BARRA DE INFORMACIÓN Y BOTONES EN PESTAÑA 2 -->
         <div class="d-flex align-items-center justify-content-between mb-3 bg-white p-2 rounded shadow-sm border">
           <div>
@@ -54,12 +54,12 @@
           </div>
 
           <div class="d-flex gap-2">
-            <button 
-              *ngIf="esGestorF4" 
-              mat-raised-button 
-              style="background-color: #10b981; color: #ffffff;" 
+            <button
+              *ngIf="esGestorF4"
+              mat-raised-button
+              style="background-color: #10b981; color: #ffffff;"
               (click)="abrirModalGestionar(facturaSeleccionada)">
-              <mat-icon>receipt_long</mat-icon> Registrar Pago / Gestionar
+              <mat-icon>receipt_long</mat-icon> Gestionar
             </button>
 
             <button mat-stroked-button color="primary" (click)="regresarABandeja()">
@@ -70,7 +70,7 @@
 
         <!-- GRILLA SPLIT 5/7 (TABLA / VISOR) -->
         <div class="row d-flex flex-wrap align-items-stretch">
-          
+
           <div class="col-xl-5 col-lg-5 col-md-5 col-sm-12">
             <app-data-table
               [titulo]="'Soportes Encontrados'"
@@ -95,14 +95,14 @@
                   Vista Previa: <span class="ms-2 fs-6" style="color: #1DA6BA;">{{ documentoActivo || 'Ningún archivo seleccionado' }}</span>
                 </mat-card-title>
               </mat-card-header>
-              
+
               <mat-card-content class="d-flex align-items-center justify-content-center p-0 position-relative" style="min-height: 550px; background-color: #525659;">
-                
-                <iframe 
-                  *ngIf="pdfUrlSafe" 
-                  [src]="pdfUrlSafe" 
-                  width="100%" 
-                  height="100%" 
+
+                <iframe
+                  *ngIf="pdfUrlSafe"
+                  [src]="pdfUrlSafe"
+                  width="100%"
+                  height="100%"
                   style="min-height: 580px;"
                   frameborder="0"
                   class="rounded-bottom">

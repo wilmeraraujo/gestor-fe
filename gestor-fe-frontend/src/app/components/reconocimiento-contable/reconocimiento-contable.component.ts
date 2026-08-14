@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -7,7 +7,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { KeycloakService } from 'keycloak-angular';
 import { PageEvent } from '@angular/material/paginator';
 import { Subject, Subscription, throwError } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -23,6 +22,8 @@ import { DocumentoService } from '../../services/documento.service';
 import { CausalDevolucionService } from '../../services/causal-devolucion.service';
 import { ObservacionService } from '../../services/observacion.service';
 import { FaseService } from '../../services/fase.service';
+import { LoginService } from '../../services/login.service';
+import { AlertService } from '../../services/alert.service';
 
 @Component({
   selector: 'app-reconocimiento-contable',
@@ -42,6 +43,10 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
 
   override titulo = 'Reconocimiento Contable (Etapa 2)';
 
+  // 💉 Inyecciones mediante Inject
+  private loginService = inject(LoginService);
+  private alertService = inject(AlertService);
+
   // Control de pestañas y visores
   tabSeleccionada: number = 0;
   facturaSeleccionada: Factura | null = null;
@@ -50,6 +55,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   documentoActivo: string = '';
 
   esGestorF2: boolean = false;
+  usuarioActivo: string = '';
 
   opcionesCausal: { value: any, label: string }[] = [];
   opcionesObservacion: { value: any, label: string }[] = [];
@@ -84,9 +90,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   ];
 
   columnasSoportes = [
-    { field: 'id', header: 'ID' },
-    { field: 'nombreOriginal', header: 'Nombre Archivo' },
-    { field: 'tipoId', header: 'Tipo ID' }
+    { field: 'nombreOriginal', header: 'Nombre Archivo' }
   ];
 
   constructor(
@@ -95,7 +99,6 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     private causalService: CausalDevolucionService,
     private observacionService: ObservacionService,
     private faseService: FaseService,
-    private keycloakService: KeycloakService,
     private dialog: MatDialog,
     private sanitizer: DomSanitizer
   ) {
@@ -103,7 +106,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   }
 
   ngOnInit(): void {
-    this.evaluarRolesUsuario();
+    this.cargarDatosSesion();
     this.cargarFases();
     this.cargarListasMaestras();
     this.configurarDebounceFiltros();
@@ -113,6 +116,16 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     if (this.filtroSubscription) {
       this.filtroSubscription.unsubscribe();
     }
+  }
+
+  /**
+   * 👤 Carga los datos de sesión y evalúa los permisos utilizando LoginService
+   */
+  private cargarDatosSesion(): void {
+    this.usuarioActivo = this.loginService.getUserName();
+    this.esGestorF2 = this.loginService.isAdmin ||
+                      this.loginService.isGAdmin ||
+                      this.loginService.isGFaseDos;
   }
 
   /**
@@ -152,22 +165,6 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     };
 
     this.cargarDatosPaginados();
-  }
-
-  /**
-   * 🔑 Evaluación flexible de roles con comprobación en minúsculas
-   */
-  private evaluarRolesUsuario(): void {
-    try {
-      const roles = (this.keycloakService.getUserRoles() || []).map(r => r.toLowerCase());
-
-      this.esGestorF2 = roles.some(rol => 
-        ['admin', 'gestor-fe-f2-rc', 'gestor-fe-admin', 'default-roles-fe', 'uma_authorization'].includes(rol)
-      );
-    } catch (e) {
-      console.warn('Error evaluando roles en Fase 2:', e);
-      this.esGestorF2 = true;
-    }
   }
 
   private cargarFases(): void {
@@ -254,7 +251,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
       },
       error: (err) => {
         console.error('Error al consultar soportes:', err);
-        alert('No se pudieron consultar los soportes de esta factura.');
+        this.alertService.error('No se pudieron consultar los soportes de esta factura.');
       }
     });
   }
@@ -269,7 +266,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
       },
       error: (err) => {
         console.error('Error al cargar la vista previa:', err);
-        alert('Este archivo no se puede previsualizar en el navegador.');
+        this.alertService.advertencia('Este archivo no se puede previsualizar directamente en el navegador.');
       }
     });
   }
@@ -373,6 +370,9 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     }
   }
 
+  /**
+   * ⚙️ Abrir modal de causación / rechazo asignando de forma segura el usuario activo
+   */
   abrirModalGestionar(row: Factura): void {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '600px',
@@ -382,12 +382,8 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         formData: { id: row.id },
         service: {
           editar: (model: any) => {
-            try {
-              model.usuario = this.keycloakService.getUsername() || 'SISTEMA';
-            } catch (error) {
-              console.warn('No se pudo obtener el username de Keycloak. Se asigna valor por defecto:', error);
-              model.usuario = 'GESTOR_SISTEMA';
-            }
+            // ⚡ RECUPERAMOS EL USUARIO LEGIBLE DE LOGINSERVICE
+            const usuarioAccion = this.loginService.getUserName();
 
             if (model.estadoAccion === 'APROBADO') {
               let archivoFile: File | undefined = undefined;
@@ -405,25 +401,34 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
               }
 
               if (!archivoFile) {
-                alert('⚠️ Debe adjuntar obligatoriamente el archivo PDF con el Soporte de Causación.');
+                this.alertService.advertencia('Debe adjuntar obligatoriamente el archivo PDF con el Soporte de Causación.', 'Archivo Requerido');
                 return throwError(() => new Error('El archivo soporte de causación es obligatorio.'));
               }
 
+              this.alertService.cargando('Guardando causación y cargando archivo...', 'Procesando Fase 2');
+
+              // ⚡ PASAMOS EL PARÁMETRO USUARIO AL SERVICIO
               return this.service.procesarCausacionFase2(
                 row.id,
                 Number(model.tipoRegistroContableId),
                 model.numeroCausacion,
+                usuarioAccion,
                 archivoFile
               );
 
             } else {
-              // RECHAZO
+              // ⚡ RECHAZO: ADJUNTAMOS EL USUARIO EN EL MODELO JSON
+              model.usuario = usuarioAccion;
+
               if (model.causalDevolucionId) {
                 model.causalDevolucionId = Number(model.causalDevolucionId);
               }
               if (model.observacionId && model.observacionId !== 'OTRO') {
                 model.observacion = model.observacionId;
               }
+
+              this.alertService.cargando('Registrando devolución...', 'Procesando Rechazo');
+
               return this.service.procesarTransicionFase(row.id, 2, model);
             }
           }
@@ -433,6 +438,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
 
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado) {
+        this.alertService.exito(`Factura No. ${row.numeroFactura} dictaminada exitosamente en Reconocimiento Contable.`, 'Proceso Completado');
         this.regresarABandeja();
         this.cargarDatosPaginados();
       }

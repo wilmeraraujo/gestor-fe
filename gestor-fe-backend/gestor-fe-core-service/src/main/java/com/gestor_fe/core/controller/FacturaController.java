@@ -27,31 +27,27 @@ public class FacturaController {
     }
 
     // =========================================================================
-    // 📋 CONSULTAS Y BANDEJAS DE LECTURA (PAGINADAS Y ORDENADAS POR ID DESC)
+    // 📋 CONSULTAS Y BANDEJAS DE LECTURA
     // =========================================================================
 
-    // 📋 Bandeja Prestador
     @GetMapping("/prestador/{nit}")
     public ResponseEntity<?> findByNit(@PathVariable("nit") String nit, Pageable pageable) {
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(service.findByNitAndDeletedAtIsNull(nit, sorted));
     }
 
-    // 📋 Bandeja Fase 1
     @GetMapping("/fase/1")
     public ResponseEntity<?> listarFase1(Pageable pageable) {
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(service.findByFaseIdAndDeletedAtIsNull(1L, sorted));
     }
 
-    // 📋 Bandeja Fases Activas (Fase 2, 3, 4)
     @GetMapping("/fase/{faseId}")
     public ResponseEntity<?> listarFaseActiva(@PathVariable("faseId") Long faseId, Pageable pageable) {
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(service.findByFaseActiva(faseId, sorted));
     }
 
-    // 📋 Módulo de Seguimiento (Fase 5 / Global)
     @GetMapping("/seguimiento")
     public ResponseEntity<?> listarSeguimiento(Pageable pageable) {
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
@@ -59,23 +55,15 @@ public class FacturaController {
     }
 
     // =========================================================================
-    // 🔍 NUEVOS ENDPOINTS DE BÚSQUEDA DINÁMICA CRITERIA Y TRAZABILIDAD
+    // 🔍 BÚSQUEDA DINÁMICA JPA CRITERIA Y TRAZABILIDAD
     // =========================================================================
 
-    /**
-     * 🔍 Búsqueda dinámicamente filtrada con JPA Criteria por Body JSON
-     */
     @PostMapping("/buscar-criteria")
     public ResponseEntity<?> buscarConCriteria(@RequestBody FacturaFilterDto filtro, Pageable pageable) {
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(service.buscarConCriteria(filtro, sorted));
     }
 
-    /**
-     * 📊 Trazabilidad Global (Fase 5 / Seguimiento) con filtro de roles:
-     * - Si el usuario es Prestador (envía su NIT), filtra SOLO sus facturas.
-     * - Si es Administrador / Gestor Global, consulta TODAS las facturas del sistema.
-     */
     @PostMapping("/trazabilidad/buscar")
     public ResponseEntity<?> buscarTrazabilidadSegunRol(
             @RequestParam(value = "nitPrestador", required = false) String nitPrestador,
@@ -88,10 +76,10 @@ public class FacturaController {
     }
 
     // =========================================================================
-    // ⚙️ ENDPOINTS DE TRANSICIÓN Y GESTIÓN DE ETAPAS
+    // ⚙️ ENDPOINTS DE TRANSICIÓN Y GESTIÓN DE ETAPAS (CON USUARIO)
     // =========================================================================
 
-    // ⚙️ Transición estándar por JSON/DTO (Fases 1, 2, 3 y 4 sin adjuntos o rechazos)
+    // ⚙️ Transición Estándar por JSON (Fases 1, 3, 4 y rechazos)
     @PutMapping("/{id}/procesar-fase/{faseId}")
     public ResponseEntity<Factura> procesarTransicion(
             @PathVariable("id") Long id,
@@ -101,26 +89,28 @@ public class FacturaController {
         return ResponseEntity.ok(service.procesarTransicionFase(id, faseId, dto));
     }
 
-    // 🏦 ENDPOINT FASE 2: Procesar causación con archivo PDF adjunto
+    // 🏦 FASE 2: Procesar causación con PDF adjunto + Usuario
     @PostMapping(value = "/{id}/causacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Factura> procesarCausacionFase2(
             @PathVariable("id") Long id,
             @RequestParam("tipoRegistroContableId") Long tipoRegistroContableId,
             @RequestParam("numeroCausacion") String numeroCausacion,
+            @RequestParam(value = "usuario", required = false) String usuario, // 👈 Captura el usuario
             @RequestParam(value = "archivo", required = false) MultipartFile archivo) {
 
-        return ResponseEntity.ok(service.procesarCausacionFase2(id, tipoRegistroContableId, numeroCausacion, archivo));
+        return ResponseEntity.ok(service.procesarCausacionFase2(id, tipoRegistroContableId, numeroCausacion, usuario, archivo));
     }
 
-    // 💸 ENDPOINT FASE 4: Registrar pago y cargar soportes (Documento TB + Comprobante)
+    // 💸 FASE 4: Registrar pago y soportes + Usuario
     @PostMapping(value = "/{id}/pago", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Factura> procesarPagoFase4(
             @PathVariable("id") Long id,
             @RequestParam(value = "tipoRegistroContableId", required = false) Long tipoRegistroContableId,
             @RequestParam(value = "numeroCausacion", required = false) String numeroCausacion,
+            @RequestParam(value = "usuario", required = false) String usuario, // 👈 Captura el usuario
             @RequestParam(value = "soporteTb", required = false) MultipartFile soporteTb,
             @RequestParam(value = "comprobantePago", required = false) MultipartFile comprobantePago) {
 
-        return ResponseEntity.ok(service.procesarPagoFase4(id, tipoRegistroContableId, numeroCausacion, soporteTb, comprobantePago));
+        return ResponseEntity.ok(service.procesarPagoFase4(id, tipoRegistroContableId, numeroCausacion, usuario, soporteTb, comprobantePago));
     }
 }

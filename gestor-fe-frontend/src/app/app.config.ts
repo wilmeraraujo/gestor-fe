@@ -7,11 +7,6 @@ import { KeycloakBearerInterceptor, KeycloakService } from 'keycloak-angular';
 import { routes } from './app.routes';
 import { environment } from '../environments/environments';
 
-// ⏸️ Descomentar cuando crees la estructura /core/interceptors/
-// import { AuthInterceptor } from './core/interceptors/auth.interceptor';
-// import { CorrelationIdInterceptor } from './core/interceptors/correlation-id.interceptor';
-// import { ErrorInterceptor } from './core/interceptors/error.interceptor';
-
 /**
  * Inicializador de Keycloak para Angular Standalone
  */
@@ -29,6 +24,7 @@ function initializeKeycloak(keycloak: KeycloakService): () => Promise<boolean> {
         pkceMethod: 'S256',
         checkLoginIframe: false
       },
+      loadUserProfileAtStartUp: false, // 👈 Evita peticiones a /account (Elimina error 401 y CORS)
       bearerExcludedUrls: ['/assets']
     });
 }
@@ -50,9 +46,5 @@ export const appConfig: ApplicationConfig = {
       useClass: KeycloakBearerInterceptor,
       multi: true
     }
-    // ⏸️ Descomentar cuando tengas las clases listas:
-    // { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
-    // { provide: HTTP_INTERCEPTORS, useClass: CorrelationIdInterceptor, multi: true },
-    // { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true }
   ]
 };

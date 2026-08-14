@@ -16,12 +16,16 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     // 👤 Prestador: Ve todas sus facturas (sin importar estado o fase)
     Page<Factura> findByNitAndDeletedAtIsNull(String nit, Pageable pageable);
 
-    // 👷 Rol F1 (Gestión): Ve facturas en Fase 1 con estado "RADICADO", "EN GESTIÓN" o "FACTURA NO CONFORME"
+    // 👷 Rol F1 (Gestión): Ve facturas en Fase 1 que no hayan sido borradas
     Page<Factura> findByFaseIdAndDeletedAtIsNull(Long faseId, Pageable pageable);
 
-    // 💼 Rol F2, F3, F4: Ve facturas de una fase específica que NO estén anuladas/rechazadas
+    // 💼 Rol F2 y F3: Ve facturas activas de una fase que NO estén devueltas/anuladas
     @Query("SELECT f FROM Factura f WHERE f.faseId = :faseId AND f.deletedAt IS NULL AND f.estado NOT IN ('FACTURA NO CONFORME', 'DEVOLVER FACTURA ELECTRÓNICA', 'DEVOLUCIÓN')")
     Page<Factura> findByFaseActiva(@Param("faseId") Long faseId, Pageable pageable);
+
+    // 💰 Rol F4 (Tesorería / Pendiente de Pago): Ve facturas en Fase 4 EXCLUYENDO las ya PAGADAS o ANULADAS
+    @Query("SELECT f FROM Factura f WHERE f.faseId = :faseId AND f.deletedAt IS NULL AND f.estado NOT IN ('PAGADO', 'ANULADO', 'RECHAZADO')")
+    Page<Factura> findByFaseCuatroPendientePago(@Param("faseId") Long faseId, Pageable pageable);
 
     // 🔍 Rol F5 (Seguimiento): Ve TODAS las facturas del sistema (Trazabilidad global)
     Page<Factura> findByDeletedAtIsNull(Pageable pageable);

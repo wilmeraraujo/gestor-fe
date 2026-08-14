@@ -2,10 +2,9 @@
 
   <div class="col-12" *ngFor="let campo of campos">
 
-    <!-- Evaluamos si el campo debe mostrarse según su propiedad 'visible' -->
     <ng-container *ngIf="campo.visible !== false">
 
-      <label class="form-label font-medium text-gray-700">
+      <label class="form-label font-medium text-gray-700" *ngIf="campo.type !== 'checkbox'">
         {{ campo.label }}
       </label>
 
@@ -15,6 +14,27 @@
         type="text"
         class="form-control rounded-4"
         [formControlName]="campo.name" />
+
+      <!-- NUMBER (NUEVO: Para el tamaño máximo MB) -->
+      <input
+        *ngIf="campo.type === 'number'"
+        type="number"
+        min="1"
+        class="form-control rounded-4"
+        [formControlName]="campo.name" />
+
+      <!-- CHECKBOX / SWITCH (NUEVO: Para 'obligatorio' y 'permiteMultiple') -->
+      <div *ngIf="campo.type === 'checkbox'" class="form-check form-switch mt-1">
+        <input
+          type="checkbox"
+          class="form-check-input"
+          role="switch"
+          [id]="campo.name"
+          [formControlName]="campo.name" />
+        <label class="form-check-label font-medium text-gray-700" [for]="campo.name">
+          {{ campo.label }}
+        </label>
+      </div>
 
       <!-- TEXTAREA -->
       <textarea
@@ -36,7 +56,7 @@
         </option>
       </select>
 
-      <!-- FILE (Para cargar el PDF) -->
+      <!-- FILE -->
       <div *ngIf="campo.type === 'file'">
         <input
           type="file"

@@ -9,11 +9,11 @@
             <mat-icon class="me-2 text-primary">filter_alt</mat-icon> Panel de Búsqueda Avanzada
           </mat-card-title>
         </mat-card-header>
-        
+
         <mat-card-content class="p-0">
           <!-- Contenedor alineado horizontalmente con Bootstrap -->
           <div class="row g-2 align-items-center">
-            
+
             <!-- Input 2: NIT Emisor -->
             <div class="col-xl-3 col-lg-3 col-md-3">
               <mat-form-field appearance="outline" class="w-100 dense-form">
@@ -29,9 +29,9 @@
                 <input matInput [(ngModel)]="filtro.numeroFactura" placeholder="Ej. fac123">
               </mat-form-field>
             </div>
-            
-            
-            
+
+
+
             <!-- Input 3: Tipo -->
             <div class="col-xl-2 col-lg-2 col-md-2">
               <mat-form-field appearance="outline" class="w-100 dense-form">
@@ -43,19 +43,19 @@
                 </mat-select>
               </mat-form-field>
             </div>
-            
+
             <!-- Botones de Acción: Buscar, Limpiar y ZIP -->
             <div class="col-xl-4 col-lg-4 col-md-4 d-flex gap-2 justify-content-end">
               <button mat-raised-button color="primary" class="btn-action" (click)="filtrar()">
                 <mat-icon>search</mat-icon> Buscar
               </button>
-              
+
               <button mat-stroked-button class="btn-action" (click)="limpiar()">
                 <mat-icon>restart_alt</mat-icon> Limpiar
               </button>
-              
+
               <button mat-raised-button color="accent" class="btn-action"
-                      [disabled]="documentosSeleccionados.length === 0" 
+                      [disabled]="documentosSeleccionados.length === 0"
                       (click)="descargarMasivoZip()">
                 <mat-icon>archive</mat-icon> Descargar ZIP ({{ documentosSeleccionados.length }})
               </button>
@@ -70,7 +70,7 @@
   <!-- 2. GRILLA COMPARTIDA (TABLA / VISOR) -->
   <!-- Forzamos una fila con d-flex y flex-wrap para que se queden alineados horizontalmente -->
   <div class="row d-flex flex-wrap align-items-stretch mt-2">
-    
+
     <!-- Columna Izquierda: Tabla de Documentos (Ocupa 5 de 12 espacios) -->
     <div class="col-xl-5 col-lg-5 col-md-5 col-sm-12">
       <app-data-table
@@ -96,18 +96,18 @@
         <mat-card-header class="bg-dark text-white p-2 border-bottom rounded-top">
           <mat-card-title class="fs-6 d-flex align-items-center w-100 m-0">
             <mat-icon class="me-2 text-danger">picture_as_pdf</mat-icon>
-            Vista Previa: <span class="ms-2 text-warning fs-6">{{ documentoActivo || 'Ningún archivo seleccionado' }}</span>
+            Vista Previa: <span class="ms-2 fs-6" style="color: #1DA6BA;">{{ documentoActivo || 'Ningún archivo seleccionado' }}</span>
           </mat-card-title>
         </mat-card-header>
-        
+
         <mat-card-content class="d-flex align-items-center justify-content-center p-0 position-relative" style="min-height: 500px; background-color: #525659;">
-          
+
           <!-- Iframe embebido para visualizar archivos PDF / XML -->
-          <iframe 
-            *ngIf="pdfUrlSafe" 
-            [src]="pdfUrlSafe" 
-            width="100%" 
-            height="100%" 
+          <iframe
+            *ngIf="pdfUrlSafe"
+            [src]="pdfUrlSafe"
+            width="100%"
+            height="100%"
             style="min-height: 530px;"
             frameborder="0"
             class="rounded-bottom">

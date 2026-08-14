@@ -15,10 +15,11 @@ import { LoginService } from '../../../services/login.service';
   styleUrl: './user-menu.component.css'
 })
 export class UserMenuComponent {
-  // 💉 Inyección del servicio de Login/Keycloak
+
   private loginService = inject(LoginService);
 
   @Input() user = '';
+  @Input() role = '';
   @Input() email = '';
 
   isOpen = false;
@@ -29,7 +30,7 @@ export class UserMenuComponent {
 
   cerrarSesion(): void {
     this.isOpen = false;
-    this.loginService.logout(); // 🚀 Llama al logout de Keycloak
+    this.loginService.logout();
   }
 
   perfil(): void {
@@ -37,11 +38,6 @@ export class UserMenuComponent {
     this.isOpen = false;
   }
 
-  /*
-  ==========================================
-  CERRAR AL DAR CLICK AFUERA
-  ==========================================
-  */
   @HostListener('document:click')
   closeMenu(): void {
     this.isOpen = false;

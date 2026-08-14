@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,7 +23,9 @@ import org.springframework.batch.item.ItemProcessor;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
+import com.gestor_fe.core.client.AdminFeignClient;
 import com.gestor_fe.core.dto.FacturaZipWrapperDto;
+import com.gestor_fe.core.dto.TipoDto;
 import com.gestor_fe.core.entity.Documento;
 import com.gestor_fe.core.entity.ErrorCargue;
 import com.gestor_fe.core.entity.Factura;
@@ -40,29 +41,23 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
     private final FacturaService facturaService;
     private final ErrorCargueService errorCargueService;
     private final DocumentoRepository documentoRepository;
+    private final AdminFeignClient adminFeignClient;
 
     private long currentLine = 0;
 
     private final Set<String> cufesInBatch = new HashSet<>();
     private final Set<String> nitFacturasInBatch = new HashSet<>();
 
-    // Map de Tipos Obligatorios para validación estricta de bloqueo:
-    // 1L = RUT (01), 2L = CÁMARA DE COMERCIO (02), 3L = CERTIFICACIÓN BANCARIA (03), 4L = CONTRATO (04)
-    private static final Map<Long, String> TIPOS_OBLIGATORIOS = Map.of(
-        1L, "RUT (01)",
-        2L, "Cámara de Comercio (02)",
-        3L, "Certificación Bancaria (03)",
-        4L, "Contrato (04)"
-    );
-
     public FacturaZipProcessor(Long identificadorCargue,
                                FacturaService facturaService,
                                ErrorCargueService errorCargueService,
-                               DocumentoRepository documentoRepository) {
+                               DocumentoRepository documentoRepository,
+                               AdminFeignClient adminFeignClient) {
         this.identificadorCargue = identificadorCargue;
         this.facturaService = facturaService;
         this.errorCargueService = errorCargueService;
         this.documentoRepository = documentoRepository;
+        this.adminFeignClient = adminFeignClient;
     }
 
     @Override
@@ -133,21 +128,34 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         String llaveNitFactura = nitClean + "_" + numFacturaClean;
 
         // =========================================================================
-        // 🛑 VALIDACIÓN 2: VERIFICACIÓN DE LOS 4 SOPORTES OBLIGATORIOS ACTIVOS
+        // 🛑 VALIDACIÓN 2: VERIFICACIÓN DE SOPORTES DILIGENCIADOS POR PRESTADOR
         // =========================================================================
         List<Documento> soportesPrestador = documentoRepository.findSoportesPrestadorByNit(nitClean);
         
         Set<Long> tiposCargados = soportesPrestador.stream()
-                .filter(d -> d.getTipoId() != null && d.getDeletedAt() == null) // Solo soportes activos
+                .filter(d -> d.getTipoId() != null && d.getDeletedAt() == null)
                 .map(Documento::getTipoId)
                 .collect(Collectors.toSet());
 
-        List<String> faltantes = new ArrayList<>();
-        TIPOS_OBLIGATORIOS.forEach((tipoId, nombreTipo) -> {
-            if (!tiposCargados.contains(tipoId)) {
-                faltantes.add(nombreTipo);
+        List<TipoDto> tiposAdministrativos = new ArrayList<>();
+        try {
+            if (adminFeignClient != null) {
+                tiposAdministrativos = adminFeignClient.listarTipos();
             }
-        });
+        } catch (Exception e) {
+            LOGGER.error("⚠️ No se pudo establecer comunicación Feign con admin-service: {}", e.getMessage());
+        }
+
+        List<String> faltantes = new ArrayList<>();
+        if (tiposAdministrativos != null && !tiposAdministrativos.isEmpty()) {
+            for (TipoDto tipo : tiposAdministrativos) {
+                if (tipo.getId() != null && tipo.getId() >= 1L && tipo.getId() <= 4L) {
+                    if (!tiposCargados.contains(tipo.getId())) {
+                        faltantes.add(tipo.getDescripcion() != null ? tipo.getDescripcion() : "Tipo " + tipo.getId());
+                    }
+                }
+            }
+        }
 
         if (!faltantes.isEmpty()) {
             String errorMsg = String.format("El prestador con NIT [%s] no puede radicar la factura [%s]. Soportes empresariales obligatorios pendientes por cargar: %s",

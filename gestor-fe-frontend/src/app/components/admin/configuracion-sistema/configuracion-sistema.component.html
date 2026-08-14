@@ -1,0 +1,13 @@
+<app-data-table
+  [titulo]="titulo"
+  [columnas]="columnas"
+  [datos]="lista"
+  [totalRegistros]="totalRegistros"
+  [totalPorPagina]="totalPorPagina"
+  [pageSizeOptions]="pageSizeOptions"
+  (paginar)="paginar($event)"
+  (editar)="editar($event)"
+  (agregar)="agregar()"
+  (buscar)="buscar($event)"
+  (eliminar)="deletedAt($event)">
+</app-data-table>

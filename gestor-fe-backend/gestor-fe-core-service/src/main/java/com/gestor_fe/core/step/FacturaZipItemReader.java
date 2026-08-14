@@ -17,27 +17,34 @@ import java.util.zip.ZipFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.item.ItemReader;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 import com.gestor_fe.core.dto.FacturaZipWrapperDto;
 import com.gestor_fe.core.entity.ErrorCargue;
-import com.gestor_fe.core.service.ErrorCargueService; // <-- CORREGIDO: Importamos el servicio
+import com.gestor_fe.core.repository.ErrorCargueRepository;
 
 public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FacturaZipItemReader.class);
 
     private final String rutaZip;
-    private final ErrorCargueService errorCargueService; // <-- CORREGIDO: Cambiado de Repository a Service
+    private final ErrorCargueRepository errorCargueRepository;
+    private final PlatformTransactionManager transactionManager; // 👈 Manejador explícito de transacciones
     private final Long cargueId;
     
     private Iterator<FacturaZipWrapperDto> iterator;
     private boolean procesado = false;
 
-    // CORREGIDO: El constructor ahora recibe el ErrorCargueService para aislar la transacción
-    public FacturaZipItemReader(String rutaZip, ErrorCargueService errorCargueService, Long cargueId) {
+    public FacturaZipItemReader(String rutaZip, 
+                               ErrorCargueRepository errorCargueRepository, 
+                               PlatformTransactionManager transactionManager,
+                               Long cargueId) {
         this.rutaZip = rutaZip;
-        this.errorCargueService = errorCargueService;
+        this.errorCargueRepository = errorCargueRepository;
+        this.transactionManager = transactionManager;
         this.cargueId = cargueId;
     }
 
@@ -59,7 +66,7 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
     private List<FacturaZipWrapperDto> descomprimirYEmparejar() throws Exception {
         File zipFileObj = new File(rutaZip);
         if (!zipFileObj.exists()) {
-            throw new IllegalArgumentException("El archivo ZIP no existe.");
+            throw new IllegalArgumentException("El archivo ZIP especificado no existe en el disco.");
         }
 
         File dirTemporal = Files.createTempDirectory("gestorfe-batch-zip-").toFile();
@@ -71,11 +78,15 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
         Map<String, String> nombresOriginalesXml = new HashMap<>();
         Map<String, String> nombresOriginalesPdf = new HashMap<>();
 
+        List<ErrorCargue> listaErrores = new ArrayList<>();
+        int lineaError = 1;
+
         try (ZipFile zipFile = new ZipFile(zipFileObj)) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
+                
                 if (entry.isDirectory() || entry.getName().contains("__MACOSX")) {
                     continue;
                 }
@@ -86,6 +97,25 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
                 String nombreBase = StringUtils.stripFilenameExtension(nombreArchivo);
 
                 if (extension == null) continue;
+
+                // 🛑 VALIDACIÓN ESTRICTA DE FORMATOS DENTRO DEL ZIP
+                if (!extension.equalsIgnoreCase("xml") && !extension.equalsIgnoreCase("pdf")) {
+                    String errorMsg = String.format("Existen archivos con extensión no permitida en el ZIP. Archivo no válido: [%s]", nombreArchivo);
+                    
+                    LOGGER.error("❌ ERROR DE EXTENSIÓN EN ZIP: {}", errorMsg);
+
+                    ErrorCargue error = new ErrorCargue();
+                    error.setCargueId(cargueId);
+                    error.setNumeroLinea(lineaError++);
+                    error.setTipoError("EXTENSION_NO_PERMITIDA");
+                    error.setCampo("ARCHIVO");
+                    error.setError(errorMsg);
+                    error.setValorAsociado(nombreArchivo);
+                    error.setCreatedAt(LocalDateTime.now());
+                    listaErrores.add(error);
+
+                    continue; 
+                }
 
                 File archivoExtraido = new File(dirTemporal, nombreArchivo);
 
@@ -113,21 +143,25 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
             }
         }
 
-        List<FacturaZipWrapperDto> listaWrappers = new ArrayList<>();
-        List<ErrorCargue> listaErrores = new ArrayList<>(); 
+        // ⚡ SI EXISTEN ARCHIVOS NO PERMITIDOS: Guardado en Transacción Independiente (REQUIRES_NEW)
+        if (!listaErrores.isEmpty()) {
+            guardarErroresEnTransaccionIndependiente(listaErrores);
+            throw new IllegalStateException("El cargue fue rechazado debido a que existen " + listaErrores.size() + " archivo(s) con extensión no permitida.");
+        }
 
-        // === REGLA DE VALIDACIÓN ESTRICTA: TODO O NADA ===
+        List<FacturaZipWrapperDto> listaWrappers = new ArrayList<>();
+
+        // === REGLA DE VALIDACIÓN ESTRICTA: TODO O NADA (PAREJAS HUÉRFANAS) ===
         
-        // 1. Validar XMLs huérfanos sin su PDF
-        int lineaError = 1;
+        // 1. Validar XMLs sin PDF
         for (String raiz : mapasXml.keySet()) {
             File xml = mapasXml.get(raiz);
             File pdf = mapasPdf.get(raiz);
 
             if (pdf == null) {
                 String xmlNombre = nombresOriginalesXml.get(raiz);
-                String errorMsg = String.format("El archivo XML [%s] no tiene el archivo PDF correspondiente en el ZIP.", xmlNombre);
-                LOGGER.error("❌ ERROR CRÍTICO: {}", errorMsg);
+                String errorMsg = String.format("El archivo XML [%s] no tiene su archivo PDF correspondiente en el ZIP.", xmlNombre);
+                LOGGER.error("❌ ARCHIVO HUÉRFANO: {}", errorMsg);
                 
                 ErrorCargue error = new ErrorCargue();
                 error.setCargueId(cargueId);
@@ -147,12 +181,12 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
             }
         }
 
-        // 2. Validar PDFs huérfanos sin su XML
+        // 2. Validar PDFs sin XML
         for (String raiz : mapasPdf.keySet()) {
             if (!mapasXml.containsKey(raiz)) {
                 String pdfNombre = nombresOriginalesPdf.get(raiz);
-                String errorMsg = String.format("El archivo PDF [%s] no tiene el archivo XML correspondiente en el ZIP.", pdfNombre);
-                LOGGER.error("❌ ERROR CRÍTICO: {}", errorMsg);
+                String errorMsg = String.format("El archivo PDF [%s] no tiene su archivo XML correspondiente en el ZIP.", pdfNombre);
+                LOGGER.error("❌ ARCHIVO HUÉRFANO: {}", errorMsg);
                 
                 ErrorCargue error = new ErrorCargue();
                 error.setCargueId(cargueId);
@@ -166,15 +200,26 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
             }
         }
 
-        // Si se capturó algún error, guardamos el listado y detenemos la transacción
+        // ⚡ SI HUBO ERRORES DE PAREJA: Guardado en Transacción Independiente
         if (!listaErrores.isEmpty()) {
-            // CORREGIDO: Invocamos al servicio con Propagation.REQUIRES_NEW para salvar los registros del rollback
-            errorCargueService.saveAll(listaErrores); 
-            
-            String failMsg = "Se canceló el procesamiento del lote debido a que " + listaErrores.size() + " archivos fallaron la regla de parejas (Todo o Nada).";
-            throw new IllegalStateException(failMsg); 
+            guardarErroresEnTransaccionIndependiente(listaErrores);
+            throw new IllegalStateException("Se canceló el cargue masivo debido a que " + listaErrores.size() + " archivo(s) fallaron la regla de pares XML/PDF.");
         }
 
         return listaWrappers;
+    }
+
+    /**
+     * 🛡️ Ejecuta un COMMIT físico e independiente en PostgreSQL (PROPAGATION_REQUIRES_NEW)
+     * para aislar los errores del Rollback automático de Spring Batch.
+     */
+    private void guardarErroresEnTransaccionIndependiente(List<ErrorCargue> errores) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+        transactionTemplate.executeWithoutResult(status -> {
+            errorCargueRepository.saveAllAndFlush(errores);
+            LOGGER.info("💾 Transacción aislada completada: Persistidos {} errores en gestor.error_cargue", errores.size());
+        });
     }
 }
