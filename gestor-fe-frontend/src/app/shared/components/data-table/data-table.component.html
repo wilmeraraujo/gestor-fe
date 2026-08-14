@@ -8,9 +8,9 @@
       <h1 class="titulo-tabla">{{ titulo }}</h1>
       <hr>
       <!-- 2️⃣ BUSCADOR Y BOTONES ABAJO A LA IZQUIERDA -->
-      <div class="acciones-header-left">      
+      <div class="acciones-header-left">
 
-        <div class="botones-container">          
+        <div class="botones-container">
 
           <!-- ➕ BOTÓN ADICIONAR / CARGAR PERSONALIZABLE -->
           <button
@@ -84,7 +84,7 @@
             {{ col.header }}
           </th>
           <td mat-cell *matCellDef="let row" class="text-nowrap">
-            
+
             <!-- 🏷️ BADGES DE ESTADO -->
             <ng-container *ngIf="col.field === 'estado' || col.field === 'estadoNombre'; else celdaTextoNormal">
               <span [class]="obtenerClaseEstado(row[col.field])">
@@ -110,7 +110,7 @@
           <td mat-cell *matCellDef="let row" class="text-center text-nowrap cell-sticky-acciones">
 
             <div class="acciones-cell">
-              
+
               <!-- 🔄 SPINNER EN PROCESAMIENTO -->
               <mat-spinner
                 *ngIf="row.estadoNombre === 'PROCESANDO' || (!row.jobExecutionId && !row.exiteError)"
@@ -128,13 +128,13 @@
                 <mat-icon>edit</mat-icon>
               </button>
 
-              <!-- 🧾 GESTIONAR FACTURA -->
+              <!-- 🧾 GESTIONAR FACTURA (OCULTO EN ANULADO, RECHAZADO, PROCESANDO) -->
               <button
-                *ngIf="mostrarGestionarFactura && row.estadoNombre !== 'PROCESANDO'"
+                *ngIf="puedeGestionarFactura(row)"
                 mat-icon-button
                 class="btn-action btn-action-invoice"
                 (click)="onGestionarFactura(row)"
-                matTooltip="Gestionar Factura">
+                matTooltip="Gestionar">
                 <mat-icon>receipt_long</mat-icon>
               </button>
 

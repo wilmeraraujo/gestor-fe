@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -7,7 +7,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { KeycloakService } from 'keycloak-angular';
 import { PageEvent } from '@angular/material/paginator';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -23,6 +22,8 @@ import { DocumentoService } from '../../services/documento.service';
 import { CausalDevolucionService } from '../../services/causal-devolucion.service';
 import { ObservacionService } from '../../services/observacion.service';
 import { FaseService } from '../../services/fase.service';
+import { LoginService } from '../../services/login.service';
+import { AlertService } from '../../services/alert.service';
 
 @Component({
   selector: 'app-gestion-inicial',
@@ -40,7 +41,11 @@ import { FaseService } from '../../services/fase.service';
 })
 export class GestionInicialComponent extends CommonListarComponent<Factura, FacturaService> implements OnInit, OnDestroy {
 
-  override titulo = 'Gestión Inicial de Facturas (Etapa 1)';
+  override titulo = 'Gestión Inicial de Facturas (Fase 1)';
+
+  // 💉 Inyecciones de Servicios mediante Inject
+  private loginService = inject(LoginService);
+  private alertService = inject(AlertService);
 
   // Control de pestañas y visores
   tabSeleccionada: number = 0;
@@ -51,6 +56,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
 
   // Bandera de permisos
   esGestorF1: boolean = false;
+  usuarioActivo: string = '';
 
   // Catálogos para desplegables
   opcionesCausal: { value: any, label: string }[] = [];
@@ -74,14 +80,12 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
     { field: 'valorTotal', header: 'Valor Total' },
     { field: 'fechaEmision', header: 'Fecha Emisión' },
     { field: 'cufe', header: 'CUFE' },
-    { field: 'faseNombre', header: 'Fase / Etapa' },
+    { field: 'faseNombre', header: 'Fase' },
     { field: 'observacion', header: 'Observación' }
   ];
 
   columnasSoportes = [
-    { field: 'id', header: 'ID' },
-    { field: 'nombreOriginal', header: 'Nombre Archivo' },
-    { field: 'tipoId', header: 'Tipo ID' }
+    { field: 'nombreOriginal', header: 'Nombre Archivo' }
   ];
 
   constructor(
@@ -90,7 +94,6 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
     private causalService: CausalDevolucionService,
     private observacionService: ObservacionService,
     private faseService: FaseService,
-    private keycloakService: KeycloakService,
     private dialog: MatDialog,
     private sanitizer: DomSanitizer
   ) {
@@ -98,7 +101,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
   }
 
   ngOnInit(): void {
-    this.evaluarRolesUsuario();
+    this.cargarDatosSesion();
     this.cargarFases();
     this.cargarListasMaestras();
     this.configurarDebounceFiltros();
@@ -108,6 +111,18 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
     if (this.filtroSubscription) {
       this.filtroSubscription.unsubscribe();
     }
+  }
+
+  /**
+   * 👤 Carga el usuario activo y evalúa los permisos utilizando LoginService
+   */
+  private cargarDatosSesion(): void {
+    this.usuarioActivo = this.loginService.getUserName();
+
+    // Habilita el rol para administradores globales o gestores de Fase 1
+    this.esGestorF1 = this.loginService.isAdmin ||
+                      this.loginService.isGAdmin ||
+                      this.loginService.isGFaseUno;
   }
 
   /**
@@ -147,17 +162,6 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
     };
 
     this.cargarDatosPaginados();
-  }
-
-  /**
-   * 🔑 Verifica los roles asignados
-   */
-  private evaluarRolesUsuario(): void {
-    const roles = this.keycloakService.getUserRoles();
-    this.esGestorF1 = roles.includes('admin') ||
-                      roles.includes('gestor-fe-f1-g') ||
-                      roles.includes('gestor-fe-admin') ||
-                      roles.includes('default-roles-fe');
   }
 
   private cargarFases(): void {
@@ -244,7 +248,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
       },
       error: (err) => {
         console.error('Error al consultar soportes:', err);
-        alert('No se pudieron consultar los soportes de esta factura.');
+        this.alertService.error('No se pudieron consultar los soportes de esta factura.');
       }
     });
   }
@@ -259,7 +263,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
       },
       error: (err) => {
         console.error('Error al cargar la vista previa:', err);
-        alert('Este archivo no se puede previsualizar en el navegador.');
+        this.alertService.advertencia('Este archivo no se puede previsualizar directamente en el navegador.');
       }
     });
   }
@@ -335,7 +339,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
   }
 
   /**
-   * ⚙️ Abrir modal de aprobación/rechazo
+   * ⚙️ Abrir modal de aprobación/rechazo asignando de forma segura el usuario activo
    */
   abrirModalGestionar(row: Factura): void {
     const dialogRef = this.dialog.open(ModalComponent, {
@@ -354,12 +358,8 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
               model.observacion = model.observacionId;
             }
 
-            try {
-              model.usuario = this.keycloakService.getUsername() || 'SISTEMA';
-            } catch (error) {
-              console.warn('No se pudo obtener el username de Keycloak. Se asigna valor por defecto:', error);
-              model.usuario = 'GESTOR_SISTEMA';
-            }
+            // ⚡ RECUPERAMOS Y ASIGNAMOS EL USUARIO LEGIBLE DE LOGINSERVICE
+            model.usuario = this.loginService.getUserName();
 
             return this.service.procesarTransicionFase(row.id, 1, model);
           }
@@ -369,6 +369,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
 
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado) {
+        this.alertService.exito(`La factura No. ${row.numeroFactura} ha sido procesada con éxito.`, 'Dictamen Registrado');
         this.regresarABandeja();
         this.cargarDatosPaginados();
       }

@@ -38,7 +38,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Input() totalRegistros = 0;
   @Input() totalPorPagina = 5;
   @Input() pageSizeOptions: number[] = [5, 10, 20, 50, 100];
-  
+
   @Input() textoBotonAgregar: string = 'Adicionar';
   @Input() tooltipAgregar: string = 'Adicionar nuevo registro';
 
@@ -131,9 +131,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     }
   }
 
-  /**
-   * 📤 Evalúa los campos filtrables y emite el objeto hacia el componente padre
-   */
   aplicarFiltrosColumnas(): void {
     const camposFiltrables = this.columnas
       .filter(c => c && c.filtrable !== false)
@@ -154,9 +151,6 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     this.filtrosChange.emit(filtrosValidos);
   }
 
-  /**
-   * 🧹 Limpia los filtros e informa al backend
-   */
   limpiarFiltrosColumnas(): void {
     this.filtrosPorColumna = {};
     this.filtrosChange.emit({});
@@ -174,6 +168,21 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
       return;
     }
     this.selection.select(...this.dataSource.data);
+  }
+
+  /**
+   * 🛑 EVALÚA SI LA FACTURA PUEDE SER GESTIONADA O DICTAMINADA
+   * Oculta el botón verde ÚNICAMENTE si la factura está en estado ANULADO o PROCESANDO.
+   * Si está en estado RECHAZADO, PENDIENTE, RADICADO, etc., el botón SE MANTIENE VISIBLE.
+   */
+  puedeGestionarFactura(row: any): boolean {
+    if (!this.mostrarGestionarFactura || !row) return false;
+
+    // Extraemos el valor del estado en mayúsculas
+    const estado = String(row.estado || row.estadoNombre || '').trim().toUpperCase();
+
+    // Oculta el botón ÚNICAMENTE si el estado es ANULADO o PROCESANDO
+    return estado !== 'ANULADO' && estado !== 'PROCESANDO';
   }
 
   obtenerClaseEstado(valorEstado: any): string {
@@ -221,7 +230,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     if (estadoUpper === 'CARGADO' || estadoUpper === 'CARGUE FINALIZADO') {
       return 'check';
     }
-    if (estadoUpper === 'CON ERRORES' || estadoUpper === 'RECHAZADO') {
+    if (estadoUpper === 'CON ERRORES' || estadoUpper === 'RECHAZADO' || estadoUpper === 'ANULADO') {
       return 'close';
     }
     if (estadoUpper === 'PROCESANDO') {

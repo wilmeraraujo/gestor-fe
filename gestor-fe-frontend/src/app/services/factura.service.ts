@@ -114,16 +114,23 @@ export class FacturaService extends CommonService<Factura> {
 
   /**
    * 🏦 8. MÉTODO DE CAUSACIÓN MULTIPART (FASE 2)
+   * ⚡ Se agrega el parámetro 'usuario' para registrar la auditoría
    */
   public procesarCausacionFase2(
     id: number,
     tipoRegistroContableId: number,
     numeroCausacion: string,
+    usuario?: string,
     archivo?: any
   ): Observable<Factura> {
     const formData = new FormData();
     formData.append('tipoRegistroContableId', tipoRegistroContableId ? tipoRegistroContableId.toString() : '');
     formData.append('numeroCausacion', numeroCausacion || '');
+
+    // 👈 Adjunta el usuario al FormData
+    if (usuario) {
+      formData.append('usuario', usuario);
+    }
 
     if (archivo && (archivo instanceof File || archivo instanceof Blob)) {
       const nombreArchivo = (archivo as File).name || 'soporte_causacion.pdf';
@@ -135,17 +142,24 @@ export class FacturaService extends CommonService<Factura> {
 
   /**
    * 💸 9. MÉTODO DE PAGO MULTIPART (FASE 4 - TESORERÍA)
+   * ⚡ Se agrega el parámetro 'usuario' para registrar la auditoría
    */
   public procesarPagoFase4(
     id: number,
     tipoRegistroContableId?: number,
     numeroCausacion?: string,
+    usuario?: string,
     soporteTb?: any,
     comprobantePago?: any
   ): Observable<Factura> {
     const formData = new FormData();
     formData.append('tipoRegistroContableId', tipoRegistroContableId ? tipoRegistroContableId.toString() : '');
     formData.append('numeroCausacion', numeroCausacion || '');
+
+    // 👈 Adjunta el usuario al FormData
+    if (usuario) {
+      formData.append('usuario', usuario);
+    }
 
     if (soporteTb && (soporteTb instanceof File || soporteTb instanceof Blob)) {
       formData.append('soporteTb', soporteTb, (soporteTb as File).name || 'documento_tb.pdf');

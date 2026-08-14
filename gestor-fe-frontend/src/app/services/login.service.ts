@@ -1,11 +1,10 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { KeycloakService } from 'keycloak-angular';
 
 @Injectable({
   providedIn: 'root'
 })
 export class LoginService {
-  private keycloakService = inject(KeycloakService);
 
   // 👥 Definición de roles requeridos
   readonly adminRoles: string[] = ['admin'];
@@ -29,60 +28,57 @@ export class LoginService {
   isGFaseCinco: boolean = false;
   isPrestador: boolean = false;
 
-  // 👤 Datos del usuario autenticado
-  userName: string = '';
-  userCedula: string = '';
-
-  constructor() {
-    this.initUserData();
-  }
+  constructor(private keycloakService: KeycloakService) {}
 
   /**
-   * Carga la información inicial del usuario
-   */
-  private initUserData(): void {
-    try {
-      this.userName = this.getUserName();
-      this.getUserRoles();
-      this.getExtendedUserData();
-    } catch (error) {
-      console.warn('Error en inicialización de datos de sesión:', error);
-    }
-  }
-
-  /**
-   * 🎯 Extrae de forma segura el usuario leyendo directamente del JWT parseado sin lanzar excepciones
+   * 🎯 Extrae el nombre de usuario legible decodificando el JWT sin lanzar excepciones
+   * y omitiendo explícitamente el UUID ('sub').
    */
   getUserName(): string {
     try {
-      // 1. Decodificar directamente la instancia del Token JWT activo
+      const instance = this.keycloakService.getKeycloakInstance();
+      // Obtenemos el token parseado (idTokenParsed o tokenParsed)
+      const tokenParsed: any = instance?.idTokenParsed || instance?.tokenParsed;
+
+      if (tokenParsed) {
+        // 💡 Jerarquía estricta: Busca preferred_username mapeado en Keycloak
+        const username = tokenParsed['preferred_username']
+                      || tokenParsed['username']
+                      || tokenParsed['given_name']
+                      || tokenParsed['name']
+                      || tokenParsed['email'];
+
+        if (username && typeof username === 'string' && username.trim() !== '') {
+          return username.trim();
+        }
+      }
+    } catch (error) {
+      console.warn('No se pudo decodificar el username del token Keycloak:', error);
+    }
+
+    return 'GESTOR_SISTEMA';
+  }
+
+  /**
+   * 🆔 Extrae el número de identificación o NIT desde los atributos del token
+   */
+  getUserCedula(): string {
+    try {
       const instance = this.keycloakService.getKeycloakInstance();
       const tokenParsed: any = instance?.idTokenParsed || instance?.tokenParsed;
 
       if (tokenParsed) {
-        const usernameParsed = tokenParsed['preferred_username'] || tokenParsed['username'] || tokenParsed['sub'] || tokenParsed['name'];
-        if (usernameParsed) {
-          this.userName = usernameParsed;
-          return this.userName;
-        }
-      }
-
-      // 2. Fallback si el objeto del servicio tiene el nombre guardado
-      if (this.userName && this.userName.trim() !== '') {
-        return this.userName;
+        return tokenParsed['numero_identificacion'] || tokenParsed['nit'] || '';
       }
     } catch (error) {
-      console.error('Error al decodificar el token JWT de Keycloak:', error);
+      console.error('Error al decodificar la identificación:', error);
     }
-
-    return this.userName || 'GESTOR_SISTEMA';
+    return '';
   }
 
-  get userRole(): 'ADMIN' | 'PRESTADOR' {
-    if (this.isAdmin) return 'ADMIN';
-    return 'PRESTADOR';
-  }
-
+  /**
+   * 🛡️ Evalúa los roles del usuario activo
+   */
   getUserRoles(): string[] {
     try {
       const roles = this.keycloakService.getUserRoles();
@@ -99,21 +95,14 @@ export class LoginService {
 
       return roles;
     } catch (error) {
-      console.error('Error al obtener los roles del usuario:', error);
       return [];
     }
   }
 
-  private getExtendedUserData(): void {
-    try {
-      const tokenParsed: any = this.keycloakService.getKeycloakInstance()?.idTokenParsed || this.keycloakService.getKeycloakInstance()?.tokenParsed;
-
-      if (tokenParsed) {
-        this.userCedula = tokenParsed['numero_identificacion'] || '';
-      }
-    } catch (error) {
-      console.error('Error al decodificar los datos extendidos del token:', error);
-    }
+  get userRole(): string {
+    if (this.isAdmin || this.isGAdmin) return 'ADMIN';
+    if (this.isPrestador) return 'PRESTADOR';
+    return 'PRESTADOR';
   }
 
   logout(): void {

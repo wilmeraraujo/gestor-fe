@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -7,7 +7,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { KeycloakService } from 'keycloak-angular';
 import { PageEvent } from '@angular/material/paginator';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -23,6 +22,8 @@ import { DocumentoService } from '../../services/documento.service';
 import { CausalDevolucionService } from '../../services/causal-devolucion.service';
 import { ObservacionService } from '../../services/observacion.service';
 import { FaseService } from '../../services/fase.service';
+import { LoginService } from '../../services/login.service';
+import { AlertService } from '../../services/alert.service';
 
 @Component({
   selector: 'app-impuestos',
@@ -42,6 +43,10 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
 
   override titulo = 'Verificación de Impuestos (Etapa 3)';
 
+  // 💉 Inyecciones mediante Inject
+  private loginService = inject(LoginService);
+  private alertService = inject(AlertService);
+
   // Control de pestañas y visores
   tabSeleccionada: number = 0; // 0: Bandeja Facturas, 1: Visor Soportes
   facturaSeleccionada: Factura | null = null;
@@ -50,6 +55,7 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
   documentoActivo: string = '';
 
   esGestorF3: boolean = false;
+  usuarioActivo: string = '';
 
   opcionesCausal: { value: any, label: string }[] = [];
   opcionesObservacion: { value: any, label: string }[] = [];
@@ -76,9 +82,7 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
   ];
 
   columnasSoportes = [
-    { field: 'id', header: 'ID' },
-    { field: 'nombreOriginal', header: 'Nombre Archivo' },
-    { field: 'tipoId', header: 'Tipo ID' }
+    { field: 'nombreOriginal', header: 'Nombre Archivo' }
   ];
 
   constructor(
@@ -87,7 +91,6 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
     private causalService: CausalDevolucionService,
     private observacionService: ObservacionService,
     private faseService: FaseService,
-    private keycloakService: KeycloakService,
     private dialog: MatDialog,
     private sanitizer: DomSanitizer
   ) {
@@ -95,7 +98,7 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
   }
 
   ngOnInit(): void {
-    this.evaluarRolesUsuario();
+    this.cargarDatosSesion();
     this.cargarFases();
     this.cargarListasMaestras();
     this.configurarDebounceFiltros();
@@ -105,6 +108,16 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
     if (this.filtroSubscription) {
       this.filtroSubscription.unsubscribe();
     }
+  }
+
+  /**
+   * 👤 Carga los datos de sesión y evalúa los permisos utilizando LoginService
+   */
+  private cargarDatosSesion(): void {
+    this.usuarioActivo = this.loginService.getUserName();
+    this.esGestorF3 = this.loginService.isAdmin ||
+                      this.loginService.isGAdmin ||
+                      this.loginService.isGFaseTres;
   }
 
   /**
@@ -144,22 +157,6 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
     };
 
     this.cargarDatosPaginados();
-  }
-
-  /**
-   * 🔑 Evaluación flexible de roles con comprobación en minúsculas
-   */
-  private evaluarRolesUsuario(): void {
-    try {
-      const roles = (this.keycloakService.getUserRoles() || []).map(r => r.toLowerCase());
-
-      this.esGestorF3 = roles.some(rol => 
-        ['admin', 'gestor-fe-f3-i', 'gestor-fe-f3-imp', 'gestor-fe-admin', 'default-roles-fe', 'uma_authorization'].includes(rol)
-      );
-    } catch (e) {
-      console.warn('Error evaluando roles en Fase 3:', e);
-      this.esGestorF3 = true;
-    }
   }
 
   private cargarFases(): void {
@@ -246,7 +243,7 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
       },
       error: (err) => {
         console.error('Error al consultar soportes:', err);
-        alert('No se pudieron consultar los soportes de esta factura.');
+        this.alertService.error('No se pudieron consultar los soportes de esta factura.');
       }
     });
   }
@@ -261,7 +258,7 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
       },
       error: (err) => {
         console.error('Error al cargar la vista previa:', err);
-        alert('Este archivo no se puede previsualizar en el navegador.');
+        this.alertService.advertencia('Este archivo no se puede previsualizar directamente en el navegador.');
       }
     });
   }
@@ -337,7 +334,7 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
   }
 
   /**
-   * ⚙️ Abrir modal de dictamen
+   * ⚙️ Abrir modal de dictamen asignando el usuario activo de LoginService
    */
   abrirModalGestionar(row: Factura): void {
     const dialogRef = this.dialog.open(ModalComponent, {
@@ -355,12 +352,10 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
               model.observacion = model.observacionId;
             }
 
-            try {
-              model.usuario = this.keycloakService.getUsername() || 'SISTEMA';
-            } catch (error) {
-              console.warn('No se pudo obtener el username de Keycloak. Se asigna valor por defecto:', error);
-              model.usuario = 'GESTOR_SISTEMA';
-            }
+            // ⚡ RECUPERAMOS EL USUARIO LEGIBLE DE LOGINSERVICE
+            model.usuario = this.loginService.getUserName();
+
+            this.alertService.cargando('Registrando dictamen tributario...', 'Procesando Fase 3');
 
             return this.service.procesarTransicionFase(row.id, 3, model);
           }
@@ -370,6 +365,7 @@ export class ImpuestosComponent extends CommonListarComponent<Factura, FacturaSe
 
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado) {
+        this.alertService.exito(`Verificación de impuestos para la factura No. ${row.numeroFactura} completada.`, 'Dictamen Registrado');
         this.regresarABandeja();
         this.cargarDatosPaginados();
       }

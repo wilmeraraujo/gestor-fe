@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -7,7 +7,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { KeycloakService } from 'keycloak-angular';
 import { PageEvent } from '@angular/material/paginator';
 import { Subject, Subscription, throwError } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -23,6 +22,8 @@ import { DocumentoService } from '../../services/documento.service';
 import { CausalDevolucionService } from '../../services/causal-devolucion.service';
 import { ObservacionService } from '../../services/observacion.service';
 import { FaseService } from '../../services/fase.service';
+import { LoginService } from '../../services/login.service';
+import { AlertService } from '../../services/alert.service';
 
 @Component({
   selector: 'app-pendiente-de-pago',
@@ -42,6 +43,10 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
 
   override titulo = 'Pendiente de Pago - Tesorería (Etapa 4)';
 
+  // 💉 Inyecciones mediante Inject
+  private loginService = inject(LoginService);
+  private alertService = inject(AlertService);
+
   tabSeleccionada: number = 0;
   facturaSeleccionada: Factura | null = null;
   soportesFactura: Documento[] = [];
@@ -49,6 +54,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
   documentoActivo: string = '';
 
   esGestorF4: boolean = false;
+  usuarioActivo: string = '';
 
   opcionesCausal: { value: any, label: string }[] = [];
   opcionesObservacion: { value: any, label: string }[] = [];
@@ -70,14 +76,12 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
     { field: 'valorTotal', header: 'Valor Total' },
     { field: 'fechaEmision', header: 'Fecha Emisión' },
     { field: 'cufe', header: 'CUFE' },
-    { field: 'faseNombre', header: 'Fase / Etapa' },
+    { field: 'faseNombre', header: 'Fase' },
     { field: 'observacion', header: 'Observación' }
   ];
 
   columnasSoportes = [
-    { field: 'id', header: 'ID' },
-    { field: 'nombreOriginal', header: 'Nombre Archivo' },
-    { field: 'tipoId', header: 'Tipo ID' }
+    { field: 'nombreOriginal', header: 'Nombre Archivo' }
   ];
 
   constructor(
@@ -86,7 +90,6 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
     private causalService: CausalDevolucionService,
     private observacionService: ObservacionService,
     private faseService: FaseService,
-    private keycloakService: KeycloakService,
     private dialog: MatDialog,
     private sanitizer: DomSanitizer
   ) {
@@ -94,7 +97,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
   }
 
   ngOnInit(): void {
-    this.evaluarRolesUsuario();
+    this.cargarDatosSesion();
     this.cargarFases();
     this.cargarListasMaestras();
     this.configurarDebounceFiltros();
@@ -104,6 +107,16 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
     if (this.filtroSubscription) {
       this.filtroSubscription.unsubscribe();
     }
+  }
+
+  /**
+   * 👤 Carga los datos de sesión y evalúa los permisos utilizando LoginService
+   */
+  private cargarDatosSesion(): void {
+    this.usuarioActivo = this.loginService.getUserName();
+    this.esGestorF4 = this.loginService.isAdmin ||
+                      this.loginService.isGAdmin ||
+                      this.loginService.isGFaseCuatro;
   }
 
   /**
@@ -143,31 +156,6 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
     };
 
     this.cargarDatosPaginados();
-  }
-
-  /**
-   * 🔑 Evaluación flexible de roles con comprobación en minúsculas
-   */
-  private evaluarRolesUsuario(): void {
-    try {
-      const roles = (this.keycloakService.getUserRoles() || []).map(r => r.toLowerCase());
-
-      this.esGestorF4 = roles.some(rol => 
-        [
-          'admin', 
-          'gestor-fe-admin', 
-          'gestor-fe-f4-pp', 
-          'gestor-fe-f1-g', 
-          'gestor-fe-f2-rc', 
-          'gestor-fe-f3-imp',
-          'default-roles-fe',
-          'uma_authorization'
-        ].includes(rol)
-      );
-    } catch (e) {
-      console.warn('Error evaluando roles en Fase 4:', e);
-      this.esGestorF4 = true;
-    }
   }
 
   private cargarFases(): void {
@@ -254,7 +242,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
       },
       error: (err) => {
         console.error('Error al consultar soportes:', err);
-        alert('No se pudieron consultar los soportes de esta factura.');
+        this.alertService.error('No se pudieron consultar los soportes de esta factura.');
       }
     });
   }
@@ -269,7 +257,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
       },
       error: (err) => {
         console.error('Error al cargar la vista previa:', err);
-        alert('Este archivo no se puede previsualizar en el navegador.');
+        this.alertService.advertencia('Este archivo no se puede previsualizar directamente en el navegador.');
       }
     });
   }
@@ -373,6 +361,9 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
     }
   }
 
+  /**
+   * ⚙️ Abrir modal de aprobación de pago / rechazo enviando el usuario a la auditoría
+   */
   abrirModalGestionar(row: Factura): void {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '600px',
@@ -382,6 +373,9 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
         formData: { id: row.id, numeroCausacion: row.numeroCausacion || '' },
         service: {
           editar: (model: any) => {
+            // ⚡ RECUPERAMOS EL USUARIO LEGIBLE DE LOGINSERVICE
+            const usuarioAccion = this.loginService.getUserName();
+
             if (model.estadoAccion === 'APROBADO') {
 
               const inputsFile = Array.from(document.querySelectorAll('input[type="file"]')) as HTMLInputElement[];
@@ -404,7 +398,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
               }
 
               if (!archivoTb || !archivoComprobante) {
-                alert('⚠️ Debe adjuntar obligatoriamente el Documento TB y el Comprobante Bancario.');
+                this.alertService.advertencia('Debe adjuntar obligatoriamente el Documento TB y el Comprobante Bancario.', 'Archivos Requeridos');
                 return throwError(() => new Error('Los archivos de pago son obligatorios.'));
               }
 
@@ -412,22 +406,31 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
                 ? Number(model.tipoRegistroContableId)
                 : (row.tipoRegistroContableId ? Number(row.tipoRegistroContableId) : undefined);
 
+              this.alertService.cargando('Registrando pago y subiendo soportes...', 'Procesando Tesorería');
+
+              // ⚡ PASAMOS EL PARÁMETRO USUARIO AL SERVICIO DE PAGO
               return this.service.procesarPagoFase4(
                 row.id,
                 tipoRegistroIdNum,
                 model.numeroCausacion,
+                usuarioAccion,
                 archivoTb,
                 archivoComprobante
               );
 
             } else {
-              // RECHAZO
+              // ⚡ RECHAZO: ADJUNTAMOS EL USUARIO EN EL MODELO JSON
+              model.usuario = usuarioAccion;
+
               if (model.causalDevolucionId) {
                 model.causalDevolucionId = Number(model.causalDevolucionId);
               }
               if (model.observacionId && model.observacionId !== 'OTRO') {
                 model.observacion = model.observacionId;
               }
+
+              this.alertService.cargando('Registrando devolución...', 'Procesando Rechazo');
+
               return this.service.procesarTransicionFase(row.id, 4, model);
             }
           }
@@ -437,6 +440,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
 
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado) {
+        this.alertService.exito(`Pago registrado y verificado para la Factura No. ${row.numeroFactura}.`, 'Proceso Finalizado');
         this.regresarABandeja();
         this.cargarDatosPaginados();
       }

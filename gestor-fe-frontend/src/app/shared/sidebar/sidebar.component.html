@@ -15,12 +15,13 @@
   <ul class="sidebar-menu">
     <li *ngFor="let item of menuNav">
 
-      <!-- ITEM NORMAL CON RUTA -->
+      <!-- ITEM NORMAL CON RUTA (ej: HOME) -->
       <a
         *ngIf="item.route && !item.children"
         [routerLink]="item.route"
         routerLinkActive="sidebar-active"
-        class="sidebar-item">
+        class="sidebar-item"
+        (click)="onDirectItemClick()">
 
         <!-- ICONO -->
         <span class="material-icons sidebar-icon">
@@ -33,7 +34,7 @@
         </span>
       </a>
 
-      <!-- ITEM CON SUBMENU -->
+      <!-- ITEM CON SUBMENU (ACCIONA EL ACORDEÓN) -->
       <div
         *ngIf="item.children"
         class="sidebar-item"
