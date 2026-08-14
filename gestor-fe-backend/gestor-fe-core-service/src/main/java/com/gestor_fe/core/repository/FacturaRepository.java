@@ -1,0 +1,41 @@
+package com.gestor_fe.core.repository;
+
+import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import com.gestor_fe.core.entity.Factura;
+
+@Repository
+public interface FacturaRepository extends JpaRepository<Factura, Long> {
+
+    // 👤 Prestador: Ve todas sus facturas (sin importar estado o fase)
+    Page<Factura> findByNitAndDeletedAtIsNull(String nit, Pageable pageable);
+
+    // 👷 Rol F1 (Gestión): Ve facturas en Fase 1 que no hayan sido borradas
+    Page<Factura> findByFaseIdAndDeletedAtIsNull(Long faseId, Pageable pageable);
+
+    // 💼 Rol F2 y F3: Ve facturas activas de una fase que NO estén devueltas/anuladas
+    @Query("SELECT f FROM Factura f WHERE f.faseId = :faseId AND f.deletedAt IS NULL AND f.estado NOT IN ('FACTURA NO CONFORME', 'DEVOLVER FACTURA ELECTRÓNICA', 'DEVOLUCIÓN')")
+    Page<Factura> findByFaseActiva(@Param("faseId") Long faseId, Pageable pageable);
+
+    // 💰 Rol F4 (Tesorería / Pendiente de Pago): Ve facturas en Fase 4 EXCLUYENDO las ya PAGADAS o ANULADAS
+    @Query("SELECT f FROM Factura f WHERE f.faseId = :faseId AND f.deletedAt IS NULL AND f.estado NOT IN ('PAGADO', 'ANULADO', 'RECHAZADO')")
+    Page<Factura> findByFaseCuatroPendientePago(@Param("faseId") Long faseId, Pageable pageable);
+
+    // 🔍 Rol F5 (Seguimiento): Ve TODAS las facturas del sistema (Trazabilidad global)
+    Page<Factura> findByDeletedAtIsNull(Pageable pageable);
+
+    @Query("SELECT f.cufe FROM Factura f WHERE f.deletedAt IS NULL AND f.cufe IN :cufes")
+    List<String> findExistingCufes(@Param("cufes") List<String> cufes);
+
+    @Query("SELECT CONCAT(f.nit, '_', f.numeroFactura) FROM Factura f WHERE f.deletedAt IS NULL AND CONCAT(f.nit, '_', f.numeroFactura) IN :nitFacturas")
+    List<String> findExistingNitFacturas(@Param("nitFacturas") List<String> nitFacturas);
+    
+    // Recupera las facturas de un cargue específico que no hayan sido borradas
+    List<Factura> findByIdentificadorCargueAndDeletedAtIsNull(Long identificadorCargue);
+}

@@ -1,4 +1,4 @@
-package com.gestor_fe.admin.service.services;
+package com.gestor_fe.admin.service.services.impl;
 
 import java.util.List;
 
@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.gestor_fe.admin.service.model.entity.TipoIdentificacion;
 import com.gestor_fe.admin.service.repository.TipoIdentificacionRepository;
+import com.gestor_fe.admin.service.services.TipoIdentificacionService;
 import com.service.common.service.GlobalServiceImpl;
 
 @Service

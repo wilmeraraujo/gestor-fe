@@ -1,21 +1,32 @@
+<!-- Input nativo oculto para seleccionar archivo ZIP -->
+<input 
+  type="file" 
+  #fileInput 
+  style="display: none;" 
+  accept=".zip" 
+  (change)="onFileSelected($event)">
+
 <app-data-table
-
   [titulo]="titulo"
-
   [columnas]="columnas"
-
   [datos]="lista"
-
   [totalRegistros]="totalRegistros"
-
-  [totalPorPagina]="5"
-
-  (editar)="editar($event)"
-
-  (eliminar)="eliminar($event)"
-
+  [totalPorPagina]="totalPorPagina"
+  [pageSizeOptions]="pageSizeOptions"
+  
+  [textoBotonAgregar]="textoBotonAgregar"
+  [tooltipAgregar]="tooltipAgregar"
+  
+  [mostrarAcciones]="true"
+  [mostrarDetalle]="false"
+  [mostrarEditar]="false"
+  [mostrarDescargaErrores]="true"
+  [mostrarEliminar]="esAdminOPerfilAdmin"
+  
+  (paginar)="paginar($event)"
+  (descargarErrores)="descargarExcelErrores($event)"
   (agregar)="agregar()"
-
-  (buscar)="buscar($event)">
-
+  (buscar)="buscar($event)"
+  (eliminar)="deletedAt($event)"
+>
 </app-data-table>

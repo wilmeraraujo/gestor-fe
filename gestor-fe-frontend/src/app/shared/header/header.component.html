@@ -26,6 +26,8 @@
     <!-- BREADCRUMB -->
     <div class="header-breadcrumb">
 
+      <img src="assets/images/logo-empresa.png" alt="Logo" style="max-height: 40px; width: auto; object-fit: contain;">FE
+
       <span class="breadcrumb-item">GESTION</span>
 
       <span class="breadcrumb-separator">/</span>
@@ -60,9 +62,10 @@
 
     </button>
 
-    <!-- USER -->
+    <!-- USER MENU -->
     <app-user-menu
       [user]="user"
+      [role]="role"
       [email]="email">
     </app-user-menu>
 

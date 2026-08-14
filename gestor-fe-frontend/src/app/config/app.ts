@@ -1,1 +1,2 @@
-export const BE='http://localhost:8095';
+export const BEADMIN='http://localhost:9095';
+export const BECORE='http://localhost:9096';
