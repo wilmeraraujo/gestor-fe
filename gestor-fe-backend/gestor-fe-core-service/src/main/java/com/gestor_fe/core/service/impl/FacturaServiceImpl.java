@@ -367,6 +367,15 @@ public class FacturaServiceImpl implements FacturaService {
 
         if (archivoCausacion != null && !archivoCausacion.isEmpty()) {
             try {
+                // 🔄 Inactivar lógicamente cualquier soporte de causación previo activo
+                if (factura.getDocumentos() != null) {
+                    for (Documento doc : factura.getDocumentos()) {
+                        if (doc.getDeletedAt() == null && doc.getTipoId() != null && doc.getTipoId() == 8L && (doc.getRuta() == null || !doc.getRuta().contains("_TB_") && !doc.getRuta().contains("_PAGO_"))) {
+                            doc.setDeletedAt(LocalDate.now());
+                        }
+                    }
+                }
+
                 String nitCarpeta = factura.getNit().replaceAll("[\\\\/:*?\"<>|]", "_").trim();
                 String numFacturaCarpeta = factura.getNumeroFactura().replaceAll("[\\\\/:*?\"<>|]", "_").trim();
 
@@ -441,10 +450,12 @@ public class FacturaServiceImpl implements FacturaService {
             }
 
             if (soporteTb != null && !soporteTb.isEmpty()) {
+                inactivarDocumentoPrevioPorPrefijo(factura, "_TB_");
                 guardarSoporteDocumento(factura, soporteTb, directorioFactura, "TB_", 8L);
             }
 
             if (comprobantePago != null && !comprobantePago.isEmpty()) {
+                inactivarDocumentoPrevioPorPrefijo(factura, "_PAGO_");
                 guardarSoporteDocumento(factura, comprobantePago, directorioFactura, "PAGO_", 8L);
             }
 
@@ -453,6 +464,16 @@ public class FacturaServiceImpl implements FacturaService {
         }
 
         return repository.save(factura);
+    }
+
+    private void inactivarDocumentoPrevioPorPrefijo(Factura factura, String prefijo) {
+        if (factura.getDocumentos() != null) {
+            for (Documento doc : factura.getDocumentos()) {
+                if (doc.getDeletedAt() == null && doc.getRuta() != null && doc.getRuta().contains(prefijo)) {
+                    doc.setDeletedAt(LocalDate.now());
+                }
+            }
+        }
     }
 
     private void guardarSoporteDocumento(Factura factura, MultipartFile archivo, Path directorio, String prefijo, Long tipoId) throws IOException {

@@ -25,6 +25,12 @@ public interface DocumentoRepository extends JpaRepository<Documento, Long>, Jpa
     // 🧾 3. Obtener los documentos de una factura de forma PAGINADA
     Page<Documento> findByFacturaIdAndDeletedAtIsNull(Long facturaId, Pageable pageable);
 
+    // 🧾 3b. Obtener la lista completa de documentos activos de una factura
+    List<Documento> findByFacturaIdAndDeletedAtIsNull(Long facturaId);
+
+    // 🧾 3c. Obtener documentos activos de una factura filtrados por tipo
+    List<Documento> findByFacturaIdAndTipoIdAndDeletedAtIsNull(Long facturaId, Long tipoId);
+
     // 🔍 4. Buscar un documento específico por tipo (Útil para saber si ya existe el RUT o Cámara de Comercio)
     Optional<Documento> findByPrestadorIdAndTipoIdAndDeletedAtIsNull(Long prestadorId, Long tipoId);
     

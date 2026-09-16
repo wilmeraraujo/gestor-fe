@@ -18,6 +18,12 @@ public interface DocumentoService {
     // Método para recuperar un documento físico del disco por su ID
     Resource descargarDocumento(Long id);
     
+    // Método para inactivar (borrado lógico) un documento asignando deleted_at = LocalDate.now()
+    void inactivarDocumento(Long id);
+
+    // Método para consultar todos los documentos activos de una factura
+    List<Documento> findByFacturaIdAndDeletedAtIsNull(Long facturaId);
+
     // Método para generar un ZIP en memoria a partir de una lista de IDs de documentos
     ByteArrayOutputStream generarZipMasivo(List<Long> ids);
 }

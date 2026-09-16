@@ -84,9 +84,10 @@
               [pageSizeOptions]="[5, 10]"
               [mostrarAgregar]="false"
               [mostrarEditar]="false"
-              [mostrarEliminar]="false"
+              [mostrarEliminar]="esGestorF2 && facturaSeleccionada.faseId === 2"
               [mostrarDetalle]="true"
-              (verDetalle)="cargarSoporteEnVisor($event)">
+              (verDetalle)="cargarSoporteEnVisor($event)"
+              (eliminar)="eliminarSoporte($event)">
             </app-data-table>
           </div>
 

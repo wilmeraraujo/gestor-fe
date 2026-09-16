@@ -106,4 +106,17 @@ public class DocumentoController {
                 .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(zipBytes.length))
                 .body(zipBytes);
     }
+
+    // 🗑️ 5. INACTIVACIÓN LÓGICA DE UN DOCUMENTO (DELETED_AT = NOW())
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> inactivarDocumento(@PathVariable("id") Long id) {
+        service.inactivarDocumento(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // 🧾 6. CONSULTAR DOCUMENTOS ACTIVOS DE UNA FACTURA
+    @GetMapping("/factura/{facturaId}/activos")
+    public ResponseEntity<?> findByFacturaIdActivos(@PathVariable("facturaId") Long facturaId) {
+        return ResponseEntity.ok(service.findByFacturaIdAndDeletedAtIsNull(facturaId));
+    }
 }

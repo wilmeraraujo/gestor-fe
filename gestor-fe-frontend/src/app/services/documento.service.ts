@@ -63,4 +63,18 @@ export class DocumentoService extends CommonService<Documento> {
     // 3. Realizamos la petición GET enviando los parámetros corregidos
     return this.http.get<any>(`${this.endPointBase}/paginable/buscar`, { params });
   }
+
+  /**
+   * Inactiva (borrado lógico: deleted_at = NOW()) un soporte documental de forma segura
+   */
+  public inactivarDocumento(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.endPointBase}/${id}`);
+  }
+
+  /**
+   * Obtiene la lista de todos los documentos activos (deleted_at IS NULL) asociados a una factura
+   */
+  public getSoportesActivosFactura(facturaId: number): Observable<Documento[]> {
+    return this.http.get<Documento[]>(`${this.endPointBase}/factura/${facturaId}/activos`);
+  }
 }

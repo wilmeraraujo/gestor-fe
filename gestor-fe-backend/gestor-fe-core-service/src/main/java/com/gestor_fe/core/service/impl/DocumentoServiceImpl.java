@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import java.time.LocalDate;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.gestor_fe.core.entity.Documento;
 import com.gestor_fe.core.entity.Factura;
 import com.gestor_fe.core.repository.DocumentoRepository;
@@ -39,6 +42,22 @@ public class DocumentoServiceImpl implements DocumentoService {
     @Override
     public Page<Documento> findByDeletedAtIsNull(Pageable pageable) {
         return repository.findByDeletedAtIsNull(pageable);
+    }
+
+    @Override
+    @Transactional
+    public void inactivarDocumento(Long id) {
+        Documento documento = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Documento no encontrado con el ID: " + id));
+        documento.setDeletedAt(LocalDate.now());
+        repository.save(documento);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Documento> findByFacturaIdAndDeletedAtIsNull(Long facturaId) {
+        if (facturaId == null) return List.of();
+        return repository.findByFacturaIdAndDeletedAtIsNull(facturaId);
     }
 
     // 🚀 BÚSQUEDA AVANZADA COMBINADA Y PAGINADA CON CRITERIA API

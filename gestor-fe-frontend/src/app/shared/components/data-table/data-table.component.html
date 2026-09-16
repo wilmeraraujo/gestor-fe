@@ -169,13 +169,13 @@
                 <mat-icon>history</mat-icon>
               </button>
 
-              <!-- 🗑️ ELIMINAR -->
+              <!-- 🗑️ ELIMINAR / INACTIVAR -->
               <button
-                *ngIf="mostrarEliminar"
+                *ngIf="mostrarEliminar && row.permitirEliminar !== false"
                 mat-icon-button
                 class="btn-action btn-action-delete"
                 (click)="onEliminar(row)"
-                matTooltip="Eliminar">
+                matTooltip="Eliminar / Inactivar Soporte">
                 <mat-icon>delete</mat-icon>
               </button>
 
