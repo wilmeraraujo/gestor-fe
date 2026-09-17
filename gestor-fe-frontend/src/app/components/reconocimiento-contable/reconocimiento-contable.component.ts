@@ -233,6 +233,9 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   /**
    * 👁️ Carga los soportes documentales de la factura y pasa a Pestaña 2
    */
+  /**
+   * 👁️ Carga los soportes documentales de la factura y pasa a Pestaña 2
+   */
   verSoportesFactura(row: Factura): void {
     this.facturaSeleccionada = row;
     this.pdfUrlSafe = null;
@@ -246,12 +249,43 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
       '50'
     ).subscribe({
       next: (res: any) => {
-        this.soportesFactura = res.content || [];
+        const rawDocs = res.content || [];
+        this.soportesFactura = rawDocs.map((doc: any) => ({
+          ...doc,
+          permitirEliminar: this.esGestorF2 && row.faseId === 2 && doc.tipoId === 8
+        }));
         this.tabSeleccionada = 1;
       },
       error: (err) => {
         console.error('Error al consultar soportes:', err);
         this.alertService.error('No se pudieron consultar los soportes de esta factura.');
+      }
+    });
+  }
+
+  /**
+   * 🗑️ Inactivación (borrado lógico) de soporte de causación desde el visor
+   */
+  eliminarSoporte(doc: Documento): void {
+    if (!doc || !doc.id) return;
+    this.alertService.confirmar(
+      `¿Está seguro de inactivar el soporte "${doc.nombreOriginal}"?`,
+      'Confirmar Inactivación'
+    ).then((result) => {
+      if (result.isConfirmed) {
+        this.alertService.cargando('Inactivando soporte...', 'Procesando');
+        this.documentoService.inactivarDocumento(doc.id).subscribe({
+          next: () => {
+            this.alertService.exito('Soporte inactivado correctamente.', 'Operación Completada');
+            if (this.facturaSeleccionada) {
+              this.verSoportesFactura(this.facturaSeleccionada);
+            }
+          },
+          error: (err) => {
+            console.error('Error al inactivar soporte:', err);
+            this.alertService.error('No se pudo inactivar el soporte seleccionado.');
+          }
+        });
       }
     });
   }
@@ -279,9 +313,9 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   }
 
   /**
-   * 📝 Configuración de campos dinámicos obligatorios
+   * 📝 Configuración de campos dinámicos obligatorios u opcionales
    */
-  getCamposGestion() {
+  getCamposGestion(tieneSoporteCausacionActivo: boolean = false) {
     return [
       {
         name: 'estadoAccion',
@@ -299,7 +333,8 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
           // CAMPOS DE APROBACIÓN
           this.toggleCampoVisibilidad(campos, form, 'tipoRegistroContableId', isAprobado, true);
           this.toggleCampoVisibilidad(campos, form, 'numeroCausacion', isAprobado, true);
-          this.toggleCampoVisibilidad(campos, form, 'archivoCausacion', isAprobado, true);
+          // Si ya existe soporte activo, adjuntar uno nuevo es OPCIONAL; si no existe, es REQUERIDO
+          this.toggleCampoVisibilidad(campos, form, 'archivoCausacion', isAprobado, !tieneSoporteCausacionActivo);
 
           // CAMPOS DE RECHAZO
           this.toggleCampoVisibilidad(campos, form, 'causalDevolucionId', isRechazado, true);
@@ -322,7 +357,9 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
       },
       {
         name: 'archivoCausacion',
-        label: 'Soporte de Causación (PDF)',
+        label: tieneSoporteCausacionActivo
+          ? 'Soporte de Causación (PDF) - Opcional (Ya existe uno activo)'
+          : 'Soporte de Causación (PDF) * [Requerido]',
         type: 'file',
         accept: '.pdf',
         visible: false
@@ -336,7 +373,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
       },
       {
         name: 'observacionId',
-        label: 'Observaciones Predeterminadas',
+        label: 'Observaciones Predeterminados',
         type: 'select',
         options: this.opcionesObservacion,
         visible: false,
@@ -371,18 +408,35 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   }
 
   /**
-   * ⚙️ Abrir modal de causación / rechazo asignando de forma segura el usuario activo
+   * ⚙️ Abrir modal de causación / rechazo consultando previamente si existen soportes activos
    */
   abrirModalGestionar(row: Factura): void {
+    this.documentoService.getSoportesActivosFactura(row.id).subscribe({
+      next: (docsActivos: Documento[]) => {
+        const tieneSoporteCausacionActivo = (docsActivos || []).some(
+          d => d.tipoId === 8 && (!d.ruta || (!d.ruta.includes('_TB_') && !d.ruta.includes('_PAGO_')))
+        );
+        this.ejecutarModalGestionar(row, tieneSoporteCausacionActivo);
+      },
+      error: () => {
+        this.ejecutarModalGestionar(row, false);
+      }
+    });
+  }
+
+  private ejecutarModalGestionar(row: Factura, tieneSoporteActivo: boolean): void {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '600px',
       data: {
         titulo: `Reconocimiento Contable - Factura No. ${row.numeroFactura}`,
-        campos: this.getCamposGestion(),
-        formData: { id: row.id },
+        campos: this.getCamposGestion(tieneSoporteActivo),
+        formData: {
+          id: row.id,
+          tipoRegistroContableId: row.tipoRegistroContableId ? String(row.tipoRegistroContableId) : '',
+          numeroCausacion: row.numeroCausacion || ''
+        },
         service: {
           editar: (model: any) => {
-            // ⚡ RECUPERAMOS EL USUARIO LEGIBLE DE LOGINSERVICE
             const usuarioAccion = this.loginService.getUserName();
 
             if (model.estadoAccion === 'APROBADO') {
@@ -400,14 +454,13 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
                 }
               }
 
-              if (!archivoFile) {
+              if (!archivoFile && !tieneSoporteActivo) {
                 this.alertService.advertencia('Debe adjuntar obligatoriamente el archivo PDF con el Soporte de Causación.', 'Archivo Requerido');
                 return throwError(() => new Error('El archivo soporte de causación es obligatorio.'));
               }
 
-              this.alertService.cargando('Guardando causación y cargando archivo...', 'Procesando Fase 2');
+              this.alertService.cargando('Guardando causación y procesando...', 'Procesando Fase 2');
 
-              // ⚡ PASAMOS EL PARÁMETRO USUARIO AL SERVICIO
               return this.service.procesarCausacionFase2(
                 row.id,
                 Number(model.tipoRegistroContableId),
@@ -417,7 +470,6 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
               );
 
             } else {
-              // ⚡ RECHAZO: ADJUNTAMOS EL USUARIO EN EL MODELO JSON
               model.usuario = usuarioAccion;
 
               if (model.causalDevolucionId) {

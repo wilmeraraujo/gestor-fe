@@ -224,6 +224,9 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
   /**
    * 👁️ Carga los soportes documentales de la factura y pasa a Pestaña 2
    */
+  /**
+   * 👁️ Carga los soportes documentales de la factura y pasa a Pestaña 2
+   */
   verSoportesFactura(row: Factura): void {
     this.facturaSeleccionada = row;
     this.pdfUrlSafe = null;
@@ -237,12 +240,43 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
       '50'
     ).subscribe({
       next: (res: any) => {
-        this.soportesFactura = res.content || [];
+        const rawDocs = res.content || [];
+        this.soportesFactura = rawDocs.map((doc: any) => ({
+          ...doc,
+          permitirEliminar: this.esGestorF4 && row.faseId === 4 && (doc.ruta?.includes('_TB_') || doc.ruta?.includes('_PAGO_'))
+        }));
         this.tabSeleccionada = 1;
       },
       error: (err) => {
         console.error('Error al consultar soportes:', err);
         this.alertService.error('No se pudieron consultar los soportes de esta factura.');
+      }
+    });
+  }
+
+  /**
+   * 🗑️ Inactivación (borrado lógico) de soporte de Tesorería desde el visor
+   */
+  eliminarSoporte(doc: Documento): void {
+    if (!doc || !doc.id) return;
+    this.alertService.confirmar(
+      `¿Está seguro de inactivar el soporte "${doc.nombreOriginal}"?`,
+      'Confirmar Inactivación'
+    ).then((result) => {
+      if (result.isConfirmed) {
+        this.alertService.cargando('Inactivando soporte...', 'Procesando');
+        this.documentoService.inactivarDocumento(doc.id).subscribe({
+          next: () => {
+            this.alertService.exito('Soporte inactivado correctamente.', 'Operación Completada');
+            if (this.facturaSeleccionada) {
+              this.verSoportesFactura(this.facturaSeleccionada);
+            }
+          },
+          error: (err) => {
+            console.error('Error al inactivar soporte:', err);
+            this.alertService.error('No se pudo inactivar el soporte seleccionado.');
+          }
+        });
       }
     });
   }
@@ -272,7 +306,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
   /**
    * 📝 Campos dinámicos del modal para la Etapa 4 (Tesorería)
    */
-  getCamposGestion() {
+  getCamposGestion(tieneTbActivo: boolean = false, tienePagoActivo: boolean = false) {
     return [
       {
         name: 'estadoAccion',
@@ -289,8 +323,8 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
 
           // CAMPOS DE APROBACIÓN DE PAGO
           this.toggleCampoVisibilidad(campos, form, 'numeroCausacion', isAprobado, false);
-          this.toggleCampoVisibilidad(campos, form, 'soporteTb', isAprobado, true);
-          this.toggleCampoVisibilidad(campos, form, 'comprobantePago', isAprobado, true);
+          this.toggleCampoVisibilidad(campos, form, 'soporteTb', isAprobado, !tieneTbActivo);
+          this.toggleCampoVisibilidad(campos, form, 'comprobantePago', isAprobado, !tienePagoActivo);
 
           // CAMPOS DE RECHAZO
           this.toggleCampoVisibilidad(campos, form, 'causalDevolucionId', isRechazado, true);
@@ -306,14 +340,18 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
       },
       {
         name: 'soporteTb',
-        label: 'Documento Registro Contable TB (PDF)',
+        label: tieneTbActivo
+          ? 'Documento Registro Contable TB (PDF) - Opcional (Ya existe activo)'
+          : 'Documento Registro Contable TB (PDF) * [Requerido]',
         type: 'file',
         accept: '.pdf',
         visible: false
       },
       {
         name: 'comprobantePago',
-        label: 'Comprobante de Pago Bancario (PDF)',
+        label: tienePagoActivo
+          ? 'Comprobante de Pago Bancario (PDF) - Opcional (Ya existe activo)'
+          : 'Comprobante de Pago Bancario (PDF) * [Requerido]',
         type: 'file',
         accept: '.pdf',
         visible: false
@@ -362,18 +400,30 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
   }
 
   /**
-   * ⚙️ Abrir modal de aprobación de pago / rechazo enviando el usuario a la auditoría
+   * ⚙️ Abrir modal de aprobación de pago / rechazo consultando antes los soportes activos
    */
   abrirModalGestionar(row: Factura): void {
+    this.documentoService.getSoportesActivosFactura(row.id).subscribe({
+      next: (docsActivos: Documento[]) => {
+        const tieneTbActivo = (docsActivos || []).some(d => d.ruta?.includes('_TB_'));
+        const tienePagoActivo = (docsActivos || []).some(d => d.ruta?.includes('_PAGO_'));
+        this.ejecutarModalGestionar(row, tieneTbActivo, tienePagoActivo);
+      },
+      error: () => {
+        this.ejecutarModalGestionar(row, false, false);
+      }
+    });
+  }
+
+  private ejecutarModalGestionar(row: Factura, tieneTbActivo: boolean, tienePagoActivo: boolean): void {
     const dialogRef = this.dialog.open(ModalComponent, {
       width: '600px',
       data: {
         titulo: `Tesorería y Registro de Pago - Factura No. ${row.numeroFactura}`,
-        campos: this.getCamposGestion(),
+        campos: this.getCamposGestion(tieneTbActivo, tienePagoActivo),
         formData: { id: row.id, numeroCausacion: row.numeroCausacion || '' },
         service: {
           editar: (model: any) => {
-            // ⚡ RECUPERAMOS EL USUARIO LEGIBLE DE LOGINSERVICE
             const usuarioAccion = this.loginService.getUserName();
 
             if (model.estadoAccion === 'APROBADO') {
@@ -397,9 +447,12 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
                 archivoComprobante = model.comprobantePago instanceof File ? model.comprobantePago : model.comprobantePago[0];
               }
 
-              if (!archivoTb || !archivoComprobante) {
-                this.alertService.advertencia('Debe adjuntar obligatoriamente el Documento TB y el Comprobante Bancario.', 'Archivos Requeridos');
-                return throwError(() => new Error('Los archivos de pago son obligatorios.'));
+              const requiereTb = !tieneTbActivo && !archivoTb;
+              const requierePago = !tienePagoActivo && !archivoComprobante;
+
+              if (requiereTb || requierePago) {
+                this.alertService.advertencia('Debe adjuntar obligatoriamente los soportes de pago requeridos que no existan activos.', 'Archivos Requeridos');
+                return throwError(() => new Error('Los archivos de pago requeridos son obligatorios.'));
               }
 
               const tipoRegistroIdNum = model.tipoRegistroContableId
@@ -408,7 +461,6 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
 
               this.alertService.cargando('Registrando pago y subiendo soportes...', 'Procesando Tesorería');
 
-              // ⚡ PASAMOS EL PARÁMETRO USUARIO AL SERVICIO DE PAGO
               return this.service.procesarPagoFase4(
                 row.id,
                 tipoRegistroIdNum,
@@ -419,7 +471,6 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
               );
 
             } else {
-              // ⚡ RECHAZO: ADJUNTAMOS EL USUARIO EN EL MODELO JSON
               model.usuario = usuarioAccion;
 
               if (model.causalDevolucionId) {

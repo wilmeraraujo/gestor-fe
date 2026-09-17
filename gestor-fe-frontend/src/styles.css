@@ -2,3 +2,30 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* 🟢 ESTILO GLOBAL DE CHECKBOX VERDE OSCURO EN LUGAR DE ROSADO */
+.mat-mdc-checkbox {
+  --mdc-checkbox-selected-focus-icon-color: #056839 !important;
+  --mdc-checkbox-selected-hover-icon-color: #056839 !important;
+  --mdc-checkbox-selected-icon-color: #056839 !important;
+  --mdc-checkbox-selected-pressed-icon-color: #056839 !important;
+  --mdc-checkbox-selected-focus-container-color: #056839 !important;
+  --mdc-checkbox-selected-hover-container-color: #056839 !important;
+  --mdc-checkbox-selected-container-color: #056839 !important;
+  --mdc-checkbox-selected-pressed-container-color: #056839 !important;
+  --mdc-checkbox-selected-checkmark-color: #ffffff !important;
+}
+
+.mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__background,
+.mat-mdc-checkbox.mat-mdc-checkbox-indeterminate .mdc-checkbox__background,
+.mat-mdc-checkbox .mdc-checkbox__native-control:enabled:checked ~ .mdc-checkbox__background,
+.mat-mdc-checkbox .mdc-checkbox__native-control:enabled:indeterminate ~ .mdc-checkbox__background {
+  background-color: #056839 !important;
+  border-color: #056839 !important;
+}
+
+.mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__icon-path,
+.mat-mdc-checkbox.mat-mdc-checkbox-indeterminate .mdc-checkbox__icon-path {
+  stroke: #ffffff !important;
+}
+

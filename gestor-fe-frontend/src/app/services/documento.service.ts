@@ -39,9 +39,45 @@ export class DocumentoService extends CommonService<Documento> {
     numeroFactura: string, 
     nit: string, 
     tipoId: number | null, 
+    extensionId: number | null, 
     page: string | number, 
     size: string | number
+  ): Observable<any>;
+
+  public filtrarDocumentosPaginado(
+    numeroFactura: string, 
+    nit: string, 
+    tipoId: number | null, 
+    page: string | number, 
+    size: string | number
+  ): Observable<any>;
+
+  public filtrarDocumentosPaginado(
+    numeroFactura: string, 
+    nit: string, 
+    arg3: number | null, 
+    arg4?: any, 
+    arg5?: any, 
+    arg6?: any
   ): Observable<any> {
+    let finalTipoId: number | null = null;
+    let finalExtensionId: number | null = null;
+    let page: string | number = '0';
+    let size: string | number = '10';
+
+    if (arg6 !== undefined) {
+      // 6 Argumentos: (numeroFactura, nit, tipoId, extensionId, page, size)
+      finalTipoId = arg3;
+      finalExtensionId = (typeof arg4 === 'number') ? arg4 : null;
+      page = arg5 !== undefined ? arg5 : '0';
+      size = arg6 !== undefined ? arg6 : '10';
+    } else {
+      // 5 Argumentos: (numeroFactura, nit, tipoId, page, size)
+      finalTipoId = arg3;
+      page = arg4 !== undefined ? arg4 : '0';
+      size = arg5 !== undefined ? arg5 : '10';
+    }
+
     // 1. Inicializamos los parámetros obligatorios de paginación
     let params = new HttpParams()
       .set('page', page.toString())
@@ -56,11 +92,29 @@ export class DocumentoService extends CommonService<Documento> {
       params = params.set('nit', nit.trim());
     }
     
-    if (tipoId !== null && tipoId !== undefined && tipoId > 0) {
-      params = params.set('tipoId', tipoId.toString());
+    if (finalTipoId !== null && finalTipoId !== undefined && finalTipoId > 0) {
+      params = params.set('tipoId', finalTipoId.toString());
+    }
+
+    if (finalExtensionId !== null && finalExtensionId !== undefined && finalExtensionId > 0) {
+      params = params.set('extensionId', finalExtensionId.toString());
     }
 
     // 3. Realizamos la petición GET enviando los parámetros corregidos
     return this.http.get<any>(`${this.endPointBase}/paginable/buscar`, { params });
+  }
+
+  /**
+   * Inactiva (borrado lógico: deleted_at = NOW()) un soporte documental de forma segura
+   */
+  public inactivarDocumento(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.endPointBase}/${id}`);
+  }
+
+  /**
+   * Obtiene la lista de todos los documentos activos (deleted_at IS NULL) asociados a una factura
+   */
+  public getSoportesActivosFactura(facturaId: number): Observable<Documento[]> {
+    return this.http.get<Documento[]>(`${this.endPointBase}/factura/${facturaId}/activos`);
   }
 }

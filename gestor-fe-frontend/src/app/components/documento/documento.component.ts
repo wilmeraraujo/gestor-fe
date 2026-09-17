@@ -8,12 +8,17 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { PageEvent } from '@angular/material/paginator';
+import { Observable, forkJoin } from 'rxjs';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
 import { Documento } from '../../models/documento';
 import { DocumentoService } from '../../services/documento.service';
+import { AlertService } from '../../services/alert.service';
+import { TipoService } from '../../services/tipo.service';
+import { ExtensionService } from '../../services/extension.service';
 
 @Component({
   selector: 'app-documento',
@@ -27,7 +32,8 @@ import { DocumentoService } from '../../services/documento.service';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatSelectModule
+    MatSelectModule,
+    MatTooltipModule
   ],
   templateUrl: './documento.component.html',
   styleUrl: './documento.component.css'
@@ -44,8 +50,12 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
   filtro = {
     numeroFactura: '',
     nit: '',
-    tipoDocumento: 'Todos' // 'Todos', 'PDF' (ID: 2), o 'XML' (ID: 1)
+    tipoId: null as number | null,
+    extensionId: null as number | null
   };
+
+  tiposLista: any[] = [];
+  extensionesLista: any[] = [];
 
   // Bandera para saber si actualmente estamos mostrando un resultado filtrado o el listado general
   aplicandoFiltro: boolean = false;
@@ -56,18 +66,36 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
   columnas = [
     { field: 'id', header: 'ID' },
     { field: 'nombreOriginal', header: 'Nombre Archivo' },
-    { field: 'tipoId', header: 'Tipo ID' } // Opcional: Representa el ID del tipo asociado
+    { field: 'nit', header: 'NIT' },
+    { field: 'numeroFactura', header: 'No. Factura' }
   ];
 
   constructor(
     service: DocumentoService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private alertService: AlertService,
+    private tipoService: TipoService,
+    private extensionService: ExtensionService
   ) {
     super(service);
   }
 
   ngOnInit(): void {
-    this.calcularRangos();
+    // Inicialmente los datos en la tabla permanecen vacíos hasta que se ingrese al menos el NIT
+    this.lista = [];
+    this.totalRegistros = 0;
+
+    // Carga de catálogo de Tipos desde el microservicio de Administración
+    this.tipoService.listar().subscribe({
+      next: (tipos) => this.tiposLista = tipos || [],
+      error: (err) => console.error('Error al cargar tipos de documento:', err)
+    });
+
+    // Carga de catálogo de Extensiones desde el microservicio de Administración
+    this.extensionService.listar().subscribe({
+      next: (exts) => this.extensionesLista = exts || [],
+      error: (err) => console.error('Error al cargar extensiones:', err)
+    });
   }
 
   // 1. Carga reactiva del documento (PDF/XML) en el visor al dar clic en el ojo (👁️)
@@ -88,63 +116,85 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
     });
   }
 
-  // 2. Gestiona la paginación heredada distinguiendo si se está filtrando o si está en listado general
+  // Mapea cada soporte garantizando la lectura directa de 'nit' y 'numeroFactura'
+  private mapearSoportes(items: any[]): any[] {
+    return (items || []).map(doc => ({
+      ...doc,
+      nit: doc.nit || doc.factura?.nit || doc.prestador?.nit || '-',
+      numeroFactura: doc.numeroFactura || doc.factura?.numeroFactura || '-'
+    }));
+  }
+
+  // 2. Override de paginación/rangos: Solo ejecuta consulta si hay parámetros de búsqueda válidos
+  override calcularRangos(): void {
+    if (!this.aplicandoFiltro || !this.filtro.nit || !this.filtro.nit.trim()) {
+      this.lista = [];
+      this.totalRegistros = 0;
+      return;
+    }
+    this.ejecutarConsultaFiltrada();
+  }
+
   override paginar(event: PageEvent): void {
     this.paginaActual = event.pageIndex;
     this.totalPorPagina = event.pageSize;
     
     if (this.aplicandoFiltro) {
       this.ejecutarConsultaFiltrada();
-    } else {
-      this.calcularRangos();
     }
   }
 
-  // 3. Método de filtrado principal del botón "Buscar"
+  // 3. Método de filtrado principal del botón "Buscar" (requiere NIT obligatoriamente)
   filtrar(): void {
-    this.paginaActual = 0; // Al presionar buscar, reseteamos a la página 1
+    if (!this.filtro.nit || !this.filtro.nit.trim()) {
+      this.alertService.advertencia('Por favor ingrese obligatoriamente el NIT para realizar la búsqueda.', 'Campo Requerido');
+      return;
+    }
+    this.paginaActual = 0;
     this.aplicandoFiltro = true;
     this.ejecutarConsultaFiltrada();
   }
 
   // 4. Lógica de consulta paginada al servicio
   private ejecutarConsultaFiltrada(): void {
-    // Mapeamos el string del selector a tus IDs de Tipo en BD (Ejemplo común: XML = 1, PDF = 2)
-    let tipoIdMapeado: number | null = null;
-    if (this.filtro.tipoDocumento === 'XML') {
-      tipoIdMapeado = 1;
-    } else if (this.filtro.tipoDocumento === 'PDF') {
-      tipoIdMapeado = 2;
+    if (!this.filtro.nit || !this.filtro.nit.trim()) {
+      this.lista = [];
+      this.totalRegistros = 0;
+      return;
     }
 
     this.service.filtrarDocumentosPaginado(
       this.filtro.numeroFactura,
       this.filtro.nit,
-      tipoIdMapeado,
+      this.filtro.tipoId,
+      this.filtro.extensionId,
       this.paginaActual.toString(),
       this.totalPorPagina.toString()
     ).subscribe({
       next: (paginator: any) => {
-        this.lista = paginator.content as Documento[];
+        this.lista = this.mapearSoportes(paginator.content);
         this.totalRegistros = paginator.totalElements as number;
       },
       error: (err) => {
         console.error('Error al ejecutar el filtro de soportes:', err);
-        alert('No se pudo procesar la búsqueda en el servidor.');
+        this.alertService.error('No se pudo procesar la búsqueda en el servidor.');
       }
     });
   }
 
-  // 5. Reinicia la vista y vuelve a la paginación global limpia
+  // 5. Reinicia la vista, vacía los filtros y deja la tabla totalmente limpia
   limpiar(): void {
     this.filtro.nit = '';
     this.filtro.numeroFactura = '';
-    this.filtro.tipoDocumento = 'Todos';
+    this.filtro.tipoId = null;
+    this.filtro.extensionId = null;
     this.pdfUrlSafe = null;
     this.documentoActivo = '';
     this.aplicandoFiltro = false;
     this.paginaActual = 0;
-    this.calcularRangos();
+    this.lista = [];
+    this.totalRegistros = 0;
+    this.documentosSeleccionados = [];
   }
 
   onSeleccionChange(selectedRows: Documento[]): void {
@@ -170,6 +220,46 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
       error: (err) => {
         console.error('Error en descarga masiva:', err);
         alert('Ocurrió un error al procesar y empaquetar los soportes en un archivo ZIP.');
+      }
+    });
+  }
+
+  // 6. Eliminación masiva de soportes seleccionados en la tabla
+  eliminarMasivoSoportes(docs?: Documento[]): void {
+    const seleccionados = (docs && docs.length > 0) ? docs : this.documentosSeleccionados;
+    if (!seleccionados || seleccionados.length === 0) {
+      this.alertService.advertencia('Debe seleccionar al menos un soporte de la tabla.', 'Sin Selección');
+      return;
+    }
+
+    this.alertService.confirmar(
+      `Se eliminarán / inactivarán ${seleccionados.length} soporte(s) seleccionado(s).`,
+      '¿Está seguro de la eliminación masiva?',
+      'Sí, eliminar'
+    ).then((result) => {
+      if (result.isConfirmed) {
+        this.alertService.cargando('Eliminando soportes seleccionados...', 'Procesando');
+
+        const peticiones = seleccionados.map(doc => this.service.inactivarDocumento(doc.id));
+
+        forkJoin(peticiones).subscribe({
+          next: () => {
+            this.alertService.exito(`${seleccionados.length} soporte(s) eliminado(s) correctamente.`, 'Eliminación Masiva Exitosa');
+            this.documentosSeleccionados = [];
+            this.pdfUrlSafe = null;
+            this.documentoActivo = '';
+
+            if (this.aplicandoFiltro) {
+              this.ejecutarConsultaFiltrada();
+            } else {
+              this.calcularRangos();
+            }
+          },
+          error: (err) => {
+            console.error('Error en eliminación masiva de soportes:', err);
+            this.alertService.error('Ocurrió un error al intentar eliminar los soportes seleccionados.');
+          }
+        });
       }
     });
   }

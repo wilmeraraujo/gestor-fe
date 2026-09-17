@@ -33,6 +33,18 @@
             <span>Limpiar</span>
           </button>
 
+          <!-- 🗑️ BOTÓN ELIMINACIÓN MASIVA (OPCIONAL) -->
+          <button
+            *ngIf="mostrarEliminarMasivo"
+            type="button"
+            class="btn-icon-theme btn-delete-bulk"
+            [disabled]="selection.selected.length === 0"
+            (click)="onEliminarMasivo()"
+            matTooltip="Eliminar soportes seleccionados">
+            <mat-icon>delete_sweep</mat-icon>
+            <span>Eliminación Masiva ({{ selection.selected.length }})</span>
+          </button>
+
         </div>
 
       </div>
@@ -42,15 +54,6 @@
 
   <!-- CONTENIDO DE LA TABLA -->
   <mat-card-content class="card-content-custom">
-
-    <mat-paginator
-      class="paginator-superior"
-      [length]="totalRegistros"
-      [pageSize]="totalPorPagina"
-      [pageSizeOptions]="pageSizeOptions"
-      showFirstLastButtons
-      (page)="onPaginar($event)">
-    </mat-paginator>
 
     <div class="tabla-responsive">
       <table
@@ -169,13 +172,13 @@
                 <mat-icon>history</mat-icon>
               </button>
 
-              <!-- 🗑️ ELIMINAR -->
+              <!-- 🗑️ ELIMINAR / INACTIVAR -->
               <button
-                *ngIf="mostrarEliminar"
+                *ngIf="mostrarEliminar && row.permitirEliminar !== false"
                 mat-icon-button
                 class="btn-action btn-action-delete"
                 (click)="onEliminar(row)"
-                matTooltip="Eliminar">
+                matTooltip="Eliminar / Inactivar Soporte">
                 <mat-icon>delete</mat-icon>
               </button>
 

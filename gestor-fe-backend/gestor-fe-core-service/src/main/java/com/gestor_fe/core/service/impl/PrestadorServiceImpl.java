@@ -120,7 +120,16 @@ public class PrestadorServiceImpl implements PrestadorService {
             documento.setRuta(destinoFinal.toString());
             documento.setTamano(archivo.getSize());
             documento.setEstadoId(1L);
-            documento.setExtensionId(extensionId);
+            String lowerNom = nombreOriginal.toLowerCase();
+            if (lowerNom.endsWith(".pdf")) {
+                documento.setExtensionId(1L);
+            } else if (lowerNom.endsWith(".xml")) {
+                documento.setExtensionId(2L);
+            } else if (lowerNom.endsWith(".zip")) {
+                documento.setExtensionId(3L);
+            } else {
+                documento.setExtensionId(extensionId != null ? extensionId : 1L);
+            }
             documento.setTipoId(tipoId);
 
             // Vinculación bidireccional usando el método helper de la entidad Prestador

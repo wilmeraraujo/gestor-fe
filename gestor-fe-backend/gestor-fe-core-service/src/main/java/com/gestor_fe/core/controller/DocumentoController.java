@@ -34,11 +34,12 @@ public class DocumentoController {
         return ResponseEntity.ok().body(service.findByDeletedAtIsNull(sortedPageable));
     }
 
-    // 🔍 1. BUSCADOR CON FILTRADO DINÁMICO COMBINADO
+    // 🔍 1. BUSCADOR CON FILTRADO DINÁMICO COMBINADO (POR NIT, FACTURA Y EXTENSIÓN/TIPO)
     @GetMapping("/paginable/buscar")
     public ResponseEntity<?> buscarDocumentos(
             @RequestParam(value = "numeroFactura", required = false) String numeroFactura, 
             @RequestParam(value = "nit", required = false) String nit,                     
+            @RequestParam(value = "extensionId", required = false) Long extensionId,
             @RequestParam(value = "tipoId", required = false) Long tipoId,                 
             Pageable pageable) {
 
@@ -48,7 +49,7 @@ public class DocumentoController {
                 Sort.by(Sort.Direction.DESC, "id"));
 
         return ResponseEntity.ok()
-                .body(service.filtrarDocumentos(numeroFactura, nit, tipoId, sortedPageable));
+                .body(service.filtrarDocumentos(numeroFactura, nit, tipoId, extensionId, sortedPageable));
     }
 
     // 👁️ 2. VISOR INLINE DE SOPORTES (¡Versión Segura Anti-Nulls!)
@@ -105,5 +106,18 @@ public class DocumentoController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"soportes_comprimidos_masivos.zip\"")
                 .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(zipBytes.length))
                 .body(zipBytes);
+    }
+
+    // 🗑️ 5. INACTIVACIÓN LÓGICA DE UN DOCUMENTO (DELETED_AT = NOW())
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> inactivarDocumento(@PathVariable("id") Long id) {
+        service.inactivarDocumento(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // 🧾 6. CONSULTAR DOCUMENTOS ACTIVOS DE UNA FACTURA
+    @GetMapping("/factura/{facturaId}/activos")
+    public ResponseEntity<?> findByFacturaIdActivos(@PathVariable("facturaId") Long facturaId) {
+        return ResponseEntity.ok(service.findByFacturaIdAndDeletedAtIsNull(facturaId));
     }
 }

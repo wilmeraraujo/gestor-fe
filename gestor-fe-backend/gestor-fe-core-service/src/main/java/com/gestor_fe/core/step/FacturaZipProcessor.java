@@ -211,7 +211,7 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         docXml.setNombreOriginal(xmlFile.getName());
         docXml.setTamano(xmlFile.length());
         docXml.setEstadoId(1L);
-        docXml.setExtensionId(1L);
+        docXml.setExtensionId(2L);
         docXml.setTipoId(6L);
         docXml.setArchivoTemporal(xmlFile);
         factura.addDocumento(docXml);
@@ -222,7 +222,7 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
             docPdf.setNombreOriginal(item.getArchivoPdf().getName());
             docPdf.setTamano(item.getArchivoPdf().length());
             docPdf.setEstadoId(1L);
-            docPdf.setExtensionId(2L);
+            docPdf.setExtensionId(1L);
             docPdf.setTipoId(5L);
             docPdf.setArchivoTemporal(item.getArchivoPdf());
             factura.addDocumento(docPdf);

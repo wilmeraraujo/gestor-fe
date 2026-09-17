@@ -51,6 +51,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Input() mostrarEditar = true;
   @Input() mostrarEliminar = true;
   @Input() mostrarHistorial: boolean = false;
+  @Input() mostrarEliminarMasivo: boolean = false;
 
   @Output() filtrosChange = new EventEmitter<{ [key: string]: string }>();
   @Output() verHistorial = new EventEmitter<any>();
@@ -63,6 +64,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Output() paginar = new EventEmitter<PageEvent>();
   @Output() selecciononChange = new EventEmitter<any[]>();
   @Output() gestionarFactura = new EventEmitter<any>();
+  @Output() eliminarMasivo = new EventEmitter<any[]>();
 
   @ViewChild('paginatorInferior') paginatorInferior!: MatPaginator;
 
@@ -76,6 +78,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   selection = new SelectionModel<any>(true, []);
 
   ngOnInit(): void {
+    this.configurarFilterPredicate();
     this.configurarColumnas();
     this.actualizarDataSource();
 
@@ -95,16 +98,35 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   ngAfterViewInit(): void {
     if (this.paginatorInferior) {
       this.paginatorInferior._intl.itemsPerPageLabel = 'Registros por página:';
-      if (!this.totalRegistros || this.totalRegistros === this.datos.length) {
-        this.dataSource.paginator = this.paginatorInferior;
-      }
+      this.actualizarDataSource();
     }
+  }
+
+  private configurarFilterPredicate(): void {
+    this.dataSource.filterPredicate = (data: any, filter: string) => {
+      if (!filter || filter === '{}') return true;
+      try {
+        const filtros = JSON.parse(filter);
+        return Object.keys(filtros).every(key => {
+          const valorFiltro = String(filtros[key]).toLowerCase().trim();
+          if (!valorFiltro) return true;
+          const valorCelda = String(data[key] || '').toLowerCase().trim();
+          return valorCelda.includes(valorFiltro);
+        });
+      } catch (e) {
+        return true;
+      }
+    };
   }
 
   private actualizarDataSource(): void {
     this.dataSource.data = this.datos || [];
-    if (this.paginatorInferior && (!this.totalRegistros || this.totalRegistros === this.datos.length)) {
-      this.dataSource.paginator = this.paginatorInferior;
+    if (this.paginatorInferior) {
+      if (!this.totalRegistros || this.totalRegistros === this.datos.length) {
+        this.dataSource.paginator = this.paginatorInferior;
+      } else {
+        this.dataSource.paginator = null;
+      }
     }
   }
 
@@ -149,10 +171,12 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     }
 
     this.filtrosChange.emit(filtrosValidos);
+    this.dataSource.filter = JSON.stringify(filtrosValidos);
   }
 
   limpiarFiltrosColumnas(): void {
     this.filtrosPorColumna = {};
+    this.dataSource.filter = '';
     this.filtrosChange.emit({});
   }
 
@@ -269,5 +293,11 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
 
   onVerHistorial(row: any): void {
     this.verHistorial.emit(row);
+  }
+
+  onEliminarMasivo(): void {
+    if (this.selection.selected.length > 0) {
+      this.eliminarMasivo.emit(this.selection.selected);
+    }
   }
 }

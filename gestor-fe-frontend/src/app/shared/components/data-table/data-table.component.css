@@ -144,6 +144,23 @@
   background-color: #dc2626 !important;
 }
 
+/* 🗑️ 3b. Botón Eliminación Masiva (Rojo Fuerte) */
+.btn-delete-bulk {
+  background-color: #dc2626 !important;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3) !important;
+}
+
+.btn-delete-bulk:hover:not(:disabled) {
+  background-color: #b91c1c !important;
+}
+
+.btn-delete-bulk:disabled {
+  background-color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
+  box-shadow: none !important;
+}
+
 /* ➕ 4. Botón Agregar (Azul Oscuro) */
 .btn-add {
   background-color: #1e3a8a !important;
@@ -279,6 +296,32 @@
   width: 48px;
   padding-left: 16px !important;
   padding-right: 8px !important;
+}
+
+/* 🟢 CAMBIO DE COLOR DEL CHECKBOX: DE ROSADO A VERDE OSCURO (#166534 / #056839) */
+::ng-deep .mat-mdc-checkbox {
+  --mdc-checkbox-selected-focus-icon-color: #056839 !important;
+  --mdc-checkbox-selected-hover-icon-color: #056839 !important;
+  --mdc-checkbox-selected-icon-color: #056839 !important;
+  --mdc-checkbox-selected-pressed-icon-color: #056839 !important;
+  --mdc-checkbox-selected-focus-container-color: #056839 !important;
+  --mdc-checkbox-selected-hover-container-color: #056839 !important;
+  --mdc-checkbox-selected-container-color: #056839 !important;
+  --mdc-checkbox-selected-pressed-container-color: #056839 !important;
+  --mdc-checkbox-selected-checkmark-color: #ffffff !important;
+}
+
+::ng-deep .mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__background,
+::ng-deep .mat-mdc-checkbox.mat-mdc-checkbox-indeterminate .mdc-checkbox__background,
+::ng-deep .mat-mdc-checkbox .mdc-checkbox__native-control:enabled:checked ~ .mdc-checkbox__background,
+::ng-deep .mat-mdc-checkbox .mdc-checkbox__native-control:enabled:indeterminate ~ .mdc-checkbox__background {
+  background-color: #056839 !important;
+  border-color: #056839 !important;
+}
+
+::ng-deep .mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__icon-path,
+::ng-deep .mat-mdc-checkbox.mat-mdc-checkbox-indeterminate .mdc-checkbox__icon-path {
+  stroke: #ffffff !important;
 }
 
 /* =====================================

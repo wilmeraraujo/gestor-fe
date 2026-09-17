@@ -40,6 +40,26 @@
   border-radius: 12px !important; /* Redondeo elegante para botones */
 }
 
+/* 🟢 Botón verde de descarga ZIP masivo con icono de nube */
+.btn-zip-green {
+  background-color: #056839 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(5, 104, 57, 0.3) !important;
+}
+
+.btn-zip-green:hover:not(:disabled) {
+  background-color: #044e2b !important;
+  box-shadow: 0 4px 10px rgba(5, 104, 57, 0.4) !important;
+}
+
+.btn-zip-green:disabled {
+  background-color: #94a3b8 !important;
+  color: #ffffff !important;
+  opacity: 0.6;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+}
+
 
 /* =========================================================================
    3. ESTILIZADO DE TARJETAS (CARDS MÁS REDONDEADAS Y ELEGANTES)

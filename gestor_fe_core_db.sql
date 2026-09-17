@@ -386,10 +386,18 @@ INSERT INTO admin."extension" (id, codigo, created_at, deleted_at, descripcion, 
 (3, '02', '2026-07-30 21:09:18.399', NULL, 'zip', NULL);
 
 
-INSERT INTO admin.configuracion_sistema (clave, valor, descripcion, categoria) VALUES
+INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, categoria) VALUES
 ('TAMANO_MAX_ZIP_CARGUE_MB', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 'CARGUE'),
 ('MAX_FACTURAS_POR_ZIP', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 'CARGUE'),
 ('ROLES_PERMITIDOS_BORRADO_LOGICO', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 'SEGURIDAD');
+
+INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, categoria) VALUES
+('01', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 'CARGUE'),
+('02', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 'CARGUE'),
+('03', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 'SEGURIDAD');
+
+
+select * from admin.configuracion_sistema;
 
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_fase_extension_active 
