@@ -12,8 +12,8 @@ public interface DocumentoService {
 
     Page<Documento> findByDeletedAtIsNull(Pageable pageable);
     
-    // Método para filtrar documentos de forma dinámica y paginada
-    Page<Documento> filtrarDocumentos(String numeroFactura, String nit, Long tipoId, Pageable pageable);
+    // Método para filtrar documentos de forma dinámica y paginada por nit, factura, tipoId y extensionId
+    Page<Documento> filtrarDocumentos(String numeroFactura, String nit, Long tipoId, Long extensionId, Pageable pageable);
     
     // Método para recuperar un documento físico del disco por su ID
     Resource descargarDocumento(Long id);

@@ -164,7 +164,15 @@ export class PrestadorComponent implements OnInit {
     const archivo: File = event.target.files[0];
     if (!archivo || !this.prestadorActual) return;
 
-    const extensionId = archivo.name.toLowerCase().endsWith('.pdf') ? 2 : 1;
+    let extensionId = 1;
+    const nameLower = archivo.name.toLowerCase();
+    if (nameLower.endsWith('.pdf')) {
+      extensionId = 1;
+    } else if (nameLower.endsWith('.xml')) {
+      extensionId = 2;
+    } else if (nameLower.endsWith('.zip')) {
+      extensionId = 3;
+    }
 
     this.alertService.cargando(`Cargando soporte ${tipo.descripcion || tipo.codigo}`, 'Subiendo archivo...');
 

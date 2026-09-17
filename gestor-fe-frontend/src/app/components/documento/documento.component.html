@@ -14,39 +14,53 @@
           <!-- Contenedor alineado horizontalmente con Bootstrap -->
           <div class="row g-2 align-items-center">
 
-            <!-- Input 2: NIT Emisor -->
-            <div class="col-xl-3 col-lg-3 col-md-3">
+            <!-- Input 1: NIT Emisor -->
+            <div class="col-xl-2 col-lg-3 col-md-3">
               <mat-form-field appearance="outline" class="w-100 dense-form">
-                <mat-label>NIT</mat-label>
-                <input matInput [(ngModel)]="filtro.nit" placeholder="Ej. 123">
+                <mat-label>NIT *</mat-label>
+                <input matInput [(ngModel)]="filtro.nit" placeholder="Ej. 123" (keyup.enter)="filtrar()">
               </mat-form-field>
             </div>
 
-            <!-- Input 1: No. Factura -->
-            <div class="col-xl-3 col-lg-3 col-md-3">
+            <!-- Input 2: No. Factura -->
+            <div class="col-xl-2 col-lg-3 col-md-3">
               <mat-form-field appearance="outline" class="w-100 dense-form">
                 <mat-label>No. Factura</mat-label>
-                <input matInput [(ngModel)]="filtro.numeroFactura" placeholder="Ej. fac123">
+                <input matInput [(ngModel)]="filtro.numeroFactura" placeholder="Ej. fac123" (keyup.enter)="filtrar()">
               </mat-form-field>
             </div>
 
-
-
-            <!-- Input 3: Tipo -->
-            <div class="col-xl-2 col-lg-2 col-md-2">
+            <!-- Selector 1: Tipo Documento (Catalogo Admin Tipo) -->
+            <div class="col-xl-3 col-lg-3 col-md-3">
               <mat-form-field appearance="outline" class="w-100 dense-form">
                 <mat-label>Tipo</mat-label>
-                <mat-select [(ngModel)]="filtro.tipoDocumento">
-                  <mat-option value="Todos">Todos</mat-option>
-                  <mat-option value="PDF">PDF</mat-option>
-                  <mat-option value="XML">XML</mat-option>
+                <mat-select [(ngModel)]="filtro.tipoId">
+                  <mat-option [value]="null">Todos</mat-option>
+                  <mat-option *ngFor="let t of tiposLista" [value]="t.id">
+                    {{ t.descripcion }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <!-- Selector 2: Extensión (Catalogo Admin Extensión) -->
+            <div class="col-xl-2 col-lg-3 col-md-3">
+              <mat-form-field appearance="outline" class="w-100 dense-form">
+                <mat-label>Extensión</mat-label>
+                <mat-select [(ngModel)]="filtro.extensionId">
+                  <mat-option [value]="null">Todas</mat-option>
+                  <mat-option *ngFor="let ext of extensionesLista" [value]="ext.id">
+                    {{ ext.descripcion | uppercase }}
+                  </mat-option>
                 </mat-select>
               </mat-form-field>
             </div>
 
             <!-- Botones de Acción: Buscar, Limpiar y ZIP -->
-            <div class="col-xl-4 col-lg-4 col-md-4 d-flex gap-2 justify-content-end">
-              <button mat-raised-button color="primary" class="btn-action" (click)="filtrar()">
+            <div class="col-xl-3 col-lg-12 col-md-12 d-flex gap-2 justify-content-end">
+              <button mat-raised-button color="primary" class="btn-action"
+                      [disabled]="!filtro.nit || !filtro.nit.trim()"
+                      (click)="filtrar()">
                 <mat-icon>search</mat-icon> Buscar
               </button>
 
@@ -54,10 +68,11 @@
                 <mat-icon>restart_alt</mat-icon> Limpiar
               </button>
 
-              <button mat-raised-button color="accent" class="btn-action"
+              <button mat-raised-button class="btn-action btn-zip-green"
                       [disabled]="documentosSeleccionados.length === 0"
+                      [matTooltip]="'Descargar ZIP (' + documentosSeleccionados.length + ')'"
                       (click)="descargarMasivoZip()">
-                <mat-icon>archive</mat-icon> Descargar ZIP ({{ documentosSeleccionados.length }})
+                <mat-icon>cloud_download</mat-icon>
               </button>
             </div>
 
@@ -83,9 +98,11 @@
         [mostrarAgregar]="false"
         [mostrarDetalle]="true"
         [mostrarSeleccion]="true"
+        [mostrarEliminarMasivo]="true"
         (paginar)="paginar($event)"
         (verDetalle)="cargarSoporteEnVisor($event)"
         (selecciononChange)="onSeleccionChange($event)"
+        (eliminarMasivo)="eliminarMasivoSoportes($event)"
       >
       </app-data-table>
     </div>

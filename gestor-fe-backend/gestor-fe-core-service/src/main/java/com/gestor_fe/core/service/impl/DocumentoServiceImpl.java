@@ -62,16 +62,33 @@ public class DocumentoServiceImpl implements DocumentoService {
 
     // 🚀 BÚSQUEDA AVANZADA COMBINADA Y PAGINADA CON CRITERIA API
     @Override
-    public Page<Documento> filtrarDocumentos(String numeroFactura, String nit, Long tipoId, Pageable pageable) {
+    public Page<Documento> filtrarDocumentos(String numeroFactura, String nit, Long tipoId, Long extensionId, Pageable pageable) {
         Specification<Documento> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             
             // 1. Filtro base: Que el documento no esté eliminado lógicamente
             predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
             
-            // 2. Filtro por Tipo de Documento (XML, PDF, etc.)
+            // 2. Filtro por Tipo de Documento (RUT=1, CAMARA=2, CERTIFICACION=3, CONTRATO=4, PDF FACTURA=5, XML FACTURA=6, etc.)
             if (tipoId != null && tipoId > 0) {
                 predicates.add(criteriaBuilder.equal(root.get("tipoId"), tipoId));
+            }
+
+            // 3. Filtro por Extensión de Documento (1 = PDF, 2 = XML, 3 = ZIP)
+            if (extensionId != null && extensionId > 0) {
+                if (extensionId == 1L) {
+                    // PDF: extension_id = 1 o nombreOriginal finalizado en .pdf
+                    Predicate byExt = criteriaBuilder.equal(root.get("extensionId"), 1L);
+                    Predicate byName = criteriaBuilder.like(criteriaBuilder.lower(root.get("nombreOriginal")), "%.pdf");
+                    predicates.add(criteriaBuilder.or(byExt, byName));
+                } else if (extensionId == 2L) {
+                    // XML: extension_id = 2 o nombreOriginal finalizado en .xml
+                    Predicate byExt = criteriaBuilder.equal(root.get("extensionId"), 2L);
+                    Predicate byName = criteriaBuilder.like(criteriaBuilder.lower(root.get("nombreOriginal")), "%.xml");
+                    predicates.add(criteriaBuilder.or(byExt, byName));
+                } else {
+                    predicates.add(criteriaBuilder.equal(root.get("extensionId"), extensionId));
+                }
             }
             
             // 3. Filtros avanzados cruzados por Factura (Número o NIT)
