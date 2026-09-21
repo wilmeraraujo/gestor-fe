@@ -112,7 +112,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     this.configurarDebounceFiltros();
   }
 
-  ngOnDestroy(): void {
+  override ngOnDestroy(): void {
     if (this.filtroSubscription) {
       this.filtroSubscription.unsubscribe();
     }
@@ -144,7 +144,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   /**
    * 📥 Captura las emisiones de filtros provenientes de DataTableComponent
    */
-  onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
+  override onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
     this.filtroSubject.next(filtrosColumnas);
   }
 

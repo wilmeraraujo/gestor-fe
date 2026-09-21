@@ -1,13 +1,14 @@
-import { OnInit, ViewChild, Directive, AfterViewInit } from '@angular/core';
+import { OnInit, ViewChild, Directive, OnDestroy } from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import Swal from 'sweetalert2';
 import { CommonService } from '../services/common.service';
 import { Generic } from '../models/generic';
 import { MatTableDataSource } from '@angular/material/table';
-import { Observable } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Directive()
-export abstract class CommonListarComponent<E extends Generic,S extends CommonService<E> > //implements AfterViewInit
+export abstract class CommonListarComponent<E extends Generic,S extends CommonService<E> > implements OnDestroy
 {
 
   titulo: string = '';
@@ -19,21 +20,38 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
   totalPorPagina = 5;
   pageSizeOptions: number[] = [5, 10, 25, 50, 100];
 
+  filtrosMap: { [key: string]: string } = {};
+  private baseFiltroSubject = new Subject<{ [key: string]: string }>();
+  private baseFiltroSubscription?: Subscription;
+
   dataSource: MatTableDataSource<E> = new MatTableDataSource<E>();
 
-  //@ViewChild(MatPaginator) paginator!: MatPaginator;
+  constructor(protected service: S){
+    this.initBaseDebounceFiltros();
+  }
 
-  constructor(protected service: S){}
-  /*
-  ngAfterViewInit(): void {
-
-    if(this.paginator){
-
-      this.paginator.page.subscribe(event => this.paginar(event));
-
+  ngOnDestroy(): void {
+    if (this.baseFiltroSubscription) {
+      this.baseFiltroSubscription.unsubscribe();
     }
+  }
 
-  }*/
+  protected initBaseDebounceFiltros(): void {
+    this.baseFiltroSubscription = this.baseFiltroSubject.pipe(
+      debounceTime(400),
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+    ).subscribe(filtros => {
+      this.filtrosMap = filtros;
+      this.paginaActual = 0;
+      this.calcularRangos();
+    });
+  }
+
+  public onFiltrosChange(filtros: { [key: string]: string }): void {
+    this.filtrosMap = filtros;
+    this.paginaActual = 0;
+    this.calcularRangos();
+  }
 
   public paginar(event: PageEvent):void{
     this.paginaActual = event.pageIndex;
@@ -42,18 +60,22 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
   }
 
   public calcularRangos(): void {
+    const servicio = this.service.getPaginableFiltrado(
+      this.filtrosMap,
+      this.paginaActual.toString(),
+      this.totalPorPagina.toString()
+    );
 
-    const servicio = this.service.getPaginableActivos(this.paginaActual.toString(), this.totalPorPagina.toString());
-
-      servicio.subscribe(p => {
-        this.lista = p.content as E[];
-        this.totalRegistros = p.totalElements as number;
+    servicio.subscribe({
+      next: (p: any) => {
+        this.lista = (p.content || []) as E[];
+        this.totalRegistros = (p.totalElements || 0) as number;
         this.dataSource.data = this.lista;
-        /*if(this.paginator){
-          this.paginator._intl.itemsPerPageLabel = 'Registros por página:';
-        }*/
-      });
-
+      },
+      error: (err: any) => {
+        console.error('Error al consultar lista paginada y filtrada:', err);
+      }
+    });
   }
 
   public eliminar(e: E): void{

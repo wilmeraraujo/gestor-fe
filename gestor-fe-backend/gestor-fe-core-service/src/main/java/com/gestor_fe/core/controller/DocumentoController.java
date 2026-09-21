@@ -34,13 +34,15 @@ public class DocumentoController {
         return ResponseEntity.ok().body(service.findByDeletedAtIsNull(sortedPageable));
     }
 
-    // 🔍 1. BUSCADOR CON FILTRADO DINÁMICO COMBINADO (POR NIT, FACTURA Y EXTENSIÓN/TIPO)
+    // 🔍 1. BUSCADOR CON FILTRADO DINÁMICO COMBINADO (POR NIT, FACTURA, EXTENSIÓN/TIPO, NOMBRE ARCHIVO E ID)
     @GetMapping("/paginable/buscar")
     public ResponseEntity<?> buscarDocumentos(
             @RequestParam(value = "numeroFactura", required = false) String numeroFactura, 
             @RequestParam(value = "nit", required = false) String nit,                     
+            @RequestParam(value = "tipoId", required = false) Long tipoId,
             @RequestParam(value = "extensionId", required = false) Long extensionId,
-            @RequestParam(value = "tipoId", required = false) Long tipoId,                 
+            @RequestParam(value = "nombreOriginal", required = false) String nombreOriginal,
+            @RequestParam(value = "id", required = false) Long id,
             Pageable pageable) {
 
         Pageable sortedPageable = PageRequest.of(
@@ -49,7 +51,7 @@ public class DocumentoController {
                 Sort.by(Sort.Direction.DESC, "id"));
 
         return ResponseEntity.ok()
-                .body(service.filtrarDocumentos(numeroFactura, nit, tipoId, extensionId, sortedPageable));
+                .body(service.filtrarDocumentos(numeroFactura, nit, tipoId, extensionId, nombreOriginal, id, sortedPageable));
     }
 
     // 👁️ 2. VISOR INLINE DE SOPORTES (¡Versión Segura Anti-Nulls!)

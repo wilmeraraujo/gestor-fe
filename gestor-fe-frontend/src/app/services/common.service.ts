@@ -33,6 +33,23 @@ export class CommonService <E extends Generic>{
     return this.http.get<any>(`${this.endPointBase}/paginable/activos`, { params: params });
   }
 
+  public getPaginableFiltrado(filtros: any, page: string, size: string): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size);
+
+    if (filtros) {
+      Object.keys(filtros).forEach(key => {
+        const val = filtros[key];
+        if (val !== null && val !== undefined && val !== '') {
+          params = params.set(key, String(val).trim());
+        }
+      });
+    }
+
+    return this.http.get<any>(`${this.endPointBase}/paginable/buscar`, { params });
+  }
+
   public buscar(desc: string): Observable<E[]>{
     return this.http.get<E[]>(`${this.endPointBase}/buscar/${desc}`);
   }

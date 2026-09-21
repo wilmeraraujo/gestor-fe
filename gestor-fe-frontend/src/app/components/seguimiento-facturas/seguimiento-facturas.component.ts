@@ -109,7 +109,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     this.configurarDebounceFiltros();
   }
 
-  ngOnDestroy(): void {
+  override ngOnDestroy(): void {
     if (this.filtroSubscription) {
       this.filtroSubscription.unsubscribe();
     }
@@ -153,7 +153,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   /**
    * 📥 Captura las emisiones de filtros provenientes de DataTableComponent
    */
-  onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
+  override onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
     this.filtroSubject.next(filtrosColumnas);
   }
 

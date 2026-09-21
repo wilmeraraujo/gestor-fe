@@ -66,7 +66,6 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
   columnas = [
     { field: 'id', header: 'ID' },
     { field: 'nombreOriginal', header: 'Nombre Archivo' },
-    { field: 'nit', header: 'NIT' },
     { field: 'numeroFactura', header: 'No. Factura' }
   ];
 
@@ -155,6 +154,15 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
     this.ejecutarConsultaFiltrada();
   }
 
+  override onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
+    this.filtrosMap = filtrosColumnas;
+    this.paginaActual = 0;
+    if (this.filtro.nit && this.filtro.nit.trim()) {
+      this.aplicandoFiltro = true;
+      this.ejecutarConsultaFiltrada();
+    }
+  }
+
   // 4. Lógica de consulta paginada al servicio
   private ejecutarConsultaFiltrada(): void {
     if (!this.filtro.nit || !this.filtro.nit.trim()) {
@@ -163,13 +171,20 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
       return;
     }
 
+    const colId = this.filtrosMap['id'] ? Number(this.filtrosMap['id']) : null;
+    const colNombre = this.filtrosMap['nombreOriginal'] || null;
+    const colNit = this.filtrosMap['nit'] || this.filtro.nit;
+    const colNumeroFactura = this.filtrosMap['numeroFactura'] || this.filtro.numeroFactura;
+
     this.service.filtrarDocumentosPaginado(
-      this.filtro.numeroFactura,
-      this.filtro.nit,
+      colNumeroFactura,
+      colNit,
       this.filtro.tipoId,
       this.filtro.extensionId,
       this.paginaActual.toString(),
-      this.totalPorPagina.toString()
+      this.totalPorPagina.toString(),
+      colNombre,
+      colId
     ).subscribe({
       next: (paginator: any) => {
         this.lista = this.mapearSoportes(paginator.content);
@@ -201,6 +216,28 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
     this.documentosSeleccionados = selectedRows;
   }
 
+  // Descarga individual por registro al hacer clic en el botón de descarga de la fila
+  descargarSoporte(row: Documento): void {
+    if (!row || !row.id) return;
+
+    this.service.getDocumentoBlob(row.id).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = row.nombreOriginal || `soporte_${row.id}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Error al descargar el soporte individual:', err);
+        this.alertService.error('Ocurrió un error al intentar descargar el soporte documental.');
+      }
+    });
+  }
+
   descargarMasivoZip(): void {
     if (this.documentosSeleccionados.length === 0) return;
 
@@ -225,6 +262,42 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
   }
 
   // 6. Eliminación masiva de soportes seleccionados en la tabla
+  eliminarSoporte(doc: Documento): void {
+    if (!doc || !doc.id) return;
+
+    const nombre = doc.nombreOriginal || `soporte #${doc.id}`;
+
+    this.alertService.confirmar(
+      `Se inactivará / eliminará el soporte "${nombre}".`,
+      '¿Está seguro de eliminar este soporte?',
+      'Sí, eliminar'
+    ).then((result) => {
+      if (result.isConfirmed) {
+        this.alertService.cargando('Eliminando soporte...', 'Procesando');
+
+        this.service.inactivarDocumento(doc.id).subscribe({
+          next: () => {
+            this.alertService.exito(`El soporte "${nombre}" fue eliminado correctamente.`, 'Eliminación Exitosa');
+            if (this.documentoActivo === doc.nombreOriginal) {
+              this.pdfUrlSafe = null;
+              this.documentoActivo = '';
+            }
+            if (this.aplicandoFiltro) {
+              this.ejecutarConsultaFiltrada();
+            } else {
+              this.calcularRangos();
+            }
+          },
+          error: (err) => {
+            console.error('Error al inactivar el soporte:', err);
+            this.alertService.error('Ocurrió un error al intentar eliminar el soporte.');
+          }
+        });
+      }
+    });
+  }
+
+  // 7. Eliminación masiva de soportes seleccionados en la tabla
   eliminarMasivoSoportes(docs?: Documento[]): void {
     const seleccionados = (docs && docs.length > 0) ? docs : this.documentosSeleccionados;
     if (!seleccionados || seleccionados.length === 0) {

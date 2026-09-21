@@ -33,7 +33,7 @@ export class DocumentoService extends CommonService<Documento> {
   }
 
   /**
-   * Realiza la búsqueda paginada utilizando los filtros avanzados combinados
+   * Realiza la búsqueda paginada utilizando los filtros avanzados combinados y filtros por columna
    */
   public filtrarDocumentosPaginado(
     numeroFactura: string, 
@@ -41,7 +41,9 @@ export class DocumentoService extends CommonService<Documento> {
     tipoId: number | null, 
     extensionId: number | null, 
     page: string | number, 
-    size: string | number
+    size: string | number,
+    nombreOriginal?: string | null,
+    id?: number | null
   ): Observable<any>;
 
   public filtrarDocumentosPaginado(
@@ -58,19 +60,25 @@ export class DocumentoService extends CommonService<Documento> {
     arg3: number | null, 
     arg4?: any, 
     arg5?: any, 
-    arg6?: any
+    arg6?: any,
+    arg7?: any,
+    arg8?: any
   ): Observable<any> {
     let finalTipoId: number | null = null;
     let finalExtensionId: number | null = null;
     let page: string | number = '0';
     let size: string | number = '10';
+    let nombreOriginal: string | null = null;
+    let id: number | null = null;
 
     if (arg6 !== undefined) {
-      // 6 Argumentos: (numeroFactura, nit, tipoId, extensionId, page, size)
+      // 6-8 Argumentos: (numeroFactura, nit, tipoId, extensionId, page, size, nombreOriginal, id)
       finalTipoId = arg3;
       finalExtensionId = (typeof arg4 === 'number') ? arg4 : null;
       page = arg5 !== undefined ? arg5 : '0';
       size = arg6 !== undefined ? arg6 : '10';
+      nombreOriginal = arg7 || null;
+      id = (typeof arg8 === 'number') ? arg8 : null;
     } else {
       // 5 Argumentos: (numeroFactura, nit, tipoId, page, size)
       finalTipoId = arg3;
@@ -83,7 +91,7 @@ export class DocumentoService extends CommonService<Documento> {
       .set('page', page.toString())
       .set('size', size.toString());
 
-    // 2. Agregamos los parámetros condicionales REASIGNANDO 'params' (HttpParams es inmutable)
+    // 2. Agregamos los parámetros condicionales
     if (numeroFactura && numeroFactura.trim() !== '') {
       params = params.set('numeroFactura', numeroFactura.trim());
     }
@@ -98,6 +106,14 @@ export class DocumentoService extends CommonService<Documento> {
 
     if (finalExtensionId !== null && finalExtensionId !== undefined && finalExtensionId > 0) {
       params = params.set('extensionId', finalExtensionId.toString());
+    }
+
+    if (nombreOriginal && nombreOriginal.trim() !== '') {
+      params = params.set('nombreOriginal', nombreOriginal.trim());
+    }
+
+    if (id !== null && id !== undefined && id > 0) {
+      params = params.set('id', id.toString());
     }
 
     // 3. Realizamos la petición GET enviando los parámetros corregidos

@@ -6,7 +6,9 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.service.common.service.GlobalService;
 
@@ -34,6 +37,16 @@ public class GlobalController <E,S extends GlobalService<E>> {
 	public ResponseEntity<?> listAll(Pageable pageable){
 		return ResponseEntity.ok().body(service.findAll(pageable));
 	}
+	
+	@GetMapping("/paginable/buscar")
+	public ResponseEntity<?> buscarPaginado(@RequestParam Map<String, String> params, Pageable pageable) {
+		Pageable sortedPageable = PageRequest.of(
+				pageable.getPageNumber(),
+				pageable.getPageSize(),
+				Sort.by(Sort.Direction.DESC, "id"));
+		return ResponseEntity.ok().body(service.buscarPaginado(params, sortedPageable));
+	}
+
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<?> listById(@PathVariable(name = "id") Long id){

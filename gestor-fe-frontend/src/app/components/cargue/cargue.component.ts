@@ -58,7 +58,7 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
     this.iniciarSuscripcionSSE();
   }
 
-  ngOnDestroy(): void {
+  override ngOnDestroy(): void {
     if (this.sseSubscription) {
       this.sseSubscription.unsubscribe();
     }

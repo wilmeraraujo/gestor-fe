@@ -15,6 +15,9 @@ public interface DocumentoService {
     // Método para filtrar documentos de forma dinámica y paginada por nit, factura, tipoId y extensionId
     Page<Documento> filtrarDocumentos(String numeroFactura, String nit, Long tipoId, Long extensionId, Pageable pageable);
     
+    // Método sobrecargado con soporte para filtrado por nombreOriginal e id desde la tabla
+    Page<Documento> filtrarDocumentos(String numeroFactura, String nit, Long tipoId, Long extensionId, String nombreOriginal, Long id, Pageable pageable);
+    
     // Método para recuperar un documento físico del disco por su ID
     Resource descargarDocumento(Long id);
     
