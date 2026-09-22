@@ -67,7 +67,8 @@ public class MunicipioController extends GlobalController<Municipio, MunicipioSe
     @PutMapping("/{id}")
     public ResponseEntity<?> edit(@Validated @RequestBody Municipio m,
                                   BindingResult result,
-                                  @PathVariable Long id) {
+                                  @PathVariable Long id,
+                                  jakarta.servlet.http.HttpServletRequest request) {
         if (result.hasErrors()) {
             return this.validar(result);
         }
@@ -78,11 +79,16 @@ public class MunicipioController extends GlobalController<Municipio, MunicipioSe
         }
 
         Municipio mDb = o.get();
+        String oldCodigo = mDb.getCodigo();
+        String oldDescripcion = mDb.getDescripcion();
+
         mDb.setCodigo(m.getCodigo());
         mDb.setDescripcion(m.getDescripcion());
         mDb.setDepartamento(m.getDepartamento()); // Actualiza la relación
         mDb.setDeletedAt(m.getDeletedAt());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.save(mDb));
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + m.getCodigo() + " | Descripción: " + m.getDescripcion() + "]";
+        String username = this.extraerUsername(request, null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(mDb, "EDITAR", observacion, username));
     }
 }

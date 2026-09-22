@@ -66,7 +66,8 @@ public class TipoIdentificacionController extends GlobalController<TipoIdentific
 	@PutMapping("/{id}")
 	public ResponseEntity<?> edit(@Validated @RequestBody TipoIdentificacion ti,
 			BindingResult result,
-			@PathVariable(name = "id") Long id) {
+			@PathVariable(name = "id") Long id,
+			jakarta.servlet.http.HttpServletRequest request) {
 		
 		if (result.hasErrors()) {
 			return this.validar(result);
@@ -78,11 +79,16 @@ public class TipoIdentificacionController extends GlobalController<TipoIdentific
 		}
 
 		TipoIdentificacion tiDb = objeto.get();
+		String oldCodigo = tiDb.getCodigo();
+		String oldDescripcion = tiDb.getDescripcion();
+
 		tiDb.setCodigo(ti.getCodigo());
 		tiDb.setDescripcion(ti.getDescripcion());
 		tiDb.setDeletedAt(ti.getDeletedAt());
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(service.save(tiDb));
+		String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + ti.getCodigo() + " | Descripción: " + ti.getDescripcion() + "]";
+		String username = this.extraerUsername(request, null);
+		return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(tiDb, "EDITAR", observacion, username));
 	}
 	
 }

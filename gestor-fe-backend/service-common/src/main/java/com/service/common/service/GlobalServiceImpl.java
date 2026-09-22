@@ -179,7 +179,134 @@ public class GlobalServiceImpl <E, R extends JpaRepository<E, Long>> implements 
 
 	@Override
 	public E save(E entity) {
+		validarCodigoUnico(entity);
 		return repository.save(entity);
+	}
+
+	@Override
+	@Transactional
+	public E saveWithLog(E entity, String accion, String observacion, String username) {
+		validarCodigoUnico(entity);
+		E savedEntity = repository.save(entity);
+
+		if (logAccionService != null) {
+			try {
+				Long id = null;
+				java.lang.reflect.Method getId = savedEntity.getClass().getMethod("getId");
+				Object idObj = getId.invoke(savedEntity);
+				if (idObj instanceof Long) {
+					id = (Long) idObj;
+				} else if (idObj != null) {
+					id = Long.valueOf(idObj.toString());
+				}
+
+				if (id != null) {
+					String modulo = getEntityClass() != null ? getEntityClass().getSimpleName() : "ADMIN";
+
+					String codigo = null;
+					try {
+						java.lang.reflect.Method getCodigo = savedEntity.getClass().getMethod("getCodigo");
+						Object c = getCodigo.invoke(savedEntity);
+						if (c != null) {
+							codigo = c.toString().trim();
+						}
+					} catch (Exception ignored) {}
+
+					String descripcion = null;
+					try {
+						java.lang.reflect.Method getDescripcion = savedEntity.getClass().getMethod("getDescripcion");
+						Object d = getDescripcion.invoke(savedEntity);
+						if (d != null) {
+							descripcion = d.toString().trim();
+						}
+					} catch (Exception ignored) {}
+
+					String finalObservacion;
+					if (observacion != null && !observacion.trim().isEmpty() 
+							&& !observacion.equalsIgnoreCase("Creación de registro") 
+							&& !observacion.equalsIgnoreCase("Edición de registro")) {
+						finalObservacion = observacion.trim();
+					} else {
+						List<String> detalles = new ArrayList<>();
+						if (codigo != null && !codigo.isEmpty()) {
+							detalles.add("Código: " + codigo);
+						}
+						if (descripcion != null && !descripcion.isEmpty()) {
+							detalles.add("Descripción: " + descripcion);
+						}
+						finalObservacion = String.join(" | ", detalles);
+					}
+
+					logAccionService.registrarLog(modulo, id, accion, finalObservacion, username);
+				}
+			} catch (Exception e) {
+				// Fallback seguro si falla el log
+			}
+		}
+
+		return savedEntity;
+	}
+
+	protected void validarCodigoUnico(E entity) {
+		if (entity == null) {
+			return;
+		}
+		Class<E> clazz = getEntityClass();
+		if (clazz == null) {
+			return;
+		}
+
+		try {
+			java.lang.reflect.Method getCodigo = clazz.getMethod("getCodigo");
+			Object codigoObj = getCodigo.invoke(entity);
+			if (codigoObj == null) {
+				return;
+			}
+			String codigo = codigoObj.toString().trim();
+			if (codigo.isEmpty()) {
+				return;
+			}
+
+			Long id = null;
+			try {
+				java.lang.reflect.Method getId = clazz.getMethod("getId");
+				Object idObj = getId.invoke(entity);
+				if (idObj instanceof Long) {
+					id = (Long) idObj;
+				} else if (idObj != null) {
+					id = Long.valueOf(idObj.toString());
+				}
+			} catch (Exception e) {
+				// Sin ID (creación)
+			}
+
+			CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+			CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+			Root<E> root = cq.from(clazz);
+
+			List<Predicate> predicates = new ArrayList<>();
+			predicates.add(cb.equal(cb.upper(cb.trim(root.<String>get("codigo"))), codigo.toUpperCase()));
+
+			if (id != null) {
+				predicates.add(cb.notEqual(root.get("id"), id));
+			}
+
+			cq.select(cb.count(root)).where(predicates.toArray(new Predicate[0]));
+
+			Long count = entityManager.createQuery(cq).getSingleResult();
+			if (count != null && count > 0) {
+				throw new IllegalArgumentException("El código '" + codigo + "' ya se encuentra registrado.");
+			}
+		} catch (NoSuchMethodException e) {
+			// La entidad no tiene campo codigo, no aplica validación
+		} catch (IllegalArgumentException e) {
+			throw e;
+		} catch (Exception e) {
+			// Si hay error en la consulta, propagar para no ignorar
+			if (e.getCause() instanceof IllegalArgumentException) {
+				throw (IllegalArgumentException) e.getCause();
+			}
+		}
 	}
 
 	@Override

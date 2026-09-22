@@ -62,7 +62,8 @@ public class DepartamentoController extends GlobalController<Departamento, Depar
     @PutMapping("/{id}")
     public ResponseEntity<?> edit(@Validated @RequestBody Departamento d,
                                   BindingResult result,
-                                  @PathVariable Long id) {
+                                  @PathVariable Long id,
+                                  jakarta.servlet.http.HttpServletRequest request) {
         if (result.hasErrors()) {
             return this.validar(result);
         }
@@ -73,10 +74,15 @@ public class DepartamentoController extends GlobalController<Departamento, Depar
         }
 
         Departamento dDb = o.get();
+        String oldCodigo = dDb.getCodigo();
+        String oldDescripcion = dDb.getDescripcion();
+
         dDb.setCodigo(d.getCodigo());
         dDb.setDescripcion(d.getDescripcion());
         dDb.setDeletedAt(d.getDeletedAt());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.save(dDb));
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + d.getCodigo() + " | Descripción: " + d.getDescripcion() + "]";
+        String username = this.extraerUsername(request, null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(dDb, "EDITAR", observacion, username));
     }
 }

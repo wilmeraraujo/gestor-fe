@@ -69,7 +69,8 @@ public class ConfiguracionFaseExtensionController extends GlobalController<Confi
     @PutMapping("/{id}")
     public ResponseEntity<?> edit(@Validated @RequestBody ConfiguracionFaseExtension x,
             BindingResult result,
-            @PathVariable(name = "id") Long id) {
+            @PathVariable(name = "id") Long id,
+            jakarta.servlet.http.HttpServletRequest request) {
 
         if (result.hasErrors()) {
             return this.validar(result);
@@ -81,6 +82,9 @@ public class ConfiguracionFaseExtensionController extends GlobalController<Confi
         }
 
         ConfiguracionFaseExtension xDb = objeto.get();
+        String oldCodigo = xDb.getCodigo();
+        String oldDescripcion = xDb.getDescripcion();
+
         xDb.setCodigo(x.getCodigo());
         xDb.setDescripcion(x.getDescripcion());
         xDb.setFaseId(x.getFaseId());
@@ -91,6 +95,8 @@ public class ConfiguracionFaseExtensionController extends GlobalController<Confi
         xDb.setUpdatedAt(LocalDateTime.now());
         xDb.setDeletedAt(x.getDeletedAt());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.save(xDb));
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
+        String username = this.extraerUsername(request, null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(xDb, "EDITAR", observacion, username));
     }
 }

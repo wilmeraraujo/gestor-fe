@@ -58,8 +58,11 @@ export class CommonService <E extends Generic>{
     return this.http.get<E>(`${this.endPointBase}/${id}`);
   }
 
-  public crear(e: E): Observable<E> {
-    return this.http.post<E>(this.endPointBase, e, { headers: this.cabeceras });
+  public crear(e: E, username?: string): Observable<E> {
+    const headers = (username && username.trim() !== '')
+      ? this.cabeceras.set('X-User', username.trim())
+      : this.cabeceras;
+    return this.http.post<E>(this.endPointBase, e, { headers });
   }
 
   public create(e: E, userName: string): Observable<E> {
@@ -68,8 +71,11 @@ export class CommonService <E extends Generic>{
     );
   }
 
-  public editar(e: E): Observable<E> {
-    return this.http.put<E>(`${this.endPointBase}/${e.id}`,e, { headers: this.cabeceras });
+  public editar(e: E, username?: string): Observable<E> {
+    const headers = (username && username.trim() !== '')
+      ? this.cabeceras.set('X-User', username.trim())
+      : this.cabeceras;
+    return this.http.put<E>(`${this.endPointBase}/${e.id}`, e, { headers });
   }
 
   public update(e: E, userName: string): Observable<E> {

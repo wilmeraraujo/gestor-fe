@@ -18,9 +18,10 @@ public interface GlobalService<E> {
 	
 	E save(E entity);
 	
+	E saveWithLog(E entity, String accion, String observacion, String username);
+	
 	void deleteById(Long id);
 
 	E toggleEstado(Long id, String observacion, String username);
 
 }
-

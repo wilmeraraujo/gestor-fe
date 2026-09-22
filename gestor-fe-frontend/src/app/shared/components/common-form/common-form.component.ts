@@ -3,6 +3,7 @@ import { Component, OnInit, Input } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
 import Swal from 'sweetalert2';
+import { LoginService } from '../../../services/login.service';
 
 @Component({
   selector: 'app-common-form',
@@ -22,7 +23,8 @@ export class CommonFormComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private dialogRef: MatDialogRef<CommonFormComponent>
+    private dialogRef: MatDialogRef<CommonFormComponent>,
+    private loginService: LoginService
   ) {}
 
   ngOnInit(): void {
@@ -66,14 +68,21 @@ export class CommonFormComponent implements OnInit {
 
     const formValues = { ...this.data, ...this.form.value };
 
+    // ⚡ Normalizar código (quitar espacios al inicio y final)
+    if (formValues.codigo && typeof formValues.codigo === 'string') {
+      formValues.codigo = formValues.codigo.trim();
+    }
+
     // ⚡ Normalizar IDs numéricos si vienen como String desde el <select>
     if (formValues.faseId) formValues.faseId = Number(formValues.faseId);
     if (formValues.extensionId) formValues.extensionId = Number(formValues.extensionId);
     if (formValues.tamanoMaximoMb) formValues.tamanoMaximoMb = Number(formValues.tamanoMaximoMb);
 
+    const usuarioActivo = this.loginService.getUserName();
+
     const request = formValues.id
-      ? this.service.editar(formValues)
-      : this.service.crear(formValues);
+      ? this.service.editar(formValues, usuarioActivo)
+      : this.service.crear(formValues, usuarioActivo);
 
     request.subscribe({
       next: () => {
@@ -81,17 +90,20 @@ export class CommonFormComponent implements OnInit {
           icon: 'success',
           title: 'Éxito',
           text: formValues.id
-            ? 'Regla actualizada con éxito'
-            : 'Regla creada con éxito'
+            ? 'Registro actualizado con éxito'
+            : 'Registro creado con éxito',
+          confirmButtonColor: '#1DA6BA'
         });
         this.dialogRef.close(true);
       },
       error: (err: any) => {
         console.error(err);
+        const errorMsg = err.error?.error || err.error?.mensaje || (typeof err.error === 'string' ? err.error : 'Ocurrió un error al procesar la solicitud');
         Swal.fire({
           icon: 'error',
-          title: 'Error',
-          text: 'Ocurrió un error al procesar la solicitud'
+          title: 'Error de Validación',
+          text: errorMsg,
+          confirmButtonColor: '#1DA6BA'
         });
       }
     });
