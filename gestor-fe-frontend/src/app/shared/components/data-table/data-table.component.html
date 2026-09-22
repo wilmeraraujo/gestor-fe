@@ -184,6 +184,18 @@
                 <mat-icon>history</mat-icon>
               </button>
 
+              <!-- 🔘 ACTIVAR / INACTIVAR DINÁMICO (VERDE ACTIVO / ROJO INACTIVO) -->
+              <button
+                *ngIf="mostrarActivarInactivar"
+                mat-icon-button
+                [class.btn-action-active]="isActivo(row)"
+                [class.btn-action-inactive]="!isActivo(row)"
+                class="btn-action"
+                (click)="onToggleEstado(row)"
+                [matTooltip]="isActivo(row) ? 'Inactivar Registro' : 'Activar Registro'">
+                <mat-icon>{{ isActivo(row) ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+              </button>
+
               <!-- 🗑️ ELIMINAR / INACTIVAR -->
               <button
                 *ngIf="mostrarEliminar && row.permitirEliminar !== false"
@@ -206,22 +218,22 @@
         <!-- FILTROS POR COLUMNA (PERMANENTES Y CONECTADOS AL EVENTO APLICAR) -->
         <ng-container *ngFor="let col of columnas" [matColumnDef]="'filter-' + col.field">
           <th mat-header-cell *matHeaderCellDef class="filter-header-cell" [class.col-id-cell]="col.field === 'id'">
-            <mat-form-field
-              *ngIf="col.filtrable !== false"
-              appearance="outline"
-              class="col-filter-input"
-              subscriptSizing="dynamic">
-              <input
-                matInput
-                [(ngModel)]="filtrosPorColumna[col.field]"
-                (input)="aplicarFiltrosColumnas(col.field)" />
+            <div class="filter-cell-wrapper" *ngIf="col.filtrable !== false">
+              <mat-form-field
+                appearance="outline"
+                class="col-filter-input"
+                subscriptSizing="dynamic">
+                <input
+                  matInput
+                  [(ngModel)]="filtrosPorColumna[col.field]"
+                  (input)="aplicarFiltrosColumnas(col.field)" />
+              </mat-form-field>
               <div
                 *ngIf="cargandoFiltro && campoFiltrando === col.field"
-                matSuffix
                 class="filter-loading-spinner"
                 title="Cargando...">
               </div>
-            </mat-form-field>
+            </div>
           </th>
         </ng-container>
 

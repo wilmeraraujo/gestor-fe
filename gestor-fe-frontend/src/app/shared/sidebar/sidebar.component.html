@@ -21,6 +21,7 @@
         [routerLink]="item.route"
         routerLinkActive="sidebar-active"
         class="sidebar-item"
+        [title]="item.name"
         (click)="onDirectItemClick()">
 
         <!-- ICONO -->
@@ -38,6 +39,7 @@
       <div
         *ngIf="item.children"
         class="sidebar-item"
+        [title]="item.name"
         (click)="toggleMenu(item)">
 
         <!-- ICONO -->
@@ -65,7 +67,8 @@
           <a
             [routerLink]="child.route"
             routerLinkActive="sidebar-active"
-            class="sidebar-subitem">
+            class="sidebar-subitem"
+            [title]="child.name">
 
             <!-- ICONO SUBMENU -->
             <span class="material-icons sidebar-subicon">
@@ -73,7 +76,7 @@
             </span>
 
             <!-- TEXTO -->
-            <span>
+            <span class="sidebar-subtext">
               {{ child.name }}
             </span>
           </a>

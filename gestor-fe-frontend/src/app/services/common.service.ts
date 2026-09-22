@@ -86,4 +86,12 @@ export class CommonService <E extends Generic>{
     const endpoint = `${this.endPointBase}/deleted-at/${id}`;
     return this.http.put<Estado>(endpoint, {});
   }
+
+  public toggleEstado(id: number | string, observacion?: string, username?: string): Observable<E> {
+    const body = {
+      observacion: observacion || '',
+      username: username || ''
+    };
+    return this.http.patch<E>(`${this.endPointBase}/${id}/toggle-estado`, body, { headers: this.cabeceras });
+  }
 }

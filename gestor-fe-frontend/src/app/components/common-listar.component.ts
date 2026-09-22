@@ -1,7 +1,8 @@
-import { OnInit, ViewChild, Directive, OnDestroy } from '@angular/core';
+import { OnInit, ViewChild, Directive, OnDestroy, inject } from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import Swal from 'sweetalert2';
 import { CommonService } from '../services/common.service';
+import { LoginService } from '../services/login.service';
 import { Generic } from '../models/generic';
 import { MatTableDataSource } from '@angular/material/table';
 import { Observable, Subject, Subscription } from 'rxjs';
@@ -23,6 +24,8 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
   filtrosMap: { [key: string]: string } = {};
   private baseFiltroSubject = new Subject<{ [key: string]: string }>();
   private baseFiltroSubscription?: Subscription;
+
+  protected commonLoginService = inject(LoginService);
 
   dataSource: MatTableDataSource<E> = new MatTableDataSource<E>();
 
@@ -98,6 +101,66 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
     })
   }
 
+  public onToggleEstado(entidad: E, userName: string = ''): void {
+    this.cambiarEstado(entidad, userName);
+  }
+
+  public cambiarEstado(entidad: E, userName: string = ''): void {
+    const isActivo = !entidad.deletedAt;
+    const accion = isActivo ? 'Inactivar' : 'Activar';
+    const colorBtn = isActivo ? '#dc2626' : '#16a34a';
+
+    Swal.fire({
+      title: `¿Desea ${accion.toLowerCase()} el registro?`,
+      text: `Por favor ingrese el motivo de la acción para "${entidad.descripcion || entidad.codigo || entidad.id}":`,
+      input: 'textarea',
+      inputPlaceholder: `Motivo de ${accion.toLowerCase()}...`,
+      inputAttributes: {
+        'aria-label': `Motivo de ${accion.toLowerCase()}`,
+        maxlength: '500'
+      },
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: colorBtn,
+      cancelButtonColor: '#64748b',
+      confirmButtonText: `Sí, ${accion}`,
+      cancelButtonText: 'Cancelar',
+      inputValidator: (value) => {
+        if (!value || !value.trim()) {
+          return 'Debe ingresar una observación obligatoria';
+        }
+        return null;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const observacion = result.value ? result.value.trim() : '';
+        const usuarioActivo = (userName && userName.trim() !== '') ? userName.trim() : this.commonLoginService.getUserName();
+        this.service.toggleEstado(entidad.id, observacion, usuarioActivo).subscribe({
+          next: () => {
+            Swal.fire({
+              icon: 'success',
+              title: `${accion} completado`,
+              text: `El registro fue ${isActivo ? 'inactivado' : 'activado'} exitosamente.`,
+              confirmButtonColor: '#1DA6BA',
+              timer: 2500,
+              timerProgressBar: true
+            });
+            this.calcularRangos();
+          },
+          error: (err: any) => {
+            const errorMsg = err.error?.error || `Error al ${accion.toLowerCase()} el registro.`;
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: errorMsg,
+              confirmButtonColor: '#1DA6BA'
+            });
+          }
+        });
+      }
+    });
+  }
+
   public toggleActivarInactivar(
     checked: boolean,
     entidad: E,
@@ -151,6 +214,5 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
       }
     });
   }
-
 
 }

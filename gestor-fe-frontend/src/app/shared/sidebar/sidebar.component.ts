@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { LoginService } from '../../services/login.service';
 
@@ -22,6 +22,7 @@ interface MenuItem {
 export class SidebarComponent implements OnInit {
 
   @Input() collapsed: boolean = false;
+  @Output() hoverChange = new EventEmitter<boolean>();
 
   private loginService = inject(LoginService);
 
@@ -182,12 +183,14 @@ export class SidebarComponent implements OnInit {
   onMouseEnter(): void {
     if (this.collapsed) {
       this.isHovered = true;
+      this.hoverChange.emit(true);
     }
   }
 
   onMouseLeave(): void {
     if (this.collapsed) {
       this.isHovered = false;
+      this.hoverChange.emit(false);
     }
   }
 

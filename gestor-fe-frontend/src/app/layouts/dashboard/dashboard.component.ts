@@ -15,13 +15,19 @@ import { RouterOutlet } from '@angular/router';
 export class DashboardComponent {
 
   sidebarCollapsed = false;
+  sidebarHovered = false;
 
-  constructor() {
-
-  }
+  constructor() {}
 
   toggleSidebar() {
     this.sidebarCollapsed = !this.sidebarCollapsed;
+    if (!this.sidebarCollapsed) {
+      this.sidebarHovered = false;
+    }
+  }
+
+  onSidebarHover(isHovered: boolean) {
+    this.sidebarHovered = isHovered;
   }
 
 }

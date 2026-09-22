@@ -89,6 +89,51 @@ public class GlobalController <E,S extends GlobalService<E>> {
 		service.deleteById(id);
 		return ResponseEntity.noContent().build();
 	}
+
+	@org.springframework.web.bind.annotation.PatchMapping("/{id}/toggle-estado")
+	public ResponseEntity<?> toggleEstado(
+			@PathVariable Long id,
+			@RequestBody(required = false) Map<String, String> body,
+			jakarta.servlet.http.HttpServletRequest request) {
+		
+		Optional<E> entityDb = service.findById(id);
+		if (entityDb.isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}
+
+		String observacion = null;
+		String username = null;
+
+		if (body != null) {
+			observacion = body.get("observacion");
+			username = body.get("username");
+			if (username == null || username.trim().isEmpty()) {
+				username = body.get("userName");
+			}
+			if (username == null || username.trim().isEmpty()) {
+				username = body.get("usuario");
+			}
+		}
+
+		if ((username == null || username.trim().isEmpty()) && request != null) {
+			username = request.getHeader("X-User");
+			if (username == null || username.trim().isEmpty()) {
+				username = request.getHeader("username");
+			}
+			if ((username == null || username.trim().isEmpty()) && request.getUserPrincipal() != null) {
+				username = request.getUserPrincipal().getName();
+			}
+		}
+
+		try {
+			E updated = service.toggleEstado(id, observacion, username);
+			return ResponseEntity.ok(updated);
+		} catch (Exception e) {
+			Map<String, String> error = new HashMap<>();
+			error.put("error", e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+		}
+	}
 	
 	protected ResponseEntity<?> validar(BindingResult result){
 		Map<String, Object> errores = new HashMap<>();

@@ -31,6 +31,9 @@ public class GlobalServiceImpl <E, R extends JpaRepository<E, Long>> implements 
 	@PersistenceContext
 	protected EntityManager entityManager;
 
+	@Autowired(required = false)
+	protected LogAccionService logAccionService;
+
 	private Class<E> entityClass;
 
 	@Override
@@ -121,9 +124,16 @@ public class GlobalServiceImpl <E, R extends JpaRepository<E, Long>> implements 
 	protected List<Predicate> construirPredicados(CriteriaBuilder cb, Root<E> root, Map<String, String> filtros) {
 		List<Predicate> predicates = new ArrayList<>();
 
-		// 1. deletedAt is null (si la entidad maneja borrado lógico)
+		// 1. Filtrado opcional por estado o deletedAt
 		try {
-			predicates.add(cb.isNull(root.get("deletedAt")));
+			if (filtros != null && filtros.containsKey("estado")) {
+				String estadoFiltro = filtros.get("estado");
+				if ("ACTIVO".equalsIgnoreCase(estadoFiltro)) {
+					predicates.add(cb.isNull(root.get("deletedAt")));
+				} else if ("INACTIVO".equalsIgnoreCase(estadoFiltro)) {
+					predicates.add(cb.isNotNull(root.get("deletedAt")));
+				}
+			}
 		} catch (Exception e) {
 			// Ignora si el campo deletedAt no existe en la entidad
 		}
@@ -137,7 +147,7 @@ public class GlobalServiceImpl <E, R extends JpaRepository<E, Long>> implements 
 				String k = key.trim();
 				String v = val.trim();
 
-				if (k.equalsIgnoreCase("page") || k.equalsIgnoreCase("size") || k.equalsIgnoreCase("sort")) {
+				if (k.equalsIgnoreCase("page") || k.equalsIgnoreCase("size") || k.equalsIgnoreCase("sort") || k.equalsIgnoreCase("estado") || k.equalsIgnoreCase("incluirInactivos")) {
 					return;
 				}
 
@@ -175,6 +185,43 @@ public class GlobalServiceImpl <E, R extends JpaRepository<E, Long>> implements 
 	@Override
 	public void deleteById(Long id) {
 		repository.deleteById(id);
+	}
+
+	@Override
+	@Transactional
+	public E toggleEstado(Long id, String observacion, String username) {
+		Optional<E> optionalEntity = repository.findById(id);
+		if (optionalEntity.isEmpty()) {
+			throw new RuntimeException("Registro no encontrado con ID: " + id);
+		}
+
+		E entity = optionalEntity.get();
+		String accion = "ACTUALIZAR";
+
+		try {
+			java.lang.reflect.Method getDeletedAt = entity.getClass().getMethod("getDeletedAt");
+			java.lang.reflect.Method setDeletedAt = entity.getClass().getMethod("setDeletedAt", java.time.LocalDateTime.class);
+
+			java.time.LocalDateTime currentDeletedAt = (java.time.LocalDateTime) getDeletedAt.invoke(entity);
+			if (currentDeletedAt == null) {
+				setDeletedAt.invoke(entity, java.time.LocalDateTime.now());
+				accion = "INACTIVAR";
+			} else {
+				setDeletedAt.invoke(entity, (java.time.LocalDateTime) null);
+				accion = "ACTIVAR";
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("La entidad no soporta activación/inactivación lógica: " + e.getMessage());
+		}
+
+		E savedEntity = repository.save(entity);
+
+		if (logAccionService != null) {
+			String modulo = getEntityClass() != null ? getEntityClass().getSimpleName() : "ADMIN";
+			logAccionService.registrarLog(modulo, id, accion, observacion, username);
+		}
+
+		return savedEntity;
 	}
 
 }

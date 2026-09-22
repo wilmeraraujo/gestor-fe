@@ -54,6 +54,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
   @Input() mostrarGestionarFactura = false;
   @Input() mostrarEditar = true;
   @Input() mostrarEliminar = true;
+  @Input() mostrarActivarInactivar: boolean = false;
   @Input() mostrarHistorial: boolean = false;
   @Input() mostrarEliminarMasivo: boolean = false;
 
@@ -62,6 +63,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
   @Output() agregar = new EventEmitter<void>();
   @Output() editar = new EventEmitter<any>();
   @Output() eliminar = new EventEmitter<any>();
+  @Output() toggleEstado = new EventEmitter<any>();
   @Output() descargar = new EventEmitter<any>();
   @Output() descargarErrores = new EventEmitter<any>();
   @Output() verDetalle = new EventEmitter<any>();
@@ -343,6 +345,14 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
 
   onEliminar(row: any): void {
     this.eliminar.emit(row);
+  }
+
+  onToggleEstado(row: any): void {
+    this.toggleEstado.emit(row);
+  }
+
+  isActivo(row: any): boolean {
+    return row && (row.deletedAt === null || row.deletedAt === undefined || row.deletedAt === '');
   }
 
   onPaginar(event: PageEvent): void {

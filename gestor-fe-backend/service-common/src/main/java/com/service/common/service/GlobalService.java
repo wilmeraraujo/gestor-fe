@@ -20,5 +20,7 @@ public interface GlobalService<E> {
 	
 	void deleteById(Long id);
 
+	E toggleEstado(Long id, String observacion, String username);
+
 }
 

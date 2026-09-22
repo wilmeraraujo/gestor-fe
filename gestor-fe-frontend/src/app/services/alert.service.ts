@@ -86,4 +86,40 @@ export class AlertService {
       cancelButtonText: 'Cancelar'
     });
   }
+
+  // 📝 Modal de Confirmación con Observación Obligatoria
+  confirmarConObservacion(
+    titulo: string = '¿Está seguro?',
+    mensaje: string = 'Por favor ingrese el motivo de esta acción:',
+    placeholder: string = 'Motivo u observación...',
+    textoBotonConfirmar: string = 'Confirmar'
+  ): Promise<{ isConfirmed: boolean; observacion?: string }> {
+    return Swal.fire({
+      title: titulo,
+      text: mensaje,
+      input: 'textarea',
+      inputPlaceholder: placeholder,
+      inputAttributes: {
+        'aria-label': placeholder,
+        maxlength: '500'
+      },
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: this.colorTema,
+      cancelButtonColor: '#64748b',
+      confirmButtonText: textoBotonConfirmar,
+      cancelButtonText: 'Cancelar',
+      inputValidator: (value) => {
+        if (!value || !value.trim()) {
+          return 'Debe ingresar una observación obligatoria';
+        }
+        return null;
+      }
+    }).then((result) => {
+      return {
+        isConfirmed: result.isConfirmed,
+        observacion: result.value ? result.value.trim() : undefined
+      };
+    });
+  }
 }

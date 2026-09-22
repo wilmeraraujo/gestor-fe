@@ -178,6 +178,13 @@
   vertical-align: middle !important;
 }
 
+.filter-cell-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
 .col-filter-input {
   width: 100%;
   margin: 0 !important;
@@ -251,16 +258,21 @@
   padding-right: 2px !important;
 }
 
-/* 🌀 SPINNER DE CARGA EN CSS PURO (Garantiza visibilidad en cualquier navegador) */
-::ng-deep .filter-loading-spinner {
+/* 🌀 SPINNER DE CARGA EN CSS PURO (Posicionado de forma absoluta por fuera del input para no mover las columnas) */
+.filter-loading-spinner {
+  position: absolute;
+  right: -15px;
+  top: calc(50% - 7px);
   width: 14px !important;
   height: 14px !important;
+  box-sizing: border-box !important;
   border: 2px solid #cbd5e1 !important;
   border-top-color: #2563eb !important;
   border-radius: 50% !important;
   animation: spinFilterSpinner 0.6s linear infinite !important;
   display: inline-block !important;
-  flex-shrink: 0 !important;
+  z-index: 5 !important;
+  pointer-events: none !important;
 }
 
 @keyframes spinFilterSpinner {
@@ -602,6 +614,30 @@
   color: #ffffff !important;
   transform: translateY(-2px) scale(1.05) !important;
   box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3) !important;
+}
+
+/* 🟢 Activo (Verde Esmeralda) */
+.btn-action-active {
+  background-color: #dcfce7 !important;
+  color: #16a34a !important;
+}
+.btn-action-active:hover {
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.35) !important;
+}
+
+/* 🔴 Inactivo (Rojo Carmesí) */
+.btn-action-inactive {
+  background-color: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+.btn-action-inactive:hover {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.35) !important;
 }
 
 /* 🗑️ Eliminar (Rojo Carmesí) */
