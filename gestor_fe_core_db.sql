@@ -95,7 +95,9 @@ select * from admin.fase f order by id desc limit 10;
 select * from admin.configuracion_sistema cs order by id desc limit 10;
 select * from admin.configuracion_fase_extension cfe order by id desc limit 10;
 
+select * from logs.log_acciones order by id desc limit 10;
 --
+TRUNCATE TABLE logs.log_acciones RESTART IDENTITY CASCADE;
 -- Reinicio masivo de tablas del esquema 'admin'
 TRUNCATE TABLE admin.departamento RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin.municipio RESTART IDENTITY CASCADE;
