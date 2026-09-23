@@ -32,6 +32,11 @@ export class FaseComponent extends CommonListarComponent<Fase,FaseService> imple
     {
       field: 'descripcion',
       header: 'Descripción'
+    },
+
+    {
+      field: 'estadoActivo',
+      header: 'Estado'
     }
 
   ];

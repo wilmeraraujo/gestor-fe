@@ -16,6 +16,6 @@ public class ConfiguracionSistema extends Global {
     @Column(name = "valor", nullable = false, length = 255)
     private String valor;
 
-    @Column(name = "categoria", length = 50)
-    private String categoria;
+    @Column(name = "proceso_id")
+    private Long procesoId;
 }

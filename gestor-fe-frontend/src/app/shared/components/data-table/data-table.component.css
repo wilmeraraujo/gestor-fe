@@ -169,12 +169,6 @@
   padding: 6px 10px !important;
   background-color: #f8fafc !important;
   border-bottom: 1px solid #e2e8f0 !important;
-}
-
-.filter-header-cell {
-  padding: 6px 10px !important;
-  background-color: #f8fafc !important;
-  border-bottom: 1px solid #e2e8f0 !important;
   vertical-align: middle !important;
 }
 
@@ -183,6 +177,7 @@
   display: flex;
   align-items: center;
   width: 100%;
+  cursor: text;
 }
 
 .col-filter-input {
@@ -207,55 +202,96 @@
   height: 0 !important;
 }
 
+/* Envoltorio principal de campo */
 ::ng-deep .col-filter-input .mat-mdc-text-field-wrapper {
   background-color: #ffffff !important;
   border-radius: 12px !important;
-  padding: 0 8px !important;
-  height: 32px !important;
-  transition: all 0.15s ease !important;
+  padding: 0 !important;
+  height: 36px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03) !important;
 }
 
 ::ng-deep .col-filter-input .mdc-text-field--outlined {
-  height: 32px !important;
+  height: 36px !important;
   --mdc-outlined-text-field-container-shape: 12px !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding: 0 !important;
 }
 
 ::ng-deep .col-filter-input .mat-mdc-form-field-flex {
-  height: 32px !important;
+  height: 36px !important;
   align-items: center !important;
+  display: flex !important;
+  width: 100% !important;
+  padding: 0 !important;
 }
 
+/* Infix con padding horizontal amplio para despegar las letras del borde */
 ::ng-deep .col-filter-input .mat-mdc-form-field-infix {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  min-height: 32px !important;
-  height: 32px !important;
+  padding: 0 14px !important;
+  min-height: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  border-top-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  pointer-events: auto !important;
+}
+
+/* Input interno con cursor y texto despegado de los bordes */
+::ng-deep .col-filter-input input.mat-mdc-input-element {
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: #1e293b !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  width: 100% !important;
+  cursor: text !important;
+  pointer-events: auto !important;
+}
+
+::ng-deep .col-filter-input .mat-mdc-select {
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  cursor: pointer !important;
+}
+
+::ng-deep .col-filter-input .mat-mdc-select-trigger {
+  display: flex !important;
+  align-items: center !important;
+  height: 36px !important;
+  width: 100% !important;
+}
+
+::ng-deep .col-filter-input .mat-mdc-select-value {
+  font-size: 12.5px !important;
+  color: #1e293b !important;
   display: flex !important;
   align-items: center !important;
 }
 
-::ng-deep .col-filter-input input.mat-mdc-input-element {
-  font-size: 12px !important;
-  color: #1e293b !important;
-  height: 24px !important;
-  line-height: 24px !important;
-  margin: 0 !important;
-  padding: 0 !important;
+::ng-deep .col-filter-input .mat-mdc-select-arrow-wrapper {
+  transform: translateY(0) !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 ::ng-deep .col-filter-input input::placeholder {
   color: #94a3b8 !important;
   font-weight: 400 !important;
-}
-
-::ng-deep .col-filter-input .mat-mdc-form-field-icon-suffix {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding-left: 4px !important;
-  padding-right: 2px !important;
+  font-size: 12px !important;
 }
 
 /* 🌀 SPINNER DE CARGA EN CSS PURO (Posicionado de forma absoluta por fuera del input para no mover las columnas) */
@@ -280,11 +316,15 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Borde normal suave */
+/* La silueta dibujada no debe interceptar eventos de clic para no bloquear la colocación del cursor */
+::ng-deep .col-filter-input .mdc-notched-outline,
 ::ng-deep .col-filter-input .mdc-notched-outline__leading,
 ::ng-deep .col-filter-input .mdc-notched-outline__notch,
 ::ng-deep .col-filter-input .mdc-notched-outline__trailing {
-  border-color: #e2e8f0 !important;
+  pointer-events: none !important;
+  border-color: #cbd5e1 !important;
+  border-width: 1px !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 ::ng-deep .col-filter-input .mdc-notched-outline__notch {
@@ -296,18 +336,20 @@
 ::ng-deep .col-filter-input:hover .mdc-notched-outline__leading,
 ::ng-deep .col-filter-input:hover .mdc-notched-outline__notch,
 ::ng-deep .col-filter-input:hover .mdc-notched-outline__trailing {
-  border-color: #cbd5e1 !important;
+  border-color: #94a3b8 !important;
 }
 
-/* Focus: Fondo azul tenue y borde azul brillante exacto a la imagen de referencia */
+/* Focus: Fondo azul tenue y borde azul brillante exacto + halo de luz (box-shadow) */
 ::ng-deep .col-filter-input.mat-focused .mat-mdc-text-field-wrapper {
   background-color: #f0f7ff !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
 
 ::ng-deep .col-filter-input.mat-focused .mdc-notched-outline__leading,
 ::ng-deep .col-filter-input.mat-focused .mdc-notched-outline__notch,
 ::ng-deep .col-filter-input.mat-focused .mdc-notched-outline__trailing {
-  border-color: #3b82f6 !important;
+  border-color: #2563eb !important;
+  border-width: 1.5px !important;
 }
 
 ::ng-deep .col-filter-input.mat-focused .mdc-notched-outline__notch {

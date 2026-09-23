@@ -90,19 +90,29 @@
           </th>
           <td mat-cell *matCellDef="let row" class="text-nowrap" [class.col-id-cell]="col.field === 'id'">
 
-            <!-- 🏷️ BADGES DE ESTADO -->
-            <ng-container *ngIf="col.field === 'estado' || col.field === 'estadoNombre'; else celdaTextoNormal">
-              <span [class]="obtenerClaseEstado(row[col.field])">
+            <!-- 🏷️ BADGES DE ESTADO (ACTIVO/INACTIVO BASADO EN DELETEDAT O PROCESAMIENTO) -->
+            <ng-container *ngIf="col.field === 'estadoActivo' || col.field === 'deletedAt' || (col.field === 'estado' && (!row['estado'] || row['estado'] === 'ACTIVO' || row['estado'] === 'INACTIVO')); else checkEstadoNombre">
+              <span [class]="isActivo(row) ? 'badge-estado badge-verde' : 'badge-estado badge-rojo'">
                 <span class="badge-dot"></span>
-                <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'PROCESANDO'">sync</mat-icon>
-                <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'CARGADO' || row[col.field] === 'CARGUE FINALIZADO'">check</mat-icon>
-                <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'CON ERRORES' || row[col.field] === 'RECHAZADO'">close</mat-icon>
-                <span>{{ row[col.field] }}</span>
+                <mat-icon class="icono-badge-estado">{{ isActivo(row) ? 'check' : 'close' }}</mat-icon>
+                <span>{{ isActivo(row) ? 'Activo' : 'Inactivo' }}</span>
               </span>
             </ng-container>
 
+            <ng-template #checkEstadoNombre>
+              <ng-container *ngIf="col.field === 'estado' || col.field === 'estadoNombre'; else celdaTextoNormal">
+                <span [class]="obtenerClaseEstado(row[col.field])">
+                  <span class="badge-dot"></span>
+                  <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'PROCESANDO'">sync</mat-icon>
+                  <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'CARGADO' || row[col.field] === 'CARGUE FINALIZADO'">check</mat-icon>
+                  <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'CON ERRORES' || row[col.field] === 'RECHAZADO'">close</mat-icon>
+                  <span>{{ row[col.field] }}</span>
+                </span>
+              </ng-container>
+            </ng-template>
+
             <ng-template #celdaTextoNormal>
-              <span class="celda-valor">{{ row[col.field] }}</span>
+              <span class="celda-valor">{{ col.field === 'procesoId' ? (row['procesoNombre'] || row['procesoId']) : row[col.field] }}</span>
             </ng-template>
 
           </td>
@@ -218,15 +228,43 @@
         <!-- FILTROS POR COLUMNA (PERMANENTES Y CONECTADOS AL EVENTO APLICAR) -->
         <ng-container *ngFor="let col of columnas" [matColumnDef]="'filter-' + col.field">
           <th mat-header-cell *matHeaderCellDef class="filter-header-cell" [class.col-id-cell]="col.field === 'id'">
-            <div class="filter-cell-wrapper" *ngIf="col.filtrable !== false">
+            <div class="filter-cell-wrapper" *ngIf="col.filtrable !== false" (click)="enfocarFiltro($event, col.field)">
               <mat-form-field
                 appearance="outline"
                 class="col-filter-input"
                 subscriptSizing="dynamic">
-                <input
-                  matInput
+
+                <mat-select
+                  *ngIf="col.options; else selectEstadoDefault"
                   [(ngModel)]="filtrosPorColumna[col.field]"
-                  (input)="aplicarFiltrosColumnas(col.field)" />
+                  (selectionChange)="aplicarFiltrosColumnas(col.field)"
+                  placeholder="Todos">
+                  <mat-option value="">Todos</mat-option>
+                  <mat-option *ngFor="let opt of col.options" [value]="opt.value">
+                    {{ opt.label }}
+                  </mat-option>
+                </mat-select>
+
+                <ng-template #selectEstadoDefault>
+                  <mat-select
+                    *ngIf="col.field === 'estadoActivo' || col.field === 'deletedAt' || col.field === 'estado'; else inputFiltroTexto"
+                    [(ngModel)]="filtrosPorColumna[col.field]"
+                    (selectionChange)="aplicarFiltrosColumnas(col.field)"
+                    placeholder="Todos">
+                    <mat-option value="">Todos</mat-option>
+                    <mat-option value="ACTIVO">Activo</mat-option>
+                    <mat-option value="INACTIVO">Inactivo</mat-option>
+                  </mat-select>
+                </ng-template>
+
+                <ng-template #inputFiltroTexto>
+                  <input
+                    matInput
+                    [(ngModel)]="filtrosPorColumna[col.field]"
+                    (input)="aplicarFiltrosColumnas(col.field)"
+                    placeholder="Filtrar..." />
+                </ng-template>
+
               </mat-form-field>
               <div
                 *ngIf="cargandoFiltro && campoFiltrando === col.field"

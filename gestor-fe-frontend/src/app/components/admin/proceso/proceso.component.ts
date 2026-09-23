@@ -1,134 +1,83 @@
 import { Component, OnInit } from '@angular/core';
-import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../../common-listar.component';
-import { Extension } from '../../../models/extension';
-import { ExtensionService } from '../../../services/extension.service';
+import { Proceso } from '../../../models/proceso';
+import { ProcesoService } from '../../../services/proceso.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 
 @Component({
-  selector: 'app-extension',
+  selector: 'app-proceso',
   standalone: true,
   imports: [DataTableComponent],
-  templateUrl: './extension.component.html',
-  styleUrl: './extension.component.css'
+  templateUrl: './proceso.component.html',
+  styleUrl: './proceso.component.css'
 })
-export class ExtensionComponent extends CommonListarComponent<Extension,ExtensionService> implements OnInit{
+export class ProcesoComponent extends CommonListarComponent<Proceso, ProcesoService> implements OnInit {
 
-  override titulo = 'Extensión';
+  override titulo = 'Proceso';
 
   columnas = [
-
-    {
-      field: 'id',
-      header: 'ID'
-    },
-
-    {
-      field: 'codigo',
-      header: 'Código'
-    },
-
-    {
-      field: 'descripcion',
-      header: 'Descripción'
-    },
-
-    {
-      field: 'estadoActivo',
-      header: 'Estado'
-    }
-
+    { field: 'id', header: 'ID' },
+    { field: 'codigo', header: 'Código' },
+    { field: 'descripcion', header: 'Descripción' },
+    { field: 'estadoActivo', header: 'Estado' }
   ];
 
   campos = [
-
-    {
-      name: 'codigo',
-      label: 'Código',
-      type: 'text',
-      required: true
-    },
-
-    {
-      name: 'descripcion',
-      label: 'Descripción',
-      type: 'text',
-      required: true
-    }
-
+    { name: 'codigo', label: 'Código', type: 'text', required: true },
+    { name: 'descripcion', label: 'Descripción', type: 'text', required: true }
   ];
 
   constructor(
-      service: ExtensionService,
-      private dialog: MatDialog
+    service: ProcesoService,
+    private dialog: MatDialog
   ) {
     super(service);
   }
 
   ngOnInit(): void {
-
     this.calcularRangos();
-
   }
 
-
   agregar(): void {
-
     const dialogRef = this.dialog.open(ModalComponent, {
-
       width: '500px',
-
       data: {
-        titulo: 'Nueva extensión',
+        titulo: 'Nuevo Proceso',
         campos: this.campos,
         formData: {},
         service: this.service
       }
-
     });
 
     dialogRef.afterClosed().subscribe(result => {
-
-      if(result){
+      if (result) {
         this.calcularRangos();
       }
-
     });
-
   }
 
-  editar(row: Extension): void {
-
+  editar(row: Proceso): void {
     const dialogRef = this.dialog.open(ModalComponent, {
-
       width: '500px',
-
       data: {
-
-        titulo: 'Editar extensión',
+        titulo: 'Editar Proceso',
         campos: this.campos,
         formData: row,
         service: this.service
-
       }
-
     });
 
     dialogRef.afterClosed().subscribe(result => {
-
-      if(result){
+      if (result) {
         this.calcularRangos();
       }
-
     });
-
   }
 
-
   buscar(texto: string): void {
-
-    if(!texto || texto.trim() === ''){
+    if (!texto || texto.trim() === '') {
       this.calcularRangos();
       return;
     }
@@ -137,26 +86,20 @@ export class ExtensionComponent extends CommonListarComponent<Extension,Extensio
       this.lista = response;
       this.totalRegistros = response.length;
     });
-
   }
 
-  deletedAt(row: Extension): void {
-
+  deletedAt(row: Proceso): void {
     if (!confirm(`¿Desea eliminar el registro ${row.descripcion}?`)) {
       return;
     }
 
     this.service.deletedAt(row.id).subscribe({
-
       next: () => {
         this.calcularRangos();
       },
-
       error: (err) => {
         console.error(err);
       }
-
     });
-
   }
 }

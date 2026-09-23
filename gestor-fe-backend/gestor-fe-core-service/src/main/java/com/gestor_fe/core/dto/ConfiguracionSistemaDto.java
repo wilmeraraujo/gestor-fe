@@ -16,7 +16,7 @@ public class ConfiguracionSistemaDto {
     private String codigo;
     private String valor;
     private String descripcion;
-    private String categoria;
+    private Long procesoId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;

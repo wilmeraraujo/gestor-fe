@@ -20,6 +20,7 @@ import { PendienteDePagoComponent } from './components/pendiente-de-pago/pendien
 import { SeguimientoFacturasComponent } from './components/seguimiento-facturas/seguimiento-facturas.component';
 import { ConfiguracionSistemaComponent } from './components/admin/configuracion-sistema/configuracion-sistema.component';
 import { ConfiguracionFaseExtensionComponent } from './components/admin/configuracion-fase-extension/configuracion-fase-extension.component';
+import { ProcesoComponent } from './components/admin/proceso/proceso.component';
 
 
 export const routes: Routes = [
@@ -86,6 +87,7 @@ export const routes: Routes = [
             path: 'observacion',
             component: ObservacionComponent
           },
+          { path: 'proceso', component: ProcesoComponent },
           { path: 'configuracion-sistema', component: ConfiguracionSistemaComponent },
           { path: 'configuracion-fase-extension', component: ConfiguracionFaseExtensionComponent }
 

@@ -18,33 +18,24 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.gestor_fe.admin.service.model.entity.ConfiguracionSistema;
-import com.gestor_fe.admin.service.services.ConfiguracionSistemaService;
+import com.gestor_fe.admin.service.model.entity.Proceso;
+import com.gestor_fe.admin.service.services.ProcesoService;
 import com.service.common.controller.GlobalController;
 
 @CrossOrigin(origins = "*")
 @RestController
-@RequestMapping("/api/v1/admin/configuracion-sistema")
-public class ConfiguracionSistemaController extends GlobalController<ConfiguracionSistema, ConfiguracionSistemaService> {
+@RequestMapping("/api/v1/admin/proceso")
+public class ProcesoController extends GlobalController<Proceso, ProcesoService> {
 
-    private final ConfiguracionSistemaService service;
+    private final ProcesoService service;
 
-    public ConfiguracionSistemaController(ConfiguracionSistemaService service) {
+    public ProcesoController(ProcesoService service) {
         this.service = service;
     }
 
     @GetMapping("/buscar/{desc}")
     public ResponseEntity<?> filter(@PathVariable String desc) {
         return ResponseEntity.ok(service.findByDescripcion(desc));
-    }
-
-    @GetMapping("/codigo/{codigo}")
-    public ResponseEntity<?> obtenerPorCodigo(@PathVariable String codigo) {
-        Optional<ConfiguracionSistema> config = service.findByCodigo(codigo);
-        if (config.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(config.get());
     }
 
     @GetMapping("/paginable/activos")
@@ -54,24 +45,25 @@ public class ConfiguracionSistemaController extends GlobalController<Configuraci
                 pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, "id"));
 
-        return ResponseEntity.ok().body(service.findByDeletedAtIsNull(sortedPageable));
+        return ResponseEntity.ok()
+                .body(service.findByDeletedAtIsNull(sortedPageable));
     }
 
     @PutMapping("/deleted-at/{id}")
     public ResponseEntity<?> addDeletedAt(@PathVariable Long id) {
-        Optional<ConfiguracionSistema> x = service.findById(id);
+        Optional<Proceso> x = service.findById(id);
 
         if (x.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        ConfiguracionSistema xDb = x.get();
+        Proceso xDb = x.get();
         xDb.setDeletedAt(LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CREATED).body(service.save(xDb));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> edit(@Validated @RequestBody ConfiguracionSistema x,
+    public ResponseEntity<?> edit(@Validated @RequestBody Proceso x,
             BindingResult result,
             @PathVariable(name = "id") Long id,
             jakarta.servlet.http.HttpServletRequest request) {
@@ -80,24 +72,20 @@ public class ConfiguracionSistemaController extends GlobalController<Configuraci
             return this.validar(result);
         }
 
-        Optional<ConfiguracionSistema> objeto = service.findById(id);
+        Optional<Proceso> objeto = service.findById(id);
         if (objeto.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        ConfiguracionSistema xDb = objeto.get();
+        Proceso xDb = objeto.get();
         String oldCodigo = xDb.getCodigo();
         String oldDescripcion = xDb.getDescripcion();
-        String oldValor = xDb.getValor();
 
         xDb.setCodigo(x.getCodigo());
         xDb.setDescripcion(x.getDescripcion());
-        xDb.setValor(x.getValor());
-        xDb.setProcesoId(x.getProcesoId());
-        xDb.setUpdatedAt(LocalDateTime.now());
         xDb.setDeletedAt(x.getDeletedAt());
 
-        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + (oldValor != null ? " | Valor: " + oldValor : "") + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + (x.getValor() != null ? " | Valor: " + x.getValor() : "") + "]";
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
         String username = this.extraerUsername(request, null);
         return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(xDb, "EDITAR", observacion, username));
     }

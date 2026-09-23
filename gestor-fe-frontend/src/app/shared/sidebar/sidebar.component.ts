@@ -62,6 +62,7 @@ export class SidebarComponent implements OnInit {
         { name: "Extensión", icon: "extension", route: "/dashboard/admin/extension", visible: true },
         { name: "Clasificación", icon: "class", route: "/dashboard/admin/clasificacion", visible: true },
         { name: "Fase", icon: "schema", route: "/dashboard/admin/fase", visible: true },
+        { name: "Proceso", icon: "account_tree", route: "/dashboard/admin/proceso", visible: true },
         { name: "Configuración Sistema", icon: "tune", route: "/dashboard/admin/configuracion-sistema", visible: true },
         { name: "Configuración Fase/Extensión", icon: "rule", route: "/dashboard/admin/configuracion-fase-extension", visible: true }
       ]

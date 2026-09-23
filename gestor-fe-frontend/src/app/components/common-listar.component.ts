@@ -113,7 +113,7 @@ export abstract class CommonListarComponent<E extends Generic,S extends CommonSe
     Swal.fire({
       title: `¿Desea ${accion.toLowerCase()} el registro?`,
       text: `Por favor ingrese el motivo de la acción para "${entidad.descripcion || entidad.codigo || entidad.id}":`,
-      input: 'textarea',
+      input: 'text',
       inputPlaceholder: `Motivo de ${accion.toLowerCase()}...`,
       inputAttributes: {
         'aria-label': `Motivo de ${accion.toLowerCase()}`,

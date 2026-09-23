@@ -158,7 +158,15 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
         return Object.keys(filtros).every(key => {
           const valorFiltro = String(filtros[key]).toLowerCase().trim();
           if (!valorFiltro) return true;
-          const valorCelda = String(data[key] || '').toLowerCase().trim();
+          let valorCelda = '';
+          if (key === 'estadoActivo' || key === 'deletedAt' || (key === 'estado' && (!data['estado'] || data['estado'] === 'ACTIVO' || data['estado'] === 'INACTIVO'))) {
+            const esActivoRegistro = this.isActivo(data);
+            if (valorFiltro === 'activo') return esActivoRegistro;
+            if (valorFiltro === 'inactivo') return !esActivoRegistro;
+            valorCelda = esActivoRegistro ? 'activo' : 'inactivo';
+          } else {
+            valorCelda = String(data[key] || '').toLowerCase().trim();
+          }
           return valorCelda.includes(valorFiltro);
         });
       } catch (e) {
@@ -235,6 +243,24 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
     }
 
     this.filtrosSubject.next(filtrosValidos);
+  }
+
+  enfocarFiltro(event: MouseEvent, field: string): void {
+    const container = event.currentTarget as HTMLElement;
+    if (!container) return;
+
+    const inputEl = container.querySelector('input') as HTMLInputElement;
+    if (inputEl) {
+      if (document.activeElement !== inputEl) {
+        inputEl.focus();
+      }
+      return;
+    }
+
+    const selectEl = container.querySelector('mat-select') as HTMLElement;
+    if (selectEl) {
+      selectEl.click();
+    }
   }
 
   limpiarFiltrosColumnas(): void {

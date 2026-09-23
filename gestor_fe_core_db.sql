@@ -388,20 +388,29 @@ INSERT INTO admin."extension" (id, codigo, created_at, deleted_at, descripcion, 
 (3, '02', '2026-07-30 21:09:18.399', NULL, 'zip', NULL);
 
 
-INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, categoria) VALUES
-('TAMANO_MAX_ZIP_CARGUE_MB', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 'CARGUE'),
-('MAX_FACTURAS_POR_ZIP', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 'CARGUE'),
-('ROLES_PERMITIDOS_BORRADO_LOGICO', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 'SEGURIDAD');
+-- 🛠️ Tabla Proceso para catálogo maestro de la administración
+CREATE TABLE IF NOT EXISTS admin.proceso (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
 
-INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, categoria) VALUES
-('01', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 'CARGUE'),
-('02', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 'CARGUE'),
-('03', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 'SEGURIDAD');
+ALTER TABLE admin.configuracion_sistema ADD COLUMN IF NOT EXISTS proceso_id BIGINT;
+ALTER TABLE admin.configuracion_sistema DROP COLUMN IF EXISTS categoria;
 
+INSERT INTO admin.proceso (id, codigo, descripcion) VALUES
+(1, 'CARGUE', 'Proceso de Cargue Soportes'),
+(2, 'GESTION', 'Proceso de Gestión de Facturas'),
+(3, 'SEGURIDAD', 'Parámetros de Seguridad y Permisos')
+ON CONFLICT DO NOTHING;
 
-select * from admin.configuracion_sistema;
-
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_fase_extension_active 
-ON admin.configuracion_fase_extension (fase_id, extension_id) 
-WHERE deleted_at IS NULL;
+INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, proceso_id) VALUES
+('01', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 1),
+('02', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 1),
+('03', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 3)
+ON CONFLICT DO NOTHING;
+

@@ -32,6 +32,11 @@ export class CausalDevolucionComponent extends CommonListarComponent<CausalDevol
     {
       field: 'descripcion',
       header: 'Descripción'
+    },
+
+    {
+      field: 'estadoActivo',
+      header: 'Estado'
     }
 
   ];

@@ -97,7 +97,7 @@ export class AlertService {
     return Swal.fire({
       title: titulo,
       text: mensaje,
-      input: 'textarea',
+      input: 'text',
       inputPlaceholder: placeholder,
       inputAttributes: {
         'aria-label': placeholder,

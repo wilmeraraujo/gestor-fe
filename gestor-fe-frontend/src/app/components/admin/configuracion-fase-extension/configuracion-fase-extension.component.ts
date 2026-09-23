@@ -33,7 +33,8 @@ export class ConfiguracionFaseExtensionComponent
     { field: 'descripcion', header: 'Descripción' },
     { field: 'tamanoMaximoMb', header: 'Tamaño Máx (MB)' },
     { field: 'obligatorio', header: 'Obligatorio' },
-    { field: 'permiteMultiple', header: 'Permite Múltiples' }
+    { field: 'permiteMultiple', header: 'Permite Múltiples' },
+    { field: 'estadoActivo', header: 'Estado' }
   ];
 
   constructor(

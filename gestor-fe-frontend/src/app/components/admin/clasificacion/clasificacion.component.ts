@@ -32,6 +32,11 @@ export class ClasificacionComponent extends CommonListarComponent<Clasificacion,
     {
       field: 'descripcion',
       header: 'Descripción'
+    },
+
+    {
+      field: 'estadoActivo',
+      header: 'Estado'
     }
 
   ];

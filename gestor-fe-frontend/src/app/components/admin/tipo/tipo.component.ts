@@ -32,6 +32,11 @@ export class TipoComponent extends CommonListarComponent<Tipo,TipoService> imple
     {
       field: 'descripcion',
       header: 'Descripción'
+    },
+
+    {
+      field: 'estadoActivo',
+      header: 'Estado'
     }
 
   ];

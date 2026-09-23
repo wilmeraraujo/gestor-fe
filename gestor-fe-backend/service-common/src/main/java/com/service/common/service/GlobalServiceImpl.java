@@ -126,11 +126,14 @@ public class GlobalServiceImpl <E, R extends JpaRepository<E, Long>> implements 
 
 		// 1. Filtrado opcional por estado o deletedAt
 		try {
-			if (filtros != null && filtros.containsKey("estado")) {
+			if (filtros != null) {
 				String estadoFiltro = filtros.get("estado");
-				if ("ACTIVO".equalsIgnoreCase(estadoFiltro)) {
+				if (estadoFiltro == null) estadoFiltro = filtros.get("estadoActivo");
+				if (estadoFiltro == null) estadoFiltro = filtros.get("deletedAt");
+
+				if ("ACTIVO".equalsIgnoreCase(estadoFiltro) || "TRUE".equalsIgnoreCase(estadoFiltro)) {
 					predicates.add(cb.isNull(root.get("deletedAt")));
-				} else if ("INACTIVO".equalsIgnoreCase(estadoFiltro)) {
+				} else if ("INACTIVO".equalsIgnoreCase(estadoFiltro) || "FALSE".equalsIgnoreCase(estadoFiltro)) {
 					predicates.add(cb.isNotNull(root.get("deletedAt")));
 				}
 			}
@@ -147,17 +150,19 @@ public class GlobalServiceImpl <E, R extends JpaRepository<E, Long>> implements 
 				String k = key.trim();
 				String v = val.trim();
 
-				if (k.equalsIgnoreCase("page") || k.equalsIgnoreCase("size") || k.equalsIgnoreCase("sort") || k.equalsIgnoreCase("estado") || k.equalsIgnoreCase("incluirInactivos")) {
+				if (k.equalsIgnoreCase("page") || k.equalsIgnoreCase("size") || k.equalsIgnoreCase("sort") 
+						|| k.equalsIgnoreCase("estado") || k.equalsIgnoreCase("estadoActivo") || k.equalsIgnoreCase("deletedAt") || k.equalsIgnoreCase("incluirInactivos")) {
 					return;
 				}
 
 				try {
-					if (k.equalsIgnoreCase("id")) {
+					Class<?> javaType = root.get(k).getJavaType();
+					if (k.equalsIgnoreCase("id") || k.endsWith("Id") || k.endsWith("_id") || Number.class.isAssignableFrom(javaType)) {
 						try {
-							Long idVal = Long.parseLong(v);
-							predicates.add(cb.equal(root.get("id"), idVal));
+							Long numVal = Long.parseLong(v);
+							predicates.add(cb.equal(root.get(k), numVal));
 						} catch (NumberFormatException ex) {
-							// Ignorar si el ID no es numérico
+							// Ignorar si el valor no es numérico
 						}
 					} else {
 						// Para cualquier otro atributo de texto (codigo, descripcion, etc.)
