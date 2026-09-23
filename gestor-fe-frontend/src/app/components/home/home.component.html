@@ -17,11 +17,12 @@
         <h1 class="hero-company-name">ASSOLIDARIA</h1>
         <p class="hero-company-sub">Asociación Mutual de Servicios Solidarios</p>
         <div class="hero-divider"></div>
-        <h2 class="hero-system-title">Sistema de Cargue y Gestión de Facturación Electrónica</h2>
+        <h2 class="hero-system-title">Sistema de Cargue y Gestión de Facturas Electrónicas</h2>
       </div>
 
       <p class="hero-description">
-        Bienvenido, <strong class="user-highlight">{{ username }}</strong>. Administre, radique, valide contablemente y realice el seguimiento en tiempo real de los soportes y facturas electrónicas de los prestadores de servicios.
+        Bienvenido, <strong class="user-highlight">{{ username }}</strong>. Cargue de soportes y gestión de facturas
+        electrónicas de los prestadores de servicios.
       </p>
 
       <div class="hero-stats-bar">
@@ -37,15 +38,7 @@
           <mat-icon>account_tree</mat-icon>
           <div>
             <span class="stat-label">Flujo Operativo</span>
-            <span class="stat-val">5 Fases de Gestión</span>
-          </div>
-        </div>
-
-        <div class="stat-pill">
-          <mat-icon>security</mat-icon>
-          <div>
-            <span class="stat-label">Seguridad</span>
-            <span class="stat-val">Acceso Keycloak RBAC</span>
+            <span class="stat-val">Fases de Gestión</span>
           </div>
         </div>
       </div>
@@ -60,7 +53,7 @@
   </section>
 
   <!-- ========================================================
-       2. MÓDULOS PRINCIPALES / ACCESOS RÁPIDOS
+       2. MÓDULOS PRINCIPALES
        ======================================================== -->
   <section class="section-container">
     <div class="section-header">
@@ -68,7 +61,7 @@
         <div class="section-indicator"></div>
         <div>
           <h2 class="section-title">Módulos del Sistema</h2>
-          <p class="section-subtitle">Seleccione el área operativa a la que desea ingresar</p>
+          <p class="section-subtitle">Áreas operativas y de control integradas en la plataforma</p>
         </div>
       </div>
     </div>
@@ -88,16 +81,6 @@
           <p class="module-desc">
             Registro de prestadores de servicios y carga masiva de facturas electrónicas con sus archivos XML y PDF.
           </p>
-          <div class="module-actions">
-            <a routerLink="/dashboard/cargue" class="btn-module-action btn-primary-action">
-              <mat-icon>upload_file</mat-icon>
-              <span>Cargar Facturas</span>
-            </a>
-            <a routerLink="/dashboard/prestador" class="btn-module-action btn-secondary-action">
-              <mat-icon>domain_add</mat-icon>
-              <span>Prestadores</span>
-            </a>
-          </div>
         </div>
       </div>
 
@@ -112,28 +95,9 @@
         <div class="module-card-body">
           <h3 class="module-name">Gestión y Aprobación</h3>
           <p class="module-desc">
-            Trámite de facturas en sus etapas de gestión inicial, reconocimiento contable, liquidación de impuestos y pago.
+            Trámite de facturas en sus etapas de gestión inicial, reconocimiento contable, liquidación de impuestos y
+            pago.
           </p>
-          <div class="module-actions">
-            <a routerLink="/dashboard/gestion-inicial" class="btn-module-action btn-primary-action">
-              <mat-icon>receipt_long</mat-icon>
-              <span>Gestión Inicial</span>
-            </a>
-            <a routerLink="/dashboard/reconocimiento-contable" class="btn-module-action btn-secondary-action">
-              <mat-icon>account_balance</mat-icon>
-              <span>Contabilidad</span>
-            </a>
-          </div>
-          <div class="module-actions mt-2">
-            <a routerLink="/dashboard/impuestos" class="btn-module-action btn-sub-action">
-              <mat-icon>request_quote</mat-icon>
-              <span>Impuestos</span>
-            </a>
-            <a routerLink="/dashboard/pendiente-pago" class="btn-module-action btn-sub-action">
-              <mat-icon>paid</mat-icon>
-              <span>Pendiente Pago</span>
-            </a>
-          </div>
         </div>
       </div>
 
@@ -148,18 +112,9 @@
         <div class="module-card-body">
           <h3 class="module-name">Trazabilidad y Reportes</h3>
           <p class="module-desc">
-            Consulte la trazabilidad completa e histórica de cada radicación, descargue soportes y visualice reportes globales.
+            Consulte la trazabilidad completa e histórica de cada radicación, descargue soportes y visualice reportes
+            globales.
           </p>
-          <div class="module-actions">
-            <a routerLink="/dashboard/seguimiento-factura" class="btn-module-action btn-primary-action">
-              <mat-icon>alt_route</mat-icon>
-              <span>Seguimiento</span>
-            </a>
-            <a routerLink="/dashboard/documento" class="btn-module-action btn-secondary-action">
-              <mat-icon>analytics</mat-icon>
-              <span>Reportes / PDF</span>
-            </a>
-          </div>
         </div>
       </div>
 
@@ -174,18 +129,9 @@
         <div class="module-card-body">
           <h3 class="module-name">Administración del Sistema</h3>
           <p class="module-desc">
-            Parametrización de catálogos maestros, estados del flujo, causas de devolución, reglas de extensión y configuraciones.
+            Parametrización de catálogos maestros, estados del flujo, causas de devolución, reglas de extensión y
+            configuraciones.
           </p>
-          <div class="module-actions">
-            <a routerLink="/dashboard/admin/estado" class="btn-module-action btn-primary-action">
-              <mat-icon>check_circle</mat-icon>
-              <span>Catálogos</span>
-            </a>
-            <a routerLink="/dashboard/admin/configuracion-sistema" class="btn-module-action btn-secondary-action">
-              <mat-icon>settings</mat-icon>
-              <span>Parámetros</span>
-            </a>
-          </div>
         </div>
       </div>
 
