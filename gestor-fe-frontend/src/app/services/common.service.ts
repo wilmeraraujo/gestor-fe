@@ -33,6 +33,23 @@ export class CommonService <E extends Generic>{
     return this.http.get<any>(`${this.endPointBase}/paginable/activos`, { params: params });
   }
 
+  public getPaginableFiltrado(filtros: any, page: string, size: string): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size);
+
+    if (filtros) {
+      Object.keys(filtros).forEach(key => {
+        const val = filtros[key];
+        if (val !== null && val !== undefined && val !== '') {
+          params = params.set(key, String(val).trim());
+        }
+      });
+    }
+
+    return this.http.get<any>(`${this.endPointBase}/paginable/buscar`, { params });
+  }
+
   public buscar(desc: string): Observable<E[]>{
     return this.http.get<E[]>(`${this.endPointBase}/buscar/${desc}`);
   }
@@ -41,8 +58,11 @@ export class CommonService <E extends Generic>{
     return this.http.get<E>(`${this.endPointBase}/${id}`);
   }
 
-  public crear(e: E): Observable<E> {
-    return this.http.post<E>(this.endPointBase, e, { headers: this.cabeceras });
+  public crear(e: E, username?: string): Observable<E> {
+    const headers = (username && username.trim() !== '')
+      ? this.cabeceras.set('X-User', username.trim())
+      : this.cabeceras;
+    return this.http.post<E>(this.endPointBase, e, { headers });
   }
 
   public create(e: E, userName: string): Observable<E> {
@@ -51,8 +71,11 @@ export class CommonService <E extends Generic>{
     );
   }
 
-  public editar(e: E): Observable<E> {
-    return this.http.put<E>(`${this.endPointBase}/${e.id}`,e, { headers: this.cabeceras });
+  public editar(e: E, username?: string): Observable<E> {
+    const headers = (username && username.trim() !== '')
+      ? this.cabeceras.set('X-User', username.trim())
+      : this.cabeceras;
+    return this.http.put<E>(`${this.endPointBase}/${e.id}`, e, { headers });
   }
 
   public update(e: E, userName: string): Observable<E> {
@@ -68,5 +91,13 @@ export class CommonService <E extends Generic>{
   public deletedAt(id: number): Observable<Estado> {
     const endpoint = `${this.endPointBase}/deleted-at/${id}`;
     return this.http.put<Estado>(endpoint, {});
+  }
+
+  public toggleEstado(id: number | string, observacion?: string, username?: string): Observable<E> {
+    const body = {
+      observacion: observacion || '',
+      username: username || ''
+    };
+    return this.http.patch<E>(`${this.endPointBase}/${id}/toggle-estado`, body, { headers: this.cabeceras });
   }
 }

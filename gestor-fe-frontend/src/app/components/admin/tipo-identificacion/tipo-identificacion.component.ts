@@ -33,6 +33,11 @@ export class TipoIdentificacionComponent
     {
       field: 'descripcion',
       header: 'Descripción'
+    },
+
+    {
+      field: 'estadoActivo',
+      header: 'Estado'
     }
 
   ];

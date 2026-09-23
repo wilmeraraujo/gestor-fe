@@ -1,0 +1,146 @@
+<div class="container-fluid mt-3">
+
+  <!--  TARJETA DE BÚSQUEDA DE PRESTADOR (VISIBILIDAD CONTROLADA POR ROL) -->
+  <div *ngIf="!esUsuarioPrestador" class="card shadow-sm mb-4">
+    <div class="card-header bg-theme text-white font-weight-bold d-flex align-items-center">
+      <mat-icon class="mr-2">search</mat-icon> Búsqueda de Soportes por Prestador
+    </div>
+    <div class="card-body">
+      <div class="d-flex align-items-center">
+        <label class="mr-3 font-weight-bold mb-0">NIT del Prestador:</label>
+
+        <input
+          type="text"
+          class="form-control input-busqueda"
+          [(ngModel)]="nitBusqueda"
+          placeholder="Ej: 123 o 900123456"
+          (keyup.enter)="buscarPrestador()">
+
+        <button
+          type="button"
+          class="btn btn-search-theme ml-3"
+          (click)="buscarPrestador()"
+          matTooltip="Buscar Prestador"
+          [disabled]="cargando">
+          <mat-icon>search</mat-icon>
+        </button>
+
+        <button
+          *ngIf="nitBusqueda || prestadorActual"
+          type="button"
+          class="btn btn-clear-theme ml-2"
+          (click)="limpiarFiltro()"
+          matTooltip="Limpiar filtro">
+          <mat-icon>clear</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!--  CABECERA CON DATOS DEL PRESTADOR ENCONTRADO O AUTOCARGADO -->
+  <div *ngIf="prestadorActual" class="card shadow-sm mb-4">
+    <div class="card-body bg-light border-left-theme">
+      <div class="row align-items-center">
+        <div class="col-md-5">
+          <h5 class="font-weight-bold mb-1 text-theme">{{ prestadorActual.razonSocial }}</h5>
+          <span class="text-muted small"><strong>NIT:</strong> {{ prestadorActual.nit }}</span>
+        </div>
+        <div class="col-md-4">
+          <span class="d-block small"><strong>Email:</strong> {{ prestadorActual.email }}</span>
+          <span class="d-block small"><strong>Teléfono:</strong> {{ prestadorActual.telefono }}</span>
+        </div>
+        <div class="col-md-3 text-right">
+          <span class="badge badge-success p-2 d-inline-flex align-items-center">
+            <mat-icon class="icon-small mr-1">check_circle</mat-icon> PRESTADOR ACTIVO
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--  TARJETAS DINÁMICAS DE SOPORTES GENERALES -->
+  <div *ngIf="prestadorActual">
+    <h5 class="mb-3 font-weight-bold text-secondary d-flex align-items-center">
+      <mat-icon class="mr-2">folder_shared</mat-icon> Soportes Documentales Empresariales
+    </h5>
+
+    <div class="row">
+      <div class="col-md-4 mb-3" *ngFor="let tipo of tiposSoporte">
+        <div
+          class="card h-100 shadow-sm"
+          [ngClass]="tieneSoporte(tipo.id) ? 'border-left-success' : 'border-left-theme'">
+
+          <div class="card-body d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="card-title font-weight-bold text-dark mb-0">
+                  {{ tipo.descripcion || tipo.codigo }}
+                </h6>
+                <span
+                  class="badge p-1"
+                  [ngClass]="tieneSoporte(tipo.id) ? 'badge-success' : 'badge-warning'">
+                  {{ tieneSoporte(tipo.id) ? 'CARGADO' : 'PENDIENTE' }}
+                </span>
+              </div>
+              <p class="card-text text-muted small mb-0">
+                Soporte {{ tipo.descripcion || tipo.codigo }}.
+              </p>
+            </div>
+
+            <!-- 🟢 ESTADO A: DOCUMENTO CARGADO -->
+            <div *ngIf="tieneSoporte(tipo.id)" class="mt-3">
+              <p class="small text-truncate text-muted mb-2 d-flex align-items-center" [title]="obtenerSoporte(tipo.id)?.nombreOriginal">
+                <mat-icon class="icon-small text-success mr-1">attach_file</mat-icon>
+                {{ obtenerSoporte(tipo.id)?.nombreOriginal }}
+              </p>
+              <div class="btn-group w-100">
+                <button
+                  class="btn btn-sm btn-outline-info d-flex align-items-center justify-content-center"
+                  matTooltip="Ver soporte"
+                  (click)="verDocumento(obtenerSoporte(tipo.id)!)">
+                  <mat-icon class="icon-btn mr-1">visibility</mat-icon>
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center"
+                  matTooltip="Eliminar soporte"
+                  (click)="eliminarSoporte(tipo.id, obtenerSoporte(tipo.id)!.id!)">
+                  <mat-icon class="icon-btn mr-1">delete</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- 🟡 ESTADO B: DOCUMENTO PENDIENTE -->
+            <div *ngIf="!tieneSoporte(tipo.id)" class="mt-3">
+              <input
+                type="file"
+                #fileInput
+                [hidden]="true"
+                (change)="onFileSelected($event, tipo)"
+                accept=".pdf">
+
+              <button
+                class="btn btn-sm btn-block btn-outline-theme d-flex align-items-center justify-content-center"
+                (click)="fileInput.click()">
+                <mat-icon class="icon-btn mr-1">cloud_upload</mat-icon> Subir Archivo
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENSAJE INICIAL ANTES DE BUSCAR (Sólo para Admin / Gestores) -->
+  <div *ngIf="!prestadorActual && !esUsuarioPrestador" class="text-center text-muted my-5">
+    <mat-icon class="icon-large mb-2 text-secondary">badge</mat-icon>
+    <p>Digite el NIT del prestador en el campo superior y haga clic en el botón de búsqueda para gestionar sus soportes.</p>
+  </div>
+
+  <!-- MENSAJE DE CARGA / ERROR PARA EL PRESTADOR -->
+  <div *ngIf="!prestadorActual && esUsuarioPrestador && cargando" class="text-center text-muted my-5">
+    <mat-icon class="icon-large mb-2 text-primary">sync</mat-icon>
+    <p>Cargando sus soportes documentales...</p>
+  </div>
+
+</div>

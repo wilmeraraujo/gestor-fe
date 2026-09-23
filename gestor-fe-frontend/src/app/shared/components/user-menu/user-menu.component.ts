@@ -1,10 +1,11 @@
 import {
   Component,
   Input,
-  HostListener
+  HostListener,
+  inject
 } from '@angular/core';
-
 import { CommonModule } from '@angular/common';
+import { LoginService } from '../../../services/login.service';
 
 @Component({
   selector: 'app-user-menu',
@@ -15,47 +16,34 @@ import { CommonModule } from '@angular/common';
 })
 export class UserMenuComponent {
 
-  @Input() user = '';
+  private loginService = inject(LoginService);
 
+  @Input() user = '';
+  @Input() role = '';
   @Input() email = '';
 
   isOpen = false;
 
   toggleMenu(): void {
-
     this.isOpen = !this.isOpen;
-
   }
 
   cerrarSesion(): void {
-
-    console.log('Cerrar sesión');
-
+    this.isOpen = false;
+    this.loginService.logout();
   }
 
   perfil(): void {
-
     console.log('Ir a perfil');
-
+    this.isOpen = false;
   }
-
-  /*
-  ==========================================
-  CERRAR AL DAR CLICK AFUERA
-  ==========================================
-  */
 
   @HostListener('document:click')
   closeMenu(): void {
-
     this.isOpen = false;
-
   }
 
   stopPropagation(event: Event): void {
-
     event.stopPropagation();
-
   }
-
 }

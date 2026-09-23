@@ -32,6 +32,11 @@ export class EstadoComponent extends CommonListarComponent<Estado,EstadoService>
     {
       field: 'descripcion',
       header: 'Descripción'
+    },
+
+    {
+      field: 'estadoActivo',
+      header: 'Estado'
     }
 
   ];

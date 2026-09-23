@@ -1,82 +1,99 @@
-<form
-  [formGroup]="form"
-  class="row g-3">
+<form [formGroup]="form" class="row g-3">
 
-  <div
-    class="col-12"
-    *ngFor="let campo of campos">
+  <div class="col-12" *ngFor="let campo of campos">
 
-    <label class="form-label">
+    <ng-container *ngIf="campo.visible !== false">
 
-      {{ campo.label }}
+      <label class="form-label font-medium text-gray-700" *ngIf="campo.type !== 'checkbox'">
+        {{ campo.label }}
+      </label>
 
-    </label>
+      <!-- TEXT -->
+      <input
+        *ngIf="campo.type === 'text'"
+        type="text"
+        class="form-control rounded-4"
+        [formControlName]="campo.name" />
 
-    <!-- TEXT -->
-    <input
-      *ngIf="campo.type === 'text'"
-      type="text"
-      class="form-control rounded-4"
-      [formControlName]="campo.name">
+      <!-- NUMBER (NUEVO: Para el tamaño máximo MB) -->
+      <input
+        *ngIf="campo.type === 'number'"
+        type="number"
+        min="1"
+        class="form-control rounded-4"
+        [formControlName]="campo.name" />
 
-    <!-- TEXTAREA -->
-    <textarea
-      *ngIf="campo.type === 'textarea'"
-      rows="3"
-      class="form-control rounded-4"
-      [formControlName]="campo.name">
-    </textarea>
+      <!-- CHECKBOX / SWITCH (NUEVO: Para 'obligatorio' y 'permiteMultiple') -->
+      <div *ngIf="campo.type === 'checkbox'" class="form-check form-switch mt-1">
+        <input
+          type="checkbox"
+          class="form-check-input"
+          role="switch"
+          [id]="campo.name"
+          [formControlName]="campo.name" />
+        <label class="form-check-label font-medium text-gray-700" [for]="campo.name">
+          {{ campo.label }}
+        </label>
+      </div>
 
-    <!-- SELECT -->
-    <select
-      *ngIf="campo.type === 'select'"
-      class="form-select rounded-4"
-      [formControlName]="campo.name">
+      <!-- TEXTAREA -->
+      <textarea
+        *ngIf="campo.type === 'textarea'"
+        rows="3"
+        class="form-control rounded-4"
+        [placeholder]="campo.placeholder || ''"
+        [formControlName]="campo.name">
+      </textarea>
 
-      <option
-        *ngFor="let op of campo.options"
-        [value]="op.value">
+      <!-- SELECT -->
+      <select
+        *ngIf="campo.type === 'select'"
+        class="form-select rounded-4"
+        [formControlName]="campo.name">
+        <option value="" disabled selected>Seleccione una opción...</option>
+        <option *ngFor="let op of campo.options" [value]="op.value">
+          {{ op.label }}
+        </option>
+      </select>
 
-        {{ op.label }}
+      <!-- FILE -->
+      <div *ngIf="campo.type === 'file'">
+        <input
+          type="file"
+          class="form-control rounded-4"
+          [accept]="campo.accept || '*/*'"
+          (change)="onFileChange($event, campo.name)" />
+        <small class="text-muted d-block mt-1" *ngIf="campo.hint">
+          {{ campo.hint }}
+        </small>
+      </div>
 
-      </option>
+      <!-- VALIDACIÓN -->
+      <small
+        class="text-danger mt-1 d-block"
+        *ngIf="form.get(campo.name)?.invalid && form.get(campo.name)?.touched">
+        Campo obligatorio
+      </small>
 
-    </select>
-
-    <!-- VALIDACION -->
-    <small
-      class="text-danger"
-      *ngIf="
-        form.get(campo.name)?.invalid &&
-        form.get(campo.name)?.touched
-      ">
-
-      Campo obligatorio
-
-    </small>
+    </ng-container>
 
   </div>
-   <!-- BOTONES -->
-  <div class="col-12 d-flex justify-content-end gap-2 mt-3">
 
+  <!-- BOTONES -->
+  <div class="col-12 d-flex justify-content-end gap-2 mt-3">
     <button
       type="button"
       class="btn btn-outline-secondary rounded-pill px-4"
       (click)="cerrar()">
-
       Cancelar
-
     </button>
 
     <button
       type="button"
       class="btn btn-outline-primary rounded-pill px-4"
       (click)="guardar()">
-
       Guardar
-
     </button>
-
   </div>
 
 </form>
