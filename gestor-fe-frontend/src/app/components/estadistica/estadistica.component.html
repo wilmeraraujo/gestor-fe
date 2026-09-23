@@ -1,0 +1,420 @@
+<div class="modulo-estadisticas">
+
+  <!-- ========================================================
+       1. ENCABEZADO Y BARRA SUPERIOR DE FILTROS
+       ======================================================== -->
+  <mat-card class="card-filtro-header">
+    <div class="header-titulo-row">
+      <div class="titulo-indicador-box">
+        <div class="barra-indicador"></div>
+        <div>
+          <h1 class="titulo-modulo">Tablero de Estadísticas y Analítica FE</h1>
+          <p class="subtitulo-modulo">
+            {{ esPrestador ? 'Consolidado privado de radicación y estado de pagos de sus facturas' : 'Métricas consolidadas del flujo de facturación electrónica de ASSOLIDARIA' }}
+          </p>
+        </div>
+      </div>
+
+      <div class="badge-rol-actual">
+        <mat-icon>{{ esPrestador ? 'domain' : 'analytics' }}</mat-icon>
+        <span>{{ esPrestador ? 'Panel Prestador' : 'Consolidado Global' }}</span>
+      </div>
+    </div>
+
+    <!-- BARRA Y GRUPO DE FILTROS REDISEÑADA -->
+    <div class="filtros-wrapper">
+      
+      <!-- Presets rápidos de fecha -->
+      <div class="quick-presets-row">
+        <span class="presets-label">
+          <mat-icon>tune</mat-icon>
+          <span>Filtro Rápido:</span>
+        </span>
+        <div class="presets-buttons">
+          <button type="button" class="btn-preset" [class.preset-active]="presetActivo === 'todo'" (click)="aplicarPreset('todo')">Histórico Completo</button>
+          <button type="button" class="btn-preset" [class.preset-active]="presetActivo === 'mes'" (click)="aplicarPreset('mes')">Este Mes</button>
+          <button type="button" class="btn-preset" [class.preset-active]="presetActivo === '7d'" (click)="aplicarPreset('7d')">Últimos 7 Días</button>
+          <button type="button" class="btn-preset" [class.preset-active]="presetActivo === 'hoy'" (click)="aplicarPreset('hoy')">Hoy</button>
+          <button type="button" class="btn-preset" [class.preset-active]="presetActivo === 'anio'" (click)="aplicarPreset('anio')">Este Año</button>
+        </div>
+      </div>
+
+      <!-- Fila de Campos de Entrada -->
+      <div class="filtros-inputs-row">
+        <!-- Filtro 1: NIT Prestador (Solo si es Admin/Gestor) -->
+        <div class="filtro-campo-box" *ngIf="!esPrestador">
+          <label class="campo-label">
+            <mat-icon>apartment</mat-icon>
+            <span>NIT Prestador</span>
+          </label>
+          <div class="campo-control-wrap">
+            <input
+              type="text"
+              class="campo-input"
+              [(ngModel)]="nitFiltro"
+              placeholder="Ej: 900123456..."
+              (keyup.enter)="consultarEstadisticas()">
+            <button
+              *ngIf="nitFiltro"
+              type="button"
+              class="btn-clear-inline"
+              (click)="nitFiltro=''; consultarEstadisticas()"
+              matTooltip="Borrar NIT">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtro 2: Fecha Desde -->
+        <div class="filtro-campo-box">
+          <label class="campo-label">
+            <mat-icon>calendar_today</mat-icon>
+            <span>Fecha Desde</span>
+          </label>
+          <div class="campo-control-wrap">
+            <input
+              type="date"
+              class="campo-input input-fecha"
+              [(ngModel)]="fechaInicio"
+              (change)="onCustomDateChange()">
+          </div>
+        </div>
+
+        <!-- Filtro 3: Fecha Hasta -->
+        <div class="filtro-campo-box">
+          <label class="campo-label">
+            <mat-icon>event</mat-icon>
+            <span>Fecha Hasta</span>
+          </label>
+          <div class="campo-control-wrap">
+            <input
+              type="date"
+              class="campo-input input-fecha"
+              [(ngModel)]="fechaFin"
+              (change)="onCustomDateChange()">
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="filtro-botones-box">
+          <button
+            type="button"
+            class="btn-filtro-consultar"
+            (click)="consultarEstadisticas()"
+            matTooltip="Consultar métricas con filtros aplicados">
+            <mat-icon>search</mat-icon>
+            <span>Consultar</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn-filtro-limpiar"
+            (click)="limpiarFiltros()"
+            matTooltip="Restablecer todos los filtros">
+            <mat-icon>refresh</mat-icon>
+            <span>Limpiar</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </mat-card>
+
+  <!-- ========================================================
+       2. TARJETAS DE KPIS PRINCIPALES
+       ======================================================== -->
+  <div class="kpis-grid" *ngIf="datos?.kpis as kpi">
+
+    <!-- KPI 1: TOTAL FACTURAS -->
+    <div class="kpi-card kpi-total">
+      <div class="kpi-icon-box">
+        <mat-icon>receipt_long</mat-icon>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Total Facturas</span>
+        <h2 class="kpi-value">{{ kpi.totalFacturas | number }}</h2>
+        <span class="kpi-monto">{{ kpi.montoTotal | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <!-- KPI 2: EN TRÁMITE / PROCESO -->
+    <div class="kpi-card kpi-tramite">
+      <div class="kpi-icon-box">
+        <mat-icon>pending_actions</mat-icon>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">En Trámite / Proceso</span>
+        <h2 class="kpi-value">{{ kpi.facturasEnTramite | number }}</h2>
+        <span class="kpi-monto">{{ kpi.montoEnTramite | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <!-- KPI 3: APROBADAS / PAGADAS -->
+    <div class="kpi-card kpi-aprobadas">
+      <div class="kpi-icon-box">
+        <mat-icon>verified</mat-icon>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Aprobadas / Pagadas</span>
+        <h2 class="kpi-value">{{ kpi.facturasAprobadas | number }}</h2>
+        <span class="kpi-monto">{{ kpi.montoAprobadas | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <!-- KPI 4: RECHAZADAS / DEVUELTAS -->
+    <div class="kpi-card kpi-rechazadas">
+      <div class="kpi-icon-box">
+        <mat-icon>cancel</mat-icon>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Rechazadas / Devueltas</span>
+        <h2 class="kpi-value">{{ kpi.facturasRechazadas | number }}</h2>
+        <span class="kpi-monto">{{ kpi.montoRechazadas | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <!-- KPI 5: PRESTADORES ACTIVOS (Solo Admin/Gestor) -->
+    <div class="kpi-card kpi-prestadores" *ngIf="!esPrestador">
+      <div class="kpi-icon-box">
+        <mat-icon>domain</mat-icon>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Prestadores Activos</span>
+        <h2 class="kpi-value">{{ kpi.totalPrestadores | number }}</h2>
+        <span class="kpi-monto">Con cargues en el período</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================================
+       3. SECCIÓN: DISTRIBUCIÓN POR FASE DEL FLUJO (INICIAL)
+       ======================================================== -->
+  <mat-card class="card-seccion mb-3" *ngIf="datos?.porFase as fases">
+    <div class="seccion-header">
+      <div class="seccion-header-title">
+        <mat-icon class="text-primary-theme">account_tree</mat-icon>
+        <div>
+          <h2 class="titulo-seccion">Distribución de Facturas por Fase Operativa</h2>
+          <p class="subtitulo-seccion">Control del volumen de facturas y montos en cada etapa del flujo</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="fases-pipeline-grid">
+      <div class="fase-item-card" *ngFor="let f of fases">
+        <div class="fase-badge-top" [ngClass]="obtenerClaseFase(f.faseId)">
+          <span>Fase {{ f.faseId }}</span>
+          <span class="fase-porcentaje">{{ f.porcentaje }}%</span>
+        </div>
+
+        <h3 class="fase-nombre">{{ f.faseNombre }}</h3>
+
+        <div class="fase-conteo-row">
+          <span class="fase-cantidad">{{ f.cantidad | number }} facturas</span>
+          <span class="fase-monto">{{ f.montoTotal | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+        </div>
+
+        <mat-progress-bar
+          mode="determinate"
+          [value]="f.porcentaje"
+          class="fase-progress-bar">
+        </mat-progress-bar>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- ========================================================
+       4. SECCIÓN DOBLE: ESTADOS Y TOP PRESTADORES (INICIAL)
+       ======================================================== -->
+  <div class="secciones-doble-grid mb-3">
+
+    <!-- COLUMNA 1: DISTRIBUCIÓN POR ESTADO -->
+    <mat-card class="card-seccion" *ngIf="datos?.porEstado as estados">
+      <div class="seccion-header">
+        <div class="seccion-header-title">
+          <mat-icon class="text-primary-theme">donut_small</mat-icon>
+          <div>
+            <h2 class="titulo-seccion">Estado de los Trámites</h2>
+            <p class="subtitulo-seccion">Conteo porcentual de dictámenes y estados actuales</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="estados-list">
+        <div class="estado-row" *ngFor="let st of estados">
+          <div class="estado-info">
+            <span class="badge-estado" [ngClass]="obtenerClaseEstado(st.estado)">
+              <span class="badge-dot"></span>
+              {{ st.estado }}
+            </span>
+            <span class="estado-conteo">{{ st.cantidad | number }} ({{ st.porcentaje }}%)</span>
+          </div>
+
+          <mat-progress-bar
+            mode="determinate"
+            [value]="st.porcentaje"
+            class="estado-progress-bar">
+          </mat-progress-bar>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- COLUMNA 2: TOP PRESTADORES -->
+    <mat-card class="card-seccion" *ngIf="datos?.topPrestadores as prestadores">
+      <div class="seccion-header">
+        <div class="seccion-header-title">
+          <mat-icon class="text-primary-theme">leaderboard</mat-icon>
+          <div>
+            <h2 class="titulo-seccion">{{ esPrestador ? 'Resumen de Mis Facturas' : 'Top Prestadores con Mayor Radicación' }}</h2>
+            <p class="subtitulo-seccion">{{ esPrestador ? 'Detalle consolidado de radicaciones de su NIT' : 'Prestadores con mayor volumen de facturas procesadas' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabla-responsive">
+        <table class="tabla-prestadores">
+          <thead>
+            <tr>
+              <th>Prestador / Razón Social</th>
+              <th class="text-center">Total</th>
+              <th class="text-center">Aprobadas</th>
+              <th class="text-center">Rechazadas</th>
+              <th class="text-end">Monto Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of prestadores">
+              <td>
+                <div class="prestador-cell-info">
+                  <span class="prestador-razon">{{ p.razonSocial }}</span>
+                  <span class="prestador-nit">NIT: {{ p.nit }}</span>
+                </div>
+              </td>
+              <td class="text-center font-bold">{{ p.totalFacturas | number }}</td>
+              <td class="text-center">
+                <span class="badge-estado badge-verde">{{ p.facturasAprobadas }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge-estado badge-rojo">{{ p.facturasRechazadas }}</span>
+              </td>
+              <td class="text-end font-bold text-nowrap">
+                {{ p.montoTotal | currency:'COP':'symbol-narrow':'1.0-0' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </mat-card>
+
+  </div>
+
+  <!-- ========================================================
+       5. SECCIÓN INFERIOR: GRÁFICAS DE BARRAS (RANKING) Y TORTA (VALORES $)
+       ======================================================== -->
+  <div class="secciones-doble-grid mb-3">
+
+    <!-- GRÁFICA 1: BARRAS ORDENADAS DE MAYOR A MENOR NÚMERO DE FACTURAS -->
+    <mat-card class="card-seccion">
+      <div class="seccion-header">
+        <div class="seccion-header-title">
+          <mat-icon class="text-primary-theme">bar_chart</mat-icon>
+          <div>
+            <h2 class="titulo-seccion">Ranking de Facturas por Fases (Mayor a Menor)</h2>
+            <p class="subtitulo-seccion">Comparativa de volumen y monto en $ COP ordenado por número de facturas</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-wrapper-main">
+        <canvas #canvasBarrasRanking></canvas>
+      </div>
+    </mat-card>
+
+    <!-- GRÁFICA 2: TORTA / DONA DE ESTADOS (CANTIDADES Y MONTOS $) -->
+    <mat-card class="card-seccion">
+      <div class="seccion-header">
+        <div class="seccion-header-title">
+          <mat-icon class="text-primary-theme">pie_chart</mat-icon>
+          <div>
+            <h2 class="titulo-seccion">Distribución de Estados y Valores</h2>
+            <p class="subtitulo-seccion">Proporción porcentual, cantidades de facturas y valores ($ COP)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-wrapper-main">
+        <canvas #canvasTortaEstados></canvas>
+      </div>
+    </mat-card>
+
+  </div>
+
+  <!-- ========================================================
+       6. SECCIÓN ADMINISTRADOR: RENDIMIENTO DE USUARIOS Y GESTIONES
+       ======================================================== -->
+  <mat-card class="card-seccion" *ngIf="isAdmin && datos?.gestionesPorUsuario as usuarios">
+    <div class="seccion-header">
+      <div class="seccion-header-title">
+        <mat-icon class="text-primary-theme">manage_accounts</mat-icon>
+        <div>
+          <h2 class="titulo-seccion">Rendimiento de Usuarios Gestores y Auditoría de Trámites</h2>
+          <p class="subtitulo-seccion">Facturas dictaminadas (Aprobadas vs Rechazadas) y efectividad por usuario operativo</p>
+        </div>
+      </div>
+
+      <div class="badge-rol-actual">
+        <mat-icon>shield</mat-icon>
+        <span>Vista Exclusiva Administrador</span>
+      </div>
+    </div>
+
+    <div class="secciones-doble-grid mt-3">
+      <!-- GRÁFICA DE GESTIONES POR USUARIO -->
+      <div class="chart-wrapper-main">
+        <canvas #canvasUsuarios></canvas>
+      </div>
+
+      <!-- TABLA DETALLADA DE PRODUCTIVIDAD -->
+      <div class="tabla-responsive">
+        <table class="tabla-prestadores">
+          <thead>
+            <tr>
+              <th>Usuario Gestor</th>
+              <th class="text-center">Total Gestiones</th>
+              <th class="text-center">Aprobadas</th>
+              <th class="text-center">Rechazadas</th>
+              <th class="text-center">% Efectividad</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of usuarios">
+              <td>
+                <div class="prestador-cell-info">
+                  <span class="prestador-razon">{{ u.usuario }}</span>
+                  <span class="prestador-nit">Operador / Gestor</span>
+                </div>
+              </td>
+              <td class="text-center font-bold">{{ u.totalGestiones | number }}</td>
+              <td class="text-center">
+                <span class="badge-estado badge-verde">{{ u.aprobadas }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge-estado badge-rojo">{{ u.rechazadas }}</span>
+              </td>
+              <td class="text-center font-bold text-primary-theme">
+                {{ u.porcentajeEfectividad }}%
+              </td>
+            </tr>
+            <tr *ngIf="usuarios.length === 0">
+              <td colspan="5" class="text-center text-muted p-3">
+                No hay registros de gestiones de usuarios en el período seleccionado.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </mat-card>
+
+</div>

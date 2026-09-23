@@ -132,6 +132,12 @@ export class SidebarComponent implements OnInit {
           icon: "analytics",
           route: "/dashboard/documento",
           visible: isAdminOGAdmin || this.loginService.isGFaseCinco
+        },
+        {
+          name: "Estadísticas",
+          icon: "insights",
+          route: "/dashboard/estadistica",
+          visible: true
         }
       ]
     };

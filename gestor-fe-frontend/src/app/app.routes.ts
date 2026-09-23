@@ -21,6 +21,7 @@ import { SeguimientoFacturasComponent } from './components/seguimiento-facturas/
 import { ConfiguracionSistemaComponent } from './components/admin/configuracion-sistema/configuracion-sistema.component';
 import { ConfiguracionFaseExtensionComponent } from './components/admin/configuracion-fase-extension/configuracion-fase-extension.component';
 import { ProcesoComponent } from './components/admin/proceso/proceso.component';
+import { EstadisticaComponent } from './components/estadistica/estadistica.component';
 
 
 export const routes: Routes = [
@@ -125,6 +126,10 @@ export const routes: Routes = [
       {
         path: 'documento',
         component: DocumentoComponent
+      },
+      {
+        path: 'estadistica',
+        component: EstadisticaComponent
       }
 
     ]
