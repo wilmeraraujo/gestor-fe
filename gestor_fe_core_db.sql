@@ -108,6 +108,8 @@ TRUNCATE TABLE admin.observacion RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin.tipo RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin."extension" RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin.fase RESTART IDENTITY CASCADE;
+TRUNCATE TABLE admin.proceso RESTART IDENTITY CASCADE;
+TRUNCATE TABLE admin.configuracion_sistema RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin.configuracion_fase_extension RESTART IDENTITY CASCADE;
 
 TRUNCATE TABLE 
@@ -399,18 +401,31 @@ CREATE TABLE IF NOT EXISTS admin.proceso (
     deleted_at TIMESTAMP WITHOUT TIME ZONE
 );
 
-ALTER TABLE admin.configuracion_sistema ADD COLUMN IF NOT EXISTS proceso_id BIGINT;
-ALTER TABLE admin.configuracion_sistema DROP COLUMN IF EXISTS categoria;
+select * from admin.configuracion_sistema;
+TRUNCATE table admin.configuracion_sistema restart identity;
+
+
 
 INSERT INTO admin.proceso (id, codigo, descripcion) VALUES
-(1, 'CARGUE', 'Proceso de Cargue Soportes'),
-(2, 'GESTION', 'Proceso de Gestión de Facturas'),
-(3, 'SEGURIDAD', 'Parámetros de Seguridad y Permisos')
-ON CONFLICT DO NOTHING;
+(1, '01', 'Proceso de Cargue Soportes'),
+(2, '02', 'Proceso de Gestión de Facturas'),
+(3, '03', 'Parámetros de Seguridad y Permisos');
 
-INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, proceso_id) VALUES
-('01', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 1),
-('02', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 1),
-('03', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 3)
-ON CONFLICT DO NOTHING;
+select * from admin.configuracion_sistema;
+INSERT INTO admin.configuracion_sistema (id, codigo, descripcion, valor, proceso_id) VALUES
+(1, '01', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', '100', 1),
+(2, '02', 'Cantidad máxima de facturas procesables en un solo ZIP', '500', 1),
+(3, '03', 'Roles autorizados para el borrado en cascada', 'admin,gestor-fe-admin', 3);
+
+--anterior configuracion sistema
+INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, categoria) VALUES
+('TAMANO_MAX_ZIP_CARGUE_MB', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 'CARGUE'),
+('MAX_FACTURAS_POR_ZIP', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 'CARGUE'),
+('ROLES_PERMITIDOS_BORRADO_LOGICO', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 'SEGURIDAD');
+
+INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, categoria) VALUES
+('01', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 'CARGUE'),
+('02', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 'CARGUE'),
+('03', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 'SEGURIDAD');
+
 

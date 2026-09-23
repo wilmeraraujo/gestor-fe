@@ -1,1 +1,280 @@
-<h1>Bienvenidos</h1>
+<div class="home-container">
+
+  <!-- ========================================================
+       1. HERO / BANNER DE BIENVENIDA EMPRESARIAL
+       ======================================================== -->
+  <section class="hero-card">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+
+      <div class="hero-brand-badge">
+        <span class="badge-pulse"></span>
+        <mat-icon class="hero-badge-icon">verified</mat-icon>
+        <span>Portal de Gestión FE • Versión 1.0</span>
+      </div>
+
+      <div class="hero-title-group">
+        <h1 class="hero-company-name">ASSOLIDARIA</h1>
+        <p class="hero-company-sub">Asociación Mutual de Servicios Solidarios</p>
+        <div class="hero-divider"></div>
+        <h2 class="hero-system-title">Sistema de Cargue y Gestión de Facturación Electrónica</h2>
+      </div>
+
+      <p class="hero-description">
+        Bienvenido, <strong class="user-highlight">{{ username }}</strong>. Administre, radique, valide contablemente y realice el seguimiento en tiempo real de los soportes y facturas electrónicas de los prestadores de servicios.
+      </p>
+
+      <div class="hero-stats-bar">
+        <div class="stat-pill">
+          <mat-icon>cloud_sync</mat-icon>
+          <div>
+            <span class="stat-label">Recepción</span>
+            <span class="stat-val">Cargue Masivo XML/PDF</span>
+          </div>
+        </div>
+
+        <div class="stat-pill">
+          <mat-icon>account_tree</mat-icon>
+          <div>
+            <span class="stat-label">Flujo Operativo</span>
+            <span class="stat-val">5 Fases de Gestión</span>
+          </div>
+        </div>
+
+        <div class="stat-pill">
+          <mat-icon>security</mat-icon>
+          <div>
+            <span class="stat-label">Seguridad</span>
+            <span class="stat-val">Acceso Keycloak RBAC</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="hero-decoration">
+      <div class="deco-circle circle-1"></div>
+      <div class="deco-circle circle-2"></div>
+      <mat-icon class="deco-icon">receipt_long</mat-icon>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       2. MÓDULOS PRINCIPALES / ACCESOS RÁPIDOS
+       ======================================================== -->
+  <section class="section-container">
+    <div class="section-header">
+      <div class="section-title-wrapper">
+        <div class="section-indicator"></div>
+        <div>
+          <h2 class="section-title">Módulos del Sistema</h2>
+          <p class="section-subtitle">Seleccione el área operativa a la que desea ingresar</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modules-grid">
+
+      <!-- CARD 1: CARGUE DE SOPORTES -->
+      <div class="module-card">
+        <div class="module-card-header card-cargue">
+          <div class="module-icon-box">
+            <mat-icon>cloud_upload</mat-icon>
+          </div>
+          <span class="module-tag">Cargue y Recepción</span>
+        </div>
+        <div class="module-card-body">
+          <h3 class="module-name">Cargue de Soportes</h3>
+          <p class="module-desc">
+            Registro de prestadores de servicios y carga masiva de facturas electrónicas con sus archivos XML y PDF.
+          </p>
+          <div class="module-actions">
+            <a routerLink="/dashboard/cargue" class="btn-module-action btn-primary-action">
+              <mat-icon>upload_file</mat-icon>
+              <span>Cargar Facturas</span>
+            </a>
+            <a routerLink="/dashboard/prestador" class="btn-module-action btn-secondary-action">
+              <mat-icon>domain_add</mat-icon>
+              <span>Prestadores</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: GESTIÓN OPERATIVA -->
+      <div class="module-card">
+        <div class="module-card-header card-gestion">
+          <div class="module-icon-box">
+            <mat-icon>account_balance</mat-icon>
+          </div>
+          <span class="module-tag">Procesamiento y Fases</span>
+        </div>
+        <div class="module-card-body">
+          <h3 class="module-name">Gestión y Aprobación</h3>
+          <p class="module-desc">
+            Trámite de facturas en sus etapas de gestión inicial, reconocimiento contable, liquidación de impuestos y pago.
+          </p>
+          <div class="module-actions">
+            <a routerLink="/dashboard/gestion-inicial" class="btn-module-action btn-primary-action">
+              <mat-icon>receipt_long</mat-icon>
+              <span>Gestión Inicial</span>
+            </a>
+            <a routerLink="/dashboard/reconocimiento-contable" class="btn-module-action btn-secondary-action">
+              <mat-icon>account_balance</mat-icon>
+              <span>Contabilidad</span>
+            </a>
+          </div>
+          <div class="module-actions mt-2">
+            <a routerLink="/dashboard/impuestos" class="btn-module-action btn-sub-action">
+              <mat-icon>request_quote</mat-icon>
+              <span>Impuestos</span>
+            </a>
+            <a routerLink="/dashboard/pendiente-pago" class="btn-module-action btn-sub-action">
+              <mat-icon>paid</mat-icon>
+              <span>Pendiente Pago</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 3: SEGUIMIENTO Y REPORTES -->
+      <div class="module-card">
+        <div class="module-card-header card-trazabilidad">
+          <div class="module-icon-box">
+            <mat-icon>alt_route</mat-icon>
+          </div>
+          <span class="module-tag">Auditoría y Consulta</span>
+        </div>
+        <div class="module-card-body">
+          <h3 class="module-name">Trazabilidad y Reportes</h3>
+          <p class="module-desc">
+            Consulte la trazabilidad completa e histórica de cada radicación, descargue soportes y visualice reportes globales.
+          </p>
+          <div class="module-actions">
+            <a routerLink="/dashboard/seguimiento-factura" class="btn-module-action btn-primary-action">
+              <mat-icon>alt_route</mat-icon>
+              <span>Seguimiento</span>
+            </a>
+            <a routerLink="/dashboard/documento" class="btn-module-action btn-secondary-action">
+              <mat-icon>analytics</mat-icon>
+              <span>Reportes / PDF</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 4: ADMINISTRACIÓN (SI ES ADMIN) -->
+      <div class="module-card" *ngIf="isAdmin">
+        <div class="module-card-header card-admin">
+          <div class="module-icon-box">
+            <mat-icon>tune</mat-icon>
+          </div>
+          <span class="module-tag">Control y Parámetros</span>
+        </div>
+        <div class="module-card-body">
+          <h3 class="module-name">Administración del Sistema</h3>
+          <p class="module-desc">
+            Parametrización de catálogos maestros, estados del flujo, causas de devolución, reglas de extensión y configuraciones.
+          </p>
+          <div class="module-actions">
+            <a routerLink="/dashboard/admin/estado" class="btn-module-action btn-primary-action">
+              <mat-icon>check_circle</mat-icon>
+              <span>Catálogos</span>
+            </a>
+            <a routerLink="/dashboard/admin/configuracion-sistema" class="btn-module-action btn-secondary-action">
+              <mat-icon>settings</mat-icon>
+              <span>Parámetros</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================
+       3. WORKFLOW DEL CICLO DE FACTURACIÓN ELECTRÓNICA
+       ======================================================== -->
+  <section class="section-container">
+    <div class="section-header">
+      <div class="section-title-wrapper">
+        <div class="section-indicator"></div>
+        <div>
+          <h2 class="section-title">Flujo del Proceso de Facturas Electrónicas</h2>
+          <p class="section-subtitle">Etapas estructuradas para garantizar la transparencia y eficiencia operativa</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="workflow-stepper">
+
+      <!-- PASO 1 -->
+      <div class="workflow-step">
+        <div class="step-badge">1</div>
+        <div class="step-icon-box">
+          <mat-icon>upload_file</mat-icon>
+        </div>
+        <h4 class="step-title">1. Cargue y Radicación</h4>
+        <p class="step-desc">Recepción del paquete de facturación (XML, PDF y anexos) por prestador.</p>
+      </div>
+
+      <div class="workflow-connector">
+        <mat-icon>arrow_forward</mat-icon>
+      </div>
+
+      <!-- PASO 2 -->
+      <div class="workflow-step">
+        <div class="step-badge">2</div>
+        <div class="step-icon-box">
+          <mat-icon>receipt_long</mat-icon>
+        </div>
+        <h4 class="step-title">2. Gestión Inicial</h4>
+        <p class="step-desc">Revisión de consistencia de datos, requisitos formales y prevalidación.</p>
+      </div>
+
+      <div class="workflow-connector">
+        <mat-icon>arrow_forward</mat-icon>
+      </div>
+
+      <!-- PASO 3 -->
+      <div class="workflow-step">
+        <div class="step-badge">3</div>
+        <div class="step-icon-box">
+          <mat-icon>account_balance</mat-icon>
+        </div>
+        <h4 class="step-title">3. Reconocimiento</h4>
+        <p class="step-desc">Validación presupuestal, causación y registro en cuentas contables.</p>
+      </div>
+
+      <div class="workflow-connector">
+        <mat-icon>arrow_forward</mat-icon>
+      </div>
+
+      <!-- PASO 4 -->
+      <div class="workflow-step">
+        <div class="step-badge">4</div>
+        <div class="step-icon-box">
+          <mat-icon>request_quote</mat-icon>
+        </div>
+        <h4 class="step-title">4. Impuestos</h4>
+        <p class="step-desc">Liquidación tributaria, retenciones aplicables y aprobación final.</p>
+      </div>
+
+      <div class="workflow-connector">
+        <mat-icon>arrow_forward</mat-icon>
+      </div>
+
+      <!-- PASO 5 -->
+      <div class="workflow-step">
+        <div class="step-badge">5</div>
+        <div class="step-icon-box">
+          <mat-icon>paid</mat-icon>
+        </div>
+        <h4 class="step-title">5. Pago y Seguimiento</h4>
+        <p class="step-desc">Programación de desembolso y trazabilidad histórica del trámite.</p>
+      </div>
+
+    </div>
+  </section>
+
+</div>

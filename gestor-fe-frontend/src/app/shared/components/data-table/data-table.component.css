@@ -303,7 +303,7 @@
   height: 14px !important;
   box-sizing: border-box !important;
   border: 2px solid #cbd5e1 !important;
-  border-top-color: #2563eb !important;
+  border-top-color: #1DA6BA !important;
   border-radius: 50% !important;
   animation: spinFilterSpinner 0.6s linear infinite !important;
   display: inline-block !important;
@@ -336,19 +336,19 @@
 ::ng-deep .col-filter-input:hover .mdc-notched-outline__leading,
 ::ng-deep .col-filter-input:hover .mdc-notched-outline__notch,
 ::ng-deep .col-filter-input:hover .mdc-notched-outline__trailing {
-  border-color: #94a3b8 !important;
+  border-color: #1DA6BA !important;
 }
 
-/* Focus: Fondo azul tenue y borde azul brillante exacto + halo de luz (box-shadow) */
+/* Focus: Fondo sutil y borde turquesa exacto (#1DA6BA) + halo de luz (box-shadow) */
 ::ng-deep .col-filter-input.mat-focused .mat-mdc-text-field-wrapper {
-  background-color: #f0f7ff !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  background-color: #f0fafd !important;
+  box-shadow: 0 0 0 3px rgba(29, 166, 186, 0.18) !important;
 }
 
 ::ng-deep .col-filter-input.mat-focused .mdc-notched-outline__leading,
 ::ng-deep .col-filter-input.mat-focused .mdc-notched-outline__notch,
 ::ng-deep .col-filter-input.mat-focused .mdc-notched-outline__trailing {
-  border-color: #2563eb !important;
+  border-color: #1DA6BA !important;
   border-width: 1.5px !important;
 }
 
