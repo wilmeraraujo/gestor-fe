@@ -417,15 +417,7 @@ INSERT INTO admin.configuracion_sistema (id, codigo, descripcion, valor, proceso
 (2, '02', 'Cantidad máxima de facturas procesables en un solo ZIP', '500', 1),
 (3, '03', 'Roles autorizados para el borrado en cascada', 'admin,gestor-fe-admin', 3);
 
---anterior configuracion sistema
-INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, categoria) VALUES
-('TAMANO_MAX_ZIP_CARGUE_MB', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 'CARGUE'),
-('MAX_FACTURAS_POR_ZIP', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 'CARGUE'),
-('ROLES_PERMITIDOS_BORRADO_LOGICO', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 'SEGURIDAD');
-
-INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, categoria) VALUES
-('01', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 'CARGUE'),
-('02', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 'CARGUE'),
-('03', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 'SEGURIDAD');
+--
+select * from admin.configuracion_fase_extension cfe order by id desc limit 10;
 
 

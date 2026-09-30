@@ -93,7 +93,10 @@ public class ConfiguracionFaseExtensionController extends GlobalController<Confi
         xDb.setObligatorio(x.getObligatorio());
         xDb.setPermiteMultiple(x.getPermiteMultiple());
         xDb.setUpdatedAt(LocalDateTime.now());
-        xDb.setDeletedAt(x.getDeletedAt());
+        // Preservar estado inactivo/activo existente (no reactivar al editar)
+        if (x.getDeletedAt() != null) {
+            xDb.setDeletedAt(x.getDeletedAt());
+        }
 
         String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
         String username = this.extraerUsername(request, null);

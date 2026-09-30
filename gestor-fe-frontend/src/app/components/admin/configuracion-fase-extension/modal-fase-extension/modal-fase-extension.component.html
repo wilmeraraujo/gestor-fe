@@ -1,0 +1,287 @@
+<div class="modal-wrapper">
+
+  <!-- HEADER -->
+  <div class="modal-header">
+    <div class="modal-header-title">
+      <mat-icon class="header-icon">{{ isEdit ? 'edit_note' : 'queue' }}</mat-icon>
+      <h2>{{ isEdit ? 'Editar Regla de Extensión' : 'Asignar Extensiones a Fase' }}</h2>
+    </div>
+    <button type="button" class="btn-close" (click)="cerrar()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- BODY -->
+  <div class="modal-body">
+
+    <!-- FASE -->
+    <div class="form-group">
+      <label class="form-label">
+        <mat-icon class="label-icon">account_tree</mat-icon>
+        Seleccionar Fase <span class="required">*</span>
+      </label>
+      <select
+        [(ngModel)]="faseId"
+        (change)="onFaseChange()"
+        [disabled]="isEdit"
+        class="form-control-custom">
+        <option [ngValue]="null" disabled>-- Seleccione una Fase --</option>
+        <option *ngFor="let f of fasesOptions" [ngValue]="f.value">
+          {{ f.label }}
+        </option>
+      </select>
+    </div>
+
+    <!-- MODO EDICIÓN INDIVIDUAL -->
+    <div *ngIf="isEdit" class="edit-single-container">
+      <div class="form-group">
+        <label class="form-label">Extensión</label>
+        <select [(ngModel)]="itemEdicion.extensionId" class="form-control-custom" [disabled]="true">
+          <option *ngFor="let ext of extensionesOptions" [ngValue]="ext.value">
+            {{ ext.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tamaño Máximo Permitido (MB) <span class="required">*</span></label>
+        <div class="input-with-suffix">
+          <input
+            type="number"
+            min="1"
+            [(ngModel)]="itemEdicion.tamanoMaximoMb"
+            class="form-control-custom"
+            placeholder="Ej: 10">
+          <span class="input-suffix">/ MB</span>
+        </div>
+      </div>
+
+      <div class="toggles-row">
+        <label class="toggle-container">
+          <input type="checkbox" [(ngModel)]="itemEdicion.obligatorio">
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">¿Es Obligatorio en esta fase?</span>
+        </label>
+
+        <label class="toggle-container">
+          <input type="checkbox" [(ngModel)]="itemEdicion.permiteMultiple">
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">¿Permite Múltiples Archivos?</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descripción de la regla</label>
+        <input
+          type="text"
+          [(ngModel)]="itemEdicion.descripcion"
+          class="form-control-custom"
+          placeholder="Ej: Archivo principal de soporte">
+      </div>
+    </div>
+
+    <!-- MODO CREACIÓN MÚLTIPLE (IMÁGENES 2 Y 3) -->
+    <div *ngIf="!isEdit" class="create-multi-container">
+
+      <!-- SELECTOR MÚLTIPLE DE EXTENSIONES -->
+      <div class="form-group dropdown-container">
+        <label class="form-label">
+          <mat-icon class="label-icon">extension</mat-icon>
+          Extensiones permitidas <span class="required">*</span>
+        </label>
+
+        <!-- INPUT / TRIGGER DEL DROPDOWN -->
+        <div
+          class="dropdown-trigger"
+          [class.dropdown-active]="dropdownAbierto"
+          (click)="dropdownAbierto = !dropdownAbierto">
+          <div class="dropdown-trigger-text">
+            <span *ngIf="extensionesSeleccionadas.length === 0" class="placeholder">
+              Seleccione
+            </span>
+            <div *ngIf="extensionesSeleccionadas.length > 0" class="chips-container">
+              <span *ngFor="let sel of extensionesSeleccionadas" class="ext-chip">
+                .{{ sel.extensionNombre }}
+                <mat-icon (click)="$event.stopPropagation(); toggleExtension({ value: sel.extensionId, label: sel.extensionNombre })">close</mat-icon>
+              </span>
+            </div>
+          </div>
+          <mat-icon class="dropdown-arrow">{{ dropdownAbierto ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </div>
+
+        <!-- MENÚ DESPLEGABLE CON CHECKBOXES Y BÚSQUEDA -->
+        <div *ngIf="dropdownAbierto" class="dropdown-menu-custom">
+          <!-- Búsqueda y acciones rápidas -->
+          <div class="dropdown-actions">
+            <div class="search-box">
+              <mat-icon class="search-icon">search</mat-icon>
+              <input
+                type="text"
+                [(ngModel)]="filtroExtension"
+                placeholder="Buscar extensión (ej: pdf, xml, zip)..."
+                (click)="$event.stopPropagation()"
+                class="search-input">
+            </div>
+            <div class="quick-btns">
+              <button type="button" class="btn-text-action" (click)="seleccionarTodas()">
+                <mat-icon>done_all</mat-icon> Todas
+              </button>
+              <button type="button" class="btn-text-action" (click)="limpiarSeleccion()">
+                <mat-icon>clear</mat-icon> Limpiar
+              </button>
+            </div>
+          </div>
+
+          <!-- Lista de checkboxes -->
+          <div class="dropdown-items-list">
+            <div
+              *ngFor="let ext of extensionesFiltradas"
+              class="dropdown-item-row"
+              [class.item-disabled]="isExtensionYaAsignada(ext.value)"
+              (click)="toggleExtension(ext)">
+              <label class="checkbox-container" (click)="$event.stopPropagation()">
+                <input
+                  type="checkbox"
+                  [checked]="isExtensionSelected(ext.value)"
+                  [disabled]="isExtensionYaAsignada(ext.value)"
+                  (change)="toggleExtension(ext)">
+                <span class="checkmark"></span>
+              </label>
+              <span class="ext-label">{{ ext.label }}</span>
+              <span *ngIf="isExtensionYaAsignada(ext.value)" class="ext-already-badge">
+                Ya configurada
+              </span>
+            </div>
+            <div *ngIf="extensionesFiltradas.length === 0" class="no-results">
+              No se encontraron extensiones con "{{ filtroExtension }}"
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN DINÁMICA DE TAMAÑOS POR EXTENSIÓN (IMAGEN 3) -->
+      <div *ngIf="extensionesSeleccionadas.length > 0" class="sizes-section">
+
+        <div class="sizes-section-header">
+          <h3>Tamaños máximos por extensión:</h3>
+        </div>
+
+        <!-- BANNER DE EJEMPLO Y CONVERSIÓN -->
+        <div class="info-banner">
+          <mat-icon class="info-icon">info</mat-icon>
+          <span>Ejemplo: 1KB, 1MB = 1024KB (1 * 1024), 1GB = 1.048.576KB (1 * 1024 * 1024)</span>
+        </div>
+
+        <!-- APLICADOR GLOBAL RÁPIDO -->
+        <div class="global-apply-bar">
+          <span class="apply-label">Aplicar tamaño a todas:</span>
+          <div class="apply-input-group">
+            <input
+              type="number"
+              min="1"
+              [(ngModel)]="tamanoGlobal"
+              class="apply-input"
+              placeholder="10">
+            <select [(ngModel)]="unidadGlobal" class="apply-unit">
+              <option value="MB">MB</option>
+              <option value="KB">KB</option>
+            </select>
+            <button type="button" class="btn-apply" (click)="aplicarTamanoGlobal()">
+              <mat-icon>sync</mat-icon> Aplicar
+            </button>
+          </div>
+        </div>
+
+        <!-- FILAS DINÁMICAS POR CADA EXTENSIÓN -->
+        <div class="ext-rows-list">
+          <div *ngFor="let item of extensionesSeleccionadas; let idx = index" class="ext-card-row">
+
+            <div class="ext-row-main">
+              <!-- Nombre de la extensión -->
+              <div class="ext-badge-col">
+                <span class="ext-badge">.{{ item.extensionNombre }}</span>
+              </div>
+
+              <!-- Input de tamaño -->
+              <div class="ext-size-col">
+                <div class="input-with-suffix" [class.input-error]="!item.tamanoInput || item.tamanoInput <= 0">
+                  <input
+                    type="number"
+                    min="1"
+                    [(ngModel)]="item.tamanoInput"
+                    (ngModelChange)="onTamanoChange(item)"
+                    class="form-control-custom size-input"
+                    [placeholder]="'Tamaño en ' + item.unidad">
+                  <select
+                    [(ngModel)]="item.unidad"
+                    (ngModelChange)="onTamanoChange(item)"
+                    class="unit-selector">
+                    <option value="MB">/ MB</option>
+                    <option value="KB">/ KB</option>
+                  </select>
+                </div>
+                <div *ngIf="!item.tamanoInput || item.tamanoInput <= 0" class="error-msg">
+                  Debe ingresar un tamaño válido (> 0 {{ item.unidad }}).
+                </div>
+                <div *ngIf="item.unidad === 'KB' && item.tamanoInput > 0" class="hint-msg">
+                  ≈ {{ (item.tamanoInput / 1024) | number:'1.1-2' }} MB
+                </div>
+              </div>
+
+              <!-- Botón quitar -->
+              <button
+                type="button"
+                class="btn-remove-ext"
+                (click)="eliminarExtension(idx)"
+                title="Quitar esta extensión">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+
+            <!-- Opciones adicionales por fila -->
+            <div class="ext-row-options">
+              <label class="toggle-container-sm">
+                <input type="checkbox" [(ngModel)]="item.obligatorio">
+                <span class="toggle-slider-sm"></span>
+                <span class="toggle-label-sm">Obligatorio</span>
+              </label>
+
+              <label class="toggle-container-sm">
+                <input type="checkbox" [(ngModel)]="item.permiteMultiple">
+                <span class="toggle-slider-sm"></span>
+                <span class="toggle-label-sm">Permite Múltiples</span>
+              </label>
+
+              <input
+                type="text"
+                [(ngModel)]="item.descripcion"
+                class="desc-input-sm"
+                placeholder="Descripción opcional de la regla">
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- FOOTER / BOTONES -->
+  <div class="modal-footer">
+    <button type="button" class="btn-secondary" (click)="cerrar()" [disabled]="guardando">
+      Volver
+    </button>
+    <button
+      type="button"
+      class="btn-primary"
+      (click)="guardar()"
+      [disabled]="guardando">
+      <mat-icon *ngIf="!guardando">{{ isEdit ? 'save' : 'add_task' }}</mat-icon>
+      <span *ngIf="!guardando">{{ isEdit ? 'Guardar' : 'Crear' }}</span>
+      <span *ngIf="guardando">Guardando...</span>
+    </button>
+  </div>
+
+</div>

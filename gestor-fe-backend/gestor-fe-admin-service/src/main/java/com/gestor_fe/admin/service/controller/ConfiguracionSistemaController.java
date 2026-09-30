@@ -95,7 +95,9 @@ public class ConfiguracionSistemaController extends GlobalController<Configuraci
         xDb.setValor(x.getValor());
         xDb.setProcesoId(x.getProcesoId());
         xDb.setUpdatedAt(LocalDateTime.now());
-        xDb.setDeletedAt(x.getDeletedAt());
+        if (x.getDeletedAt() != null) {
+            xDb.setDeletedAt(x.getDeletedAt());
+        }
 
         String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + (oldValor != null ? " | Valor: " + oldValor : "") + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + (x.getValor() != null ? " | Valor: " + x.getValor() : "") + "]";
         String username = this.extraerUsername(request, null);

@@ -32,12 +32,15 @@
   justify-content: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
+  padding: 0 16px;
 }
 
-.sidebar-logo h2 {
-  font-size: 22px;
-  font-weight: 700;
-  margin: 0;
+.sidebar-logo-img {
+  max-height: 44px;
+  max-width: 100%;
+  width: auto;
+  object-fit: contain;
+  transition: max-height 0.2s ease, transform 0.2s ease;
 }
 
 /* MENU */

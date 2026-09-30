@@ -7,8 +7,8 @@ import { ConfiguracionFaseExtension } from '../../../models/configuracion-fase-e
 import { ConfiguracionFaseExtensionService } from '../../../services/configuracion-fase-extension.service';
 import { FaseService } from '../../../services/fase.service';
 import { ExtensionService } from '../../../services/extension.service';
-import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { ModalFaseExtensionComponent } from './modal-fase-extension/modal-fase-extension.component';
 
 @Component({
   selector: 'app-configuracion-fase-extension',
@@ -55,18 +55,27 @@ export class ConfiguracionFaseExtensionComponent
       fases: this.faseService.listar(),
       exts: this.extensionService.listar()
     }).subscribe(({ fases, exts }) => {
-      this.fasesOptions = fases.map(f => ({ value: f.id, label: f.descripcion }));
-      this.extensionesOptions = exts.map(e => ({ value: e.id, label: e.descripcion }));
+      this.fasesOptions = (fases || []).filter(f => !f.deletedAt).map(f => ({ value: f.id, label: f.descripcion }));
+      this.extensionesOptions = (exts || []).filter(e => !e.deletedAt).map(e => ({ value: e.id, label: e.descripcion }));
 
       this.calcularRangos();
     });
   }
 
   override calcularRangos(): void {
-    this.service.getPaginableActivos(this.paginaActual.toString(), this.totalPorPagina.toString()).subscribe(p => {
-      this.lista = this.mapearNombres(p.content as ConfiguracionFaseExtension[]);
-      this.totalRegistros = p.totalElements as number;
-      this.dataSource.data = this.lista;
+    const servicio = this.service.getPaginableFiltrado(
+      this.filtrosMap,
+      this.paginaActual.toString(),
+      this.totalPorPagina.toString()
+    );
+
+    servicio.subscribe({
+      next: (p: any) => {
+        this.lista = this.mapearNombres(p.content as ConfiguracionFaseExtension[]);
+        this.totalRegistros = (p.totalElements || 0) as number;
+        this.dataSource.data = this.lista;
+      },
+      error: (err) => console.error('Error al consultar lista:', err)
     });
   }
 
@@ -87,7 +96,8 @@ export class ConfiguracionFaseExtensionComponent
     return datos.map(item => ({
       ...item,
       faseNombre: this.obtenerNombreFase(item.faseId),
-      extensionNombre: this.obtenerNombreExtension(item.extensionId)
+      extensionNombre: this.obtenerNombreExtension(item.extensionId),
+      estadoActivo: !item.deletedAt
     }));
   }
 
@@ -101,90 +111,16 @@ export class ConfiguracionFaseExtensionComponent
     return ext ? ext.label : `Extensión ${extensionId}`;
   }
 
-  // ⚡ Genera campos dinámicos y filtra las extensiones según la fase elegida
-  getCamposModal(faseIdSeleccionada?: number, idEdicion?: number) {
-    let extensionesFiltradas = [...this.extensionesOptions];
-
-    // Si hay una fase seleccionada, excluir las extensiones que ya se le asignaron
-    if (faseIdSeleccionada) {
-      const extensionesYaAsignadas = this.lista
-        .filter(item => Number(item.faseId) === Number(faseIdSeleccionada) && item.id !== idEdicion)
-        .map(item => Number(item.extensionId));
-
-      extensionesFiltradas = this.extensionesOptions.filter(
-        ext => !extensionesYaAsignadas.includes(ext.value)
-      );
-    }
-
-    return [
-      {
-        name: 'faseId',
-        label: 'Seleccionar Fase',
-        type: 'select',
-        options: this.fasesOptions,
-        required: true,
-        // 🔔 Evento para recalcular las extensiones disponibles al cambiar de fase
-        onChange: (faseIdVal: any, campos: any[], form: any) => {
-          if (!faseIdVal) return;
-          const asignadas = this.lista
-            .filter(item => Number(item.faseId) === Number(faseIdVal) && item.id !== idEdicion)
-            .map(item => Number(item.extensionId));
-
-          const campoExt = campos.find(c => c.name === 'extensionId');
-          if (campoExt) {
-            campoExt.options = this.extensionesOptions.filter(ext => !asignadas.includes(ext.value));
-          }
-        }
-      },
-      {
-        name: 'extensionId',
-        label: 'Seleccionar Extensión Permitida',
-        type: 'select',
-        options: extensionesFiltradas,
-        required: true
-      },
-      {
-        name: 'descripcion',
-        label: 'Descripción de la regla',
-        type: 'text',
-        required: false
-      },
-      {
-        name: 'tamanoMaximoMb',
-        label: 'Tamaño Máximo Permitido (MB)',
-        type: 'number',
-        required: true
-      },
-      {
-        name: 'obligatorio',
-        label: '¿Es Obligatorio en esta fase?',
-        type: 'checkbox',
-        required: false
-      },
-      {
-        name: 'permiteMultiple',
-        label: '¿Permite Múltiples Archivos?',
-        type: 'checkbox',
-        required: false
-      }
-    ];
-  }
-
   agregar(): void {
-    const dialogRef = this.dialog.open(ModalComponent, {
-      width: '500px',
+    const dialogRef = this.dialog.open(ModalFaseExtensionComponent, {
+      width: '900px',
+      maxWidth: '95vw',
+      disableClose: true,
       data: {
-        titulo: 'Asignar Extensión a Fase',
-        campos: this.getCamposModal(),
-        formData: {
-          faseId: '',
-          extensionId: '',
-          descripcion: '',
-          tamanoMaximoMb: 10,
-          obligatorio: false,
-          permiteMultiple: true
-        },
-        service: this.service
+        fasesOptions: this.fasesOptions,
+        extensionesOptions: this.extensionesOptions,
+        configuracionesExistentes: this.lista,
+        isEdit: false
       }
     });
 
@@ -194,13 +130,16 @@ export class ConfiguracionFaseExtensionComponent
   }
 
   editar(row: ConfiguracionFaseExtension): void {
-    const dialogRef = this.dialog.open(ModalComponent, {
-      width: '500px',
+    const dialogRef = this.dialog.open(ModalFaseExtensionComponent, {
+      width: '800px',
+      maxWidth: '95vw',
+      disableClose: true,
       data: {
-        titulo: 'Editar Regla de Extensión',
-        campos: this.getCamposModal(row.faseId, row.id),
-        formData: row,
-        service: this.service
+        fasesOptions: this.fasesOptions,
+        extensionesOptions: this.extensionesOptions,
+        configuracionesExistentes: this.lista,
+        item: row,
+        isEdit: true
       }
     });
 

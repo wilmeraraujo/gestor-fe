@@ -296,6 +296,10 @@ public class GlobalServiceImpl <E, R extends JpaRepository<E, Long>> implements 
 				predicates.add(cb.notEqual(root.get("id"), id));
 			}
 
+			try {
+				predicates.add(cb.isNull(root.get("deletedAt")));
+			} catch (Exception ignored) {}
+
 			cq.select(cb.count(root)).where(predicates.toArray(new Predicate[0]));
 
 			Long count = entityManager.createQuery(cq).getSingleResult();

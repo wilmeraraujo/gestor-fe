@@ -36,22 +36,35 @@ public class ConfiguracionFaseExtensionServiceImpl extends GlobalServiceImpl<Con
     @Override
     @Transactional
     public ConfiguracionFaseExtension save(ConfiguracionFaseExtension entity) {
-        boolean existe;
-        
         if (entity.getId() == null) {
-            // Creación: Verificar si la combinación fase_id + extension_id ya existe
-            existe = repository.existsByFaseIdAndExtensionIdAndDeletedAtIsNull(
+            // Creación: Verificar si existe un registro previo para esta fase y extensión
+            java.util.Optional<ConfiguracionFaseExtension> existenteOpt = repository.findFirstByFaseIdAndExtensionId(
                 entity.getFaseId(), entity.getExtensionId()
             );
+
+            if (existenteOpt.isPresent()) {
+                ConfiguracionFaseExtension existente = existenteOpt.get();
+                if (existente.getDeletedAt() == null) {
+                    throw new IllegalArgumentException("Ya existe una regla activa configurada para esta extensión en la fase seleccionada.");
+                } else {
+                    // Si estaba inactivo, reactivarlo y actualizar sus valores
+                    existente.setDeletedAt(null);
+                    existente.setTamanoMaximoMb(entity.getTamanoMaximoMb());
+                    existente.setObligatorio(entity.getObligatorio());
+                    existente.setPermiteMultiple(entity.getPermiteMultiple());
+                    existente.setDescripcion(entity.getDescripcion());
+                    existente.setUpdatedAt(java.time.LocalDateTime.now());
+                    return repository.save(existente);
+                }
+            }
         } else {
-            // Edición: Verificar que la combinación no pertenezca a OTRO registro distinto
-            existe = repository.existsByFaseIdAndExtensionIdAndIdNotAndDeletedAtIsNull(
+            // Edición: Verificar que la combinación no pertenezca a OTRO registro distinto y activo
+            boolean existe = repository.existsByFaseIdAndExtensionIdAndIdNotAndDeletedAtIsNull(
                 entity.getFaseId(), entity.getExtensionId(), entity.getId()
             );
-        }
-
-        if (existe) {
-            throw new IllegalArgumentException("Ya existe una regla configurada para esta extensión en la fase seleccionada.");
+            if (existe) {
+                throw new IllegalArgumentException("Ya existe otra regla activa configurada para esta extensión en la fase seleccionada.");
+            }
         }
 
         return super.save(entity);
