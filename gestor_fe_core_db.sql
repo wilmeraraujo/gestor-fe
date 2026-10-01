@@ -346,9 +346,9 @@ INSERT INTO admin.municipio (codigo, descripcion, departamento_id, created_at) V
 
 
 select * from "admin".estado d;
-insert into admin.estado (id,codigo,created_at,deleted_at,descripcion,updated_at)
-(1,'01','2026-07-30 20:57:10.592',,null,'Activo',null),
-(2,'02','2026-07-30 20:57:10.592',,null,'Inactivo',null);
+insert into admin.estado (id,codigo,created_at,deleted_at,descripcion,updated_at) values
+(1,'01','2026-07-30 20:57:10.592',null,'Activo',null),
+(2,'02','2026-07-30 20:57:10.592',null,'Inactivo',null);
 
 
 INSERT INTO admin.causal_devolucion (id, codigo, created_at, deleted_at, descripcion, updated_at) VALUES
