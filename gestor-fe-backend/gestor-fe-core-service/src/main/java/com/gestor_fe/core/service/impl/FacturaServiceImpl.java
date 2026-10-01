@@ -1,5 +1,6 @@
 package com.gestor_fe.core.service.impl;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,6 +9,19 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -36,6 +50,8 @@ import jakarta.persistence.criteria.Root;
 
 @Service
 public class FacturaServiceImpl implements FacturaService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(FacturaServiceImpl.class);
 
     private final FacturaRepository repository;
 
@@ -511,5 +527,123 @@ public class FacturaServiceImpl implements FacturaService {
             return List.of();
         }
         return repository.findExistingNitFacturas(nitFacturas);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportarFacturasExcel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro) {
+        if (filtro == null) {
+            filtro = new FacturaFilterDto();
+        }
+
+        boolean esAdminOGestor = rolesUsuario != null && rolesUsuario.stream().anyMatch(rol ->
+            rol.equalsIgnoreCase("admin") ||
+            rol.equalsIgnoreCase("gestor-fe-admin") ||
+            rol.equalsIgnoreCase("gestor-fe-f5-sf") ||
+            rol.equalsIgnoreCase("default-roles-fe")
+        );
+
+        if (!esAdminOGestor && nitPrestador != null && !nitPrestador.isBlank()) {
+            filtro.setNit(nitPrestador);
+        }
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Factura> query = cb.createQuery(Factura.class);
+        Root<Factura> root = query.from(Factura.class);
+
+        List<Predicate> predicates = construirPredicados(cb, root, filtro);
+        query.where(cb.and(predicates.toArray(new Predicate[0])));
+        query.orderBy(cb.desc(root.get("id")));
+
+        List<Factura> facturas = entityManager.createQuery(query).getResultList();
+
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+            Sheet sheet = workbook.createSheet("Facturas");
+
+            // Estilo para encabezados
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.TEAL.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            // Estilos para datos numéricos y de moneda
+            CellStyle currencyStyle = workbook.createCellStyle();
+            DataFormat format = workbook.createDataFormat();
+            currencyStyle.setDataFormat(format.getFormat("#,##0.00"));
+
+            String[] encabezados = {
+                "ID", "No. Factura", "Fecha Emisión", "NIT", "DV", 
+                "Primer Apellido", "Segundo Apellido", "Primer Nombre", "Segundo Nombre",
+                "Razón Social", "Dirección", "Código Departamento", "Código Municipio", 
+                "Código País", "Valor Subtotal", "Valor IVA", "Valor Factura", "Estado", "CUFE"
+            };
+
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < encabezados.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(encabezados[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIdx = 1;
+            for (Factura f : facturas) {
+                Row row = sheet.createRow(rowIdx++);
+
+                row.createCell(0).setCellValue(f.getId() != null ? f.getId() : 0);
+                row.createCell(1).setCellValue(f.getNumeroFactura() != null ? f.getNumeroFactura() : "");
+                row.createCell(2).setCellValue(f.getFechaEmision() != null ? f.getFechaEmision().toString() : "");
+                row.createCell(3).setCellValue(f.getNit() != null ? f.getNit() : "");
+                row.createCell(4).setCellValue(f.getDv() != null ? f.getDv() : "");
+                row.createCell(5).setCellValue(f.getPrimerApellido() != null ? f.getPrimerApellido() : "");
+                row.createCell(6).setCellValue(f.getSegundoApellido() != null ? f.getSegundoApellido() : "");
+                row.createCell(7).setCellValue(f.getPrimerNombre() != null ? f.getPrimerNombre() : "");
+                row.createCell(8).setCellValue(f.getSegundoNombre() != null ? f.getSegundoNombre() : "");
+                row.createCell(9).setCellValue(f.getRazonSocialEmisor() != null ? f.getRazonSocialEmisor() : "");
+                row.createCell(10).setCellValue(f.getDireccion() != null ? f.getDireccion() : "");
+                row.createCell(11).setCellValue(f.getCodigoDepartamento() != null ? f.getCodigoDepartamento() : "");
+                row.createCell(12).setCellValue(f.getCodigoMunicipio() != null ? f.getCodigoMunicipio() : "");
+                row.createCell(13).setCellValue(f.getCodigoPais() != null ? f.getCodigoPais() : "");
+
+                Cell subtotalCell = row.createCell(14);
+                if (f.getValorSubtotal() != null) {
+                    subtotalCell.setCellValue(f.getValorSubtotal().doubleValue());
+                } else {
+                    subtotalCell.setCellValue(0.00);
+                }
+                subtotalCell.setCellStyle(currencyStyle);
+
+                Cell ivaCell = row.createCell(15);
+                if (f.getValorIva() != null) {
+                    ivaCell.setCellValue(f.getValorIva().doubleValue());
+                } else {
+                    ivaCell.setCellValue(0.00);
+                }
+                ivaCell.setCellStyle(currencyStyle);
+
+                Cell totalCell = row.createCell(16);
+                if (f.getValorTotal() != null) {
+                    totalCell.setCellValue(f.getValorTotal().doubleValue());
+                } else {
+                    totalCell.setCellValue(0.00);
+                }
+                totalCell.setCellStyle(currencyStyle);
+
+                row.createCell(17).setCellValue(f.getEstado() != null ? f.getEstado() : "");
+                row.createCell(18).setCellValue(f.getCufe() != null ? f.getCufe() : "");
+            }
+
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                workbook.write(baos);
+                workbook.dispose();
+                return baos.toByteArray();
+            }
+        } catch (IOException e) {
+            LOGGER.error("❌ Error generando archivo Excel de facturas", e);
+            throw new RuntimeException("Error generando archivo Excel de facturas", e);
+        }
     }
 }

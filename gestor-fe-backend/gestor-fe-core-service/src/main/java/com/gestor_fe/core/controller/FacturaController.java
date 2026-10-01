@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -73,6 +74,20 @@ public class FacturaController {
 
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(service.buscarTrazabilidadSegunRol(nitPrestador, roles, filtro, sorted));
+    }
+
+    @PostMapping("/trazabilidad/exportar-excel")
+    public ResponseEntity<byte[]> exportarTrazabilidadExcel(
+            @RequestParam(value = "nitPrestador", required = false) String nitPrestador,
+            @RequestParam(value = "roles", required = false) List<String> roles,
+            @RequestBody(required = false) FacturaFilterDto filtro) {
+
+        byte[] excelBytes = service.exportarFacturasExcel(nitPrestador, roles, filtro);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=facturas_seguimiento.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelBytes);
     }
 
     // =========================================================================

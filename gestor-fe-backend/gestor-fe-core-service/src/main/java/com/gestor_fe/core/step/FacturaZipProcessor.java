@@ -95,9 +95,50 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
             nitEmisor = (String) xPath.compile("//SenderParty//CompanyID/text()").evaluate(doc, XPathConstants.STRING);
         }
 
+        String dv = (String) xPath.compile("//AccountingSupplierParty//CompanyID/@schemeID").evaluate(docFactura, XPathConstants.STRING);
+        if (dv == null || dv.isBlank()) {
+            dv = (String) xPath.compile("//SenderParty//CompanyID/@schemeID").evaluate(doc, XPathConstants.STRING);
+        }
+
         String razonSocial = (String) xPath.compile("//AccountingSupplierParty//RegistrationName/text()").evaluate(docFactura, XPathConstants.STRING);
         if (razonSocial == null || razonSocial.isBlank()) {
             razonSocial = (String) xPath.compile("//SenderParty//RegistrationName/text()").evaluate(doc, XPathConstants.STRING);
+        }
+
+        // Extracción de datos de Persona Natural (si aplica en el XML)
+        String primerNombre = (String) xPath.compile("//AccountingSupplierParty//Person/FirstName/text()").evaluate(docFactura, XPathConstants.STRING);
+        String segundoNombre = (String) xPath.compile("//AccountingSupplierParty//Person/MiddleName/text()").evaluate(docFactura, XPathConstants.STRING);
+        String primerApellido = (String) xPath.compile("//AccountingSupplierParty//Person/FamilyName/text()").evaluate(docFactura, XPathConstants.STRING);
+        String segundoApellido = (String) xPath.compile("//AccountingSupplierParty//Person/SecondFamilyName/text()").evaluate(docFactura, XPathConstants.STRING);
+
+        if ((razonSocial == null || razonSocial.isBlank()) && primerNombre != null && !primerNombre.isBlank()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(primerNombre.trim());
+            if (segundoNombre != null && !segundoNombre.isBlank()) sb.append(" ").append(segundoNombre.trim());
+            if (primerApellido != null && !primerApellido.isBlank()) sb.append(" ").append(primerApellido.trim());
+            if (segundoApellido != null && !segundoApellido.isBlank()) sb.append(" ").append(segundoApellido.trim());
+            razonSocial = sb.toString();
+        }
+
+        // Extracción de Ubicación y Dirección
+        String direccion = (String) xPath.compile("//AccountingSupplierParty//PhysicalLocation//AddressLine/Line/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (direccion == null || direccion.isBlank()) {
+            direccion = (String) xPath.compile("//AccountingSupplierParty//RegistrationAddress//AddressLine/Line/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+
+        String codigoMunicipio = (String) xPath.compile("//AccountingSupplierParty//PhysicalLocation//Address/ID/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (codigoMunicipio == null || codigoMunicipio.isBlank()) {
+            codigoMunicipio = (String) xPath.compile("//AccountingSupplierParty//RegistrationAddress/ID/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+
+        String codigoDepartamento = (String) xPath.compile("//AccountingSupplierParty//PhysicalLocation//Address/CountrySubentityCode/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (codigoDepartamento == null || codigoDepartamento.isBlank()) {
+            codigoDepartamento = (String) xPath.compile("//AccountingSupplierParty//RegistrationAddress/CountrySubentityCode/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+
+        String codigoPais = (String) xPath.compile("//AccountingSupplierParty//PhysicalLocation//Address/Country/IdentificationCode/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (codigoPais == null || codigoPais.isBlank()) {
+            codigoPais = (String) xPath.compile("//AccountingSupplierParty//RegistrationAddress/Country/IdentificationCode/text()").evaluate(docFactura, XPathConstants.STRING);
         }
 
         String numeroFactura = (String) xPath.compile("//ParentDocumentID/text()").evaluate(doc, XPathConstants.STRING);
@@ -108,6 +149,20 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         String cufe = (String) xPath.compile("//UUID/text()").evaluate(docFactura, XPathConstants.STRING);
         String fechaStr = (String) xPath.compile("//IssueDate/text()").evaluate(docFactura, XPathConstants.STRING);
         String valorStr = (String) xPath.compile("//LegalMonetaryTotal/PayableAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+
+        // Extracción de Subtotal e Impuesto IVA
+        String subtotalStr = (String) xPath.compile("//LegalMonetaryTotal/TaxExclusiveAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (subtotalStr == null || subtotalStr.isBlank()) {
+            subtotalStr = (String) xPath.compile("//LegalMonetaryTotal/LineExtensionAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+
+        String ivaStr = (String) xPath.compile("//TaxTotal[TaxSubtotal/TaxCategory/TaxScheme/ID='01']/TaxAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (ivaStr == null || ivaStr.isBlank()) {
+            ivaStr = (String) xPath.compile("//TaxSubtotal[TaxCategory/TaxScheme/ID='01' or TaxCategory/TaxScheme/Name='IVA']/TaxAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+        if (ivaStr == null || ivaStr.isBlank()) {
+            ivaStr = (String) xPath.compile("//TaxTotal/TaxAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
 
         // =========================================================================
         // ⚡ VALIDACIÓN 1: ETIQUETAS ESTRUCTURALES OBLIGATORIAS EN XML
@@ -189,6 +244,20 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         // Mapeo de la entidad Factura
         Factura factura = new Factura();
         factura.setNit(nitClean);
+        if (dv != null && !dv.isBlank()) {
+            String dvTrim = dv.trim();
+            factura.setDv(dvTrim.length() > 2 ? dvTrim.substring(0, 2) : dvTrim);
+        }
+        factura.setPrimerNombre(primerNombre != null && !primerNombre.isBlank() ? primerNombre.trim() : null);
+        factura.setSegundoNombre(segundoNombre != null && !segundoNombre.isBlank() ? segundoNombre.trim() : null);
+        factura.setPrimerApellido(primerApellido != null && !primerApellido.isBlank() ? primerApellido.trim() : null);
+        factura.setSegundoApellido(segundoApellido != null && !segundoApellido.isBlank() ? segundoApellido.trim() : null);
+
+        factura.setDireccion(direccion != null && !direccion.isBlank() ? direccion.trim() : null);
+        factura.setCodigoDepartamento(codigoDepartamento != null && !codigoDepartamento.isBlank() ? codigoDepartamento.trim() : null);
+        factura.setCodigoMunicipio(codigoMunicipio != null && !codigoMunicipio.isBlank() ? codigoMunicipio.trim() : null);
+        factura.setCodigoPais(codigoPais != null && !codigoPais.isBlank() ? codigoPais.trim() : null);
+
         factura.setRazonSocialEmisor(razonSocial != null ? razonSocial.trim() : "DESCONOCIDO");
         factura.setNumeroFactura(numFacturaClean);
         factura.setCufe(cufeClean);
@@ -197,6 +266,22 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
 
         if (fechaStr != null && !fechaStr.isBlank()) {
             factura.setFechaEmision(LocalDate.parse(fechaStr.trim()));
+        }
+        if (subtotalStr != null && !subtotalStr.isBlank()) {
+            try {
+                factura.setValorSubtotal(new BigDecimal(subtotalStr.trim()));
+            } catch (Exception e) {
+                LOGGER.warn("⚠️ No se pudo parsear el subtotal: {}", subtotalStr);
+            }
+        }
+        if (ivaStr != null && !ivaStr.isBlank()) {
+            try {
+                factura.setValorIva(new BigDecimal(ivaStr.trim()));
+            } catch (Exception e) {
+                LOGGER.warn("⚠️ No se pudo parsear el valor IVA: {}", ivaStr);
+            }
+        } else {
+            factura.setValorIva(BigDecimal.ZERO);
         }
         if (valorStr != null && !valorStr.isBlank()) {
             factura.setValorTotal(new BigDecimal(valorStr.trim()));

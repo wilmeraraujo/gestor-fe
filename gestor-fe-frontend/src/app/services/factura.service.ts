@@ -171,4 +171,34 @@ export class FacturaService extends CommonService<Factura> {
 
     return this.http.post<Factura>(`${this.endPointBase}/${id}/pago`, formData);
   }
+
+  /**
+   * 📊 10. EXPORTACIÓN A EXCEL DE TRAZABILIDAD / FACTURAS
+   */
+  public exportarTrazabilidadExcel(
+    nitPrestador?: string,
+    roles: string[] = [],
+    filtro?: any
+  ): Observable<Blob> {
+    let params = new HttpParams();
+
+    if (nitPrestador) {
+      params = params.set('nitPrestador', nitPrestador);
+    }
+
+    if (roles && roles.length > 0) {
+      roles.forEach(rol => {
+        params = params.append('roles', rol);
+      });
+    }
+
+    return this.http.post(
+      `${this.endPointBase}/trazabilidad/exportar-excel`,
+      filtro || {},
+      {
+        params,
+        responseType: 'blob'
+      }
+    );
+  }
 }

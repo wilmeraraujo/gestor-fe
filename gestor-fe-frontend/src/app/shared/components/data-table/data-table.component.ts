@@ -58,6 +58,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
   @Input() mostrarHistorial: boolean = false;
   @Input() mostrarEliminarMasivo: boolean = false;
   @Input() mostrarRefrescar: boolean = true;
+  @Input() mostrarDescargarExcel: boolean = false;
+  @Input() descargandoExcel: boolean = false;
 
   @Output() filtrosChange = new EventEmitter<{ [key: string]: string }>();
   @Output() verHistorial = new EventEmitter<any>();
@@ -74,6 +76,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
   @Output() gestionarFactura = new EventEmitter<any>();
   @Output() eliminarMasivo = new EventEmitter<any[]>();
   @Output() refrescar = new EventEmitter<void>();
+  @Output() descargarExcel = new EventEmitter<void>();
 
   refrescando = false;
 

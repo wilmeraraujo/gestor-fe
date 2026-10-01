@@ -24,7 +24,11 @@
           
           [mostrarHistorial]="!esPrestador"
           [mostrarGestionarFactura]="false"
+          [mostrarDescargarExcel]="true"
+          [descargandoExcel]="descargandoExcel"
           
+          (descargarExcel)="descargarReporteExcel()"
+          (refrescar)="cargarDatosPaginados()"
           (filtrosChange)="onFiltrosChange($event)"
           (paginar)="paginar($event)"
           (verDetalle)="verSoportesFactura($event)"

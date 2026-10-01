@@ -19,6 +19,7 @@ import { FacturaService } from '../../services/factura.service';
 import { DocumentoService } from '../../services/documento.service';
 import { FaseService } from '../../services/fase.service';
 import { LoginService } from '../../services/login.service'; // 👈 Inyección de LoginService
+import { AlertService } from '../../services/alert.service';
 
 @Component({
   selector: 'app-seguimiento-facturas',
@@ -52,8 +53,12 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   rolesUsuario: string[] = [];
   esPrestador: boolean = false; // 👈 Flag para ocultar el botón de historial al Prestador
 
-  // 🚀 Inyección de LoginService
+  // 🚀 Inyección de Servicios
   private loginService = inject(LoginService);
+  private alertService = inject(AlertService);
+
+  // 📊 Estado de descarga de Excel
+  descargandoExcel: boolean = false;
 
   // 🎯 SUBJECT Y SUBSCRIPCIÓN PARA RETARDO DE FILTROS (DEBOUNCE 400ms)
   private filtroSubject = new Subject<{ [key: string]: string }>();
@@ -319,5 +324,44 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     this.paginaActual = event.pageIndex;
     this.totalPorPagina = event.pageSize;
     this.cargarDatosPaginados();
+  }
+
+  /**
+   * 📊 Descarga el reporte en Excel con los campos requeridos y filtros aplicados
+   */
+  descargarReporteExcel(): void {
+    if (this.descargandoExcel) return;
+
+    this.descargandoExcel = true;
+    this.alertService.cargando('Generando archivo Excel con los registros filtrados...', 'Descargando Reporte');
+
+    this.service.exportarTrazabilidadExcel(
+      this.nitPrestadorActivo,
+      this.rolesUsuario,
+      this.filtrosActivos
+    ).subscribe({
+      next: (blob: Blob) => {
+        this.descargandoExcel = false;
+        this.alertService.cerrar();
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const fechaStr = new Date().toISOString().substring(0, 10);
+        a.download = `reporte_facturas_${fechaStr}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        this.alertService.exito('Reporte de facturas descargado exitosamente.', 'Descarga Completa');
+      },
+      error: (err) => {
+        this.descargandoExcel = false;
+        this.alertService.cerrar();
+        console.error('Error al exportar Excel:', err);
+        this.alertService.error('Ocurrió un error al intentar generar el archivo Excel.', 'Error en la descarga');
+      }
+    });
   }
 }

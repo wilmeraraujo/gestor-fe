@@ -71,7 +71,7 @@ public class JobLoteCargueConfig {
         ItemWriter<Factura> writer
     ) throws Exception {
       return new StepBuilder("stepOne", jobRepository) 
-          .<FacturaZipWrapperDto, Factura>chunk(20, transactionManager)
+          .<FacturaZipWrapperDto, Factura>chunk(1000, transactionManager)
           .reader(reader)
           .processor(processor)
           .writer(writer)

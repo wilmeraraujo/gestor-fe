@@ -25,6 +25,33 @@ public class Factura {
     @Column(nullable = false, length = 15)
     private String nit;
 
+    @Column(length = 2)
+    private String dv;
+
+    @Column(name = "primer_apellido", length = 100)
+    private String primerApellido;
+
+    @Column(name = "segundo_apellido", length = 100)
+    private String segundoApellido;
+
+    @Column(name = "primer_nombre", length = 100)
+    private String primerNombre;
+
+    @Column(name = "segundo_nombre", length = 100)
+    private String segundoNombre;
+
+    @Column(length = 255)
+    private String direccion;
+
+    @Column(name = "codigo_departamento", length = 10)
+    private String codigoDepartamento;
+
+    @Column(name = "codigo_municipio", length = 10)
+    private String codigoMunicipio;
+
+    @Column(name = "codigo_pais", length = 10)
+    private String codigoPais;
+
     @Column(name = "numero_factura", nullable = false, length = 30)
     private String numeroFactura;
 
@@ -39,6 +66,12 @@ public class Factura {
 
     @Column(name = "razon_social_emisor")
     private String razonSocialEmisor;
+
+    @Column(name = "valor_subtotal")
+    private BigDecimal valorSubtotal;
+
+    @Column(name = "valor_iva")
+    private BigDecimal valorIva;
 
     @Column(name = "valor_total")
     private BigDecimal valorTotal;

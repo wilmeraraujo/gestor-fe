@@ -45,6 +45,20 @@
             <mat-icon [class.spinning]="refrescando">refresh</mat-icon>
           </button>
 
+          <!-- 📊 BOTÓN DESCARGAR EXCEL (OPCIONAL) -->
+          <button
+            *ngIf="mostrarDescargarExcel"
+            type="button"
+            class="btn-icon-theme btn-export-excel"
+            (click)="descargarExcel.emit()"
+            [disabled]="descargandoExcel"
+            matTooltip="Descargar reporte en Excel según filtros aplicados">
+            <mat-icon [class.spinning]="descargandoExcel">
+              {{ descargandoExcel ? 'autorenew' : 'file_download' }}
+            </mat-icon>
+            <span>{{ descargandoExcel ? 'Descargando...' : 'Descargar Excel' }}</span>
+          </button>
+
           <!-- 🗑️ BOTÓN ELIMINACIÓN MASIVA (OPCIONAL) -->
           <button
             *ngIf="mostrarEliminarMasivo"
