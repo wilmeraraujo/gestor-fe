@@ -140,6 +140,46 @@
   box-shadow: 0 4px 12px rgba(71, 85, 105, 0.25) !important;
 }
 
+/* 🔄 Botón Refrescar Tabla (Redondo Elegante) */
+.btn-refresh-table {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-refresh-table:hover {
+  background: linear-gradient(135deg, #1DA6BA 0%, #0e7490 100%) !important;
+  color: #ffffff !important;
+  border-color: #1DA6BA !important;
+  box-shadow: 0 4px 12px rgba(29, 166, 186, 0.3) !important;
+  transform: translateY(-2px) !important;
+}
+
+.btn-refresh-table mat-icon {
+  font-size: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+  transition: transform 0.3s ease;
+}
+
+.btn-refresh-table mat-icon.spinning {
+  animation: spinRefresh 0.8s linear infinite !important;
+}
+
+@keyframes spinRefresh {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* 🗑️ Botón Eliminación Masiva (Rojo Neón Pastel) */
 .btn-delete-bulk {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;

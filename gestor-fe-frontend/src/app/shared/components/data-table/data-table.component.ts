@@ -57,6 +57,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
   @Input() mostrarActivarInactivar: boolean = false;
   @Input() mostrarHistorial: boolean = false;
   @Input() mostrarEliminarMasivo: boolean = false;
+  @Input() mostrarRefrescar: boolean = true;
 
   @Output() filtrosChange = new EventEmitter<{ [key: string]: string }>();
   @Output() verHistorial = new EventEmitter<any>();
@@ -72,6 +73,9 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
   @Output() selecciononChange = new EventEmitter<any[]>();
   @Output() gestionarFactura = new EventEmitter<any>();
   @Output() eliminarMasivo = new EventEmitter<any[]>();
+  @Output() refrescar = new EventEmitter<void>();
+
+  refrescando = false;
 
   @ViewChild('paginatorInferior') paginatorInferior!: MatPaginator;
 
@@ -271,6 +275,15 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
     if (this.fallbackTimer) clearTimeout(this.fallbackTimer);
     this.selection.clear();
     this.filtrosChange.emit({});
+  }
+
+  onRefrescar(): void {
+    this.refrescando = true;
+    this.selection.clear();
+    this.refrescar.emit();
+    setTimeout(() => {
+      this.refrescando = false;
+    }, 600);
   }
 
   isAllSelected(): boolean {

@@ -35,6 +35,16 @@
             <span>Limpiar</span>
           </button>
 
+          <!-- 🔄 BOTÓN REFRESCAR TABLA (REDONDO) -->
+          <button
+            *ngIf="mostrarRefrescar"
+            type="button"
+            class="btn-icon-theme btn-refresh-table"
+            (click)="onRefrescar()"
+            matTooltip="Refrescar tabla">
+            <mat-icon [class.spinning]="refrescando">refresh</mat-icon>
+          </button>
+
           <!-- 🗑️ BOTÓN ELIMINACIÓN MASIVA (OPCIONAL) -->
           <button
             *ngIf="mostrarEliminarMasivo"
