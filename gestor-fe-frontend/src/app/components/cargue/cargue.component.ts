@@ -80,20 +80,8 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
     if (!this.usuarioActivo) return;
 
     this.sseSubscription = this.service.conectarSSE(this.usuarioActivo).subscribe({
-      next: (evento) => {
-        this.calcularRangos(); // Refresca grilla tras notificación
-
-        if (evento.exiteError) {
-          this.alertService.advertencia(
-            'El cargue finalizó con errores. Revisa el reporte de inconsistencias.',
-            'Cargue con Errores'
-          );
-        } else {
-          this.alertService.exito(
-            `El cargue finalizó exitosamente. Facturas procesadas: ${evento.numeroRegistro}`,
-            'Cargue Exitoso'
-          );
-        }
+      next: () => {
+        this.calcularRangos(); // Refresca grilla en tiempo real sin mostrar popups
       },
       error: (err) => console.error('Error en conexión SSE:', err)
     });
@@ -162,12 +150,12 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
           this.alertService.cargando('Subiendo archivo ZIP...', 'Procesando archivo');
 
           this.service.cargarZip(file, usuarioEnvio).subscribe({
-            next: (response) => {
-              this.alertService.exito(
-                `Archivo recibido correctamente. Cargue ID asignado: ${response.id}. Procesando lote...`,
-                'Cargue Exitoso'
-              );
+            next: () => {
+              this.alertService.cerrar(); // Cierra el modal de cargando
               this.calcularRangos();
+              // Reintentos automáticos de refresco como respaldo
+              setTimeout(() => this.calcularRangos(), 1500);
+              setTimeout(() => this.calcularRangos(), 3500);
             },
             error: (err) => {
               console.error('Error al subir el archivo:', err);

@@ -14,4 +14,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
                 .body("El archivo adjunto supera el límite de tamaño máximo permitido por el servidor (100 MB).");
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException exc) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(exc.getMessage());
+    }
 }

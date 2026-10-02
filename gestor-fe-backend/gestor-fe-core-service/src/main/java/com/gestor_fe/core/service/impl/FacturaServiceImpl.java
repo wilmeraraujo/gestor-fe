@@ -7,7 +7,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -31,6 +33,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.gestor_fe.core.client.AdminFeignClient;
+import com.gestor_fe.core.dto.ConfiguracionFaseExtensionDto;
+import com.gestor_fe.core.dto.ExtensionDto;
 import com.gestor_fe.core.dto.FacturaFilterDto;
 import com.gestor_fe.core.dto.GestionDto;
 import com.gestor_fe.core.entity.Documento;
@@ -54,6 +59,7 @@ public class FacturaServiceImpl implements FacturaService {
     private static final Logger LOGGER = LoggerFactory.getLogger(FacturaServiceImpl.class);
 
     private final FacturaRepository repository;
+    private final AdminFeignClient adminFeignClient;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -61,8 +67,9 @@ public class FacturaServiceImpl implements FacturaService {
     @Value("${ruta.storage.validos}")
     private String rutaStorageValidos;
 
-    public FacturaServiceImpl(FacturaRepository repository) {
+    public FacturaServiceImpl(FacturaRepository repository, AdminFeignClient adminFeignClient) {
         this.repository = repository;
+        this.adminFeignClient = adminFeignClient;
     }
 
     @Override
@@ -382,6 +389,9 @@ public class FacturaServiceImpl implements FacturaService {
         factura.addGestion(gestion);
 
         if (archivoCausacion != null && !archivoCausacion.isEmpty()) {
+            // 🛡️ VALIDACIÓN DINÁMICA DE EXTENSIÓN Y TAMAÑO SEGÚN CONFIGURACIÓN FASE 2
+            Long extensionId = validarArchivoSegunConfiguracionFase(archivoCausacion, 2L, "Soporte de Causación");
+
             try {
                 // 🔄 Inactivar lógicamente cualquier soporte de causación previo activo
                 if (factura.getDocumentos() != null) {
@@ -411,14 +421,14 @@ public class FacturaServiceImpl implements FacturaService {
                 docCausacion.setRuta(destinoFinal.toString());
                 docCausacion.setTamano(archivoCausacion.getSize());
                 docCausacion.setEstadoId(1L);
-                docCausacion.setExtensionId(1L);
+                docCausacion.setExtensionId(extensionId != null ? extensionId : 1L);
                 docCausacion.setTipoId(8L);
                 docCausacion.setFactura(factura);
 
                 factura.addDocumento(docCausacion);
 
             } catch (IOException e) {
-                throw new RuntimeException("Error al guardar físicamente el PDF de causación: " + e.getMessage(), e);
+                throw new RuntimeException("Error al guardar físicamente el archivo de causación: " + e.getMessage(), e);
             }
         }
 
@@ -456,6 +466,17 @@ public class FacturaServiceImpl implements FacturaService {
 
         factura.addGestion(gestion);
 
+        // 🛡️ VALIDACIÓN DINÁMICA DE EXTENSIÓN Y TAMAÑO SEGÚN CONFIGURACIÓN FASE 4
+        Long extensionIdTb = null;
+        if (soporteTb != null && !soporteTb.isEmpty()) {
+            extensionIdTb = validarArchivoSegunConfiguracionFase(soporteTb, 4L, "Documento Registro Contable TB");
+        }
+
+        Long extensionIdPago = null;
+        if (comprobantePago != null && !comprobantePago.isEmpty()) {
+            extensionIdPago = validarArchivoSegunConfiguracionFase(comprobantePago, 4L, "Comprobante de Pago Bancario");
+        }
+
         String nitCarpeta = factura.getNit().replaceAll("[\\\\/:*?\"<>|]", "_").trim();
         String numFacturaCarpeta = factura.getNumeroFactura().replaceAll("[\\\\/:*?\"<>|]", "_").trim();
         Path directorioFactura = Paths.get(rutaStorageValidos, nitCarpeta, numFacturaCarpeta);
@@ -467,12 +488,12 @@ public class FacturaServiceImpl implements FacturaService {
 
             if (soporteTb != null && !soporteTb.isEmpty()) {
                 inactivarDocumentoPrevioPorPrefijo(factura, "_TB_");
-                guardarSoporteDocumento(factura, soporteTb, directorioFactura, "TB_", 8L);
+                guardarSoporteDocumento(factura, soporteTb, directorioFactura, "TB_", 8L, extensionIdTb);
             }
 
             if (comprobantePago != null && !comprobantePago.isEmpty()) {
                 inactivarDocumentoPrevioPorPrefijo(factura, "_PAGO_");
-                guardarSoporteDocumento(factura, comprobantePago, directorioFactura, "PAGO_", 8L);
+                guardarSoporteDocumento(factura, comprobantePago, directorioFactura, "PAGO_", 8L, extensionIdPago);
             }
 
         } catch (IOException e) {
@@ -480,6 +501,86 @@ public class FacturaServiceImpl implements FacturaService {
         }
 
         return repository.save(factura);
+    }
+
+    /**
+     * 🛡️ Valida que un archivo cumpla con las extensiones permitidas y el tamaño máximo en MB
+     * configurado dinámicamente en el módulo de administración para la fase especificada.
+     */
+    private Long validarArchivoSegunConfiguracionFase(MultipartFile archivo, Long faseId, String campoNombre) {
+        if (archivo == null || archivo.isEmpty()) {
+            return 1L;
+        }
+
+        String nombreArchivo = archivo.getOriginalFilename();
+        if (nombreArchivo == null || !nombreArchivo.contains(".")) {
+            throw new IllegalArgumentException(String.format("El archivo '%s' no tiene una extensión válida.", nombreArchivo));
+        }
+
+        String extArchivo = nombreArchivo.substring(nombreArchivo.lastIndexOf('.') + 1).toLowerCase().trim();
+
+        try {
+            List<ConfiguracionFaseExtensionDto> configs = adminFeignClient.obtenerConfiguracionesPorFase(faseId);
+            List<ExtensionDto> extensiones = adminFeignClient.listarExtensiones();
+
+            if (configs != null && !configs.isEmpty()) {
+                Map<Long, String> extMap = new HashMap<>();
+                if (extensiones != null) {
+                    for (ExtensionDto e : extensiones) {
+                        if (e.getId() != null) {
+                            String code = (e.getCodigo() != null && !e.getCodigo().isBlank()) ? e.getCodigo() : e.getDescripcion();
+                            if (code != null) {
+                                extMap.put(e.getId(), code.toLowerCase().replace(".", "").trim());
+                            }
+                        }
+                    }
+                }
+
+                ConfiguracionFaseExtensionDto configCoincidente = null;
+                Long extensionIdCoincidente = null;
+
+                for (ConfiguracionFaseExtensionDto c : configs) {
+                    String extConfig = extMap.get(c.getExtensionId());
+                    if (extConfig != null && extConfig.equalsIgnoreCase(extArchivo)) {
+                        configCoincidente = c;
+                        extensionIdCoincidente = c.getExtensionId();
+                        break;
+                    }
+                }
+
+                if (configCoincidente == null) {
+                    List<String> permitidas = configs.stream()
+                            .map(c -> extMap.getOrDefault(c.getExtensionId(), "ID " + c.getExtensionId()))
+                            .map(s -> "." + s.toUpperCase())
+                            .toList();
+                    throw new IllegalArgumentException(String.format(
+                            "Extensión no permitida para [%s] en la Fase %d. El archivo adjunto '%s' es .%s pero solo se permiten: %s",
+                            campoNombre, faseId, nombreArchivo, extArchivo.toUpperCase(), String.join(", ", permitidas)
+                    ));
+                }
+
+                int maxMb = (configCoincidente.getTamanoMaximoMb() != null && configCoincidente.getTamanoMaximoMb() > 0)
+                        ? configCoincidente.getTamanoMaximoMb()
+                        : 10;
+                long maxBytes = (long) maxMb * 1024 * 1024;
+
+                if (archivo.getSize() > maxBytes) {
+                    double pesoRealMb = (double) archivo.getSize() / (1024 * 1024);
+                    throw new IllegalArgumentException(String.format(
+                            "El archivo '%s' para [%s] supera el límite de tamaño configurado para la Fase %d (Pesa %.2f MB, Máximo permitido: %d MB).",
+                            nombreArchivo, campoNombre, faseId, pesoRealMb, maxMb
+                    ));
+                }
+
+                return extensionIdCoincidente;
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            LOGGER.warn("⚠️ No se pudo consultar la parametrización vía Feign para Fase {}: {}", faseId, e.getMessage());
+        }
+
+        return 1L;
     }
 
     private void inactivarDocumentoPrevioPorPrefijo(Factura factura, String prefijo) {
@@ -492,7 +593,7 @@ public class FacturaServiceImpl implements FacturaService {
         }
     }
 
-    private void guardarSoporteDocumento(Factura factura, MultipartFile archivo, Path directorio, String prefijo, Long tipoId) throws IOException {
+    private void guardarSoporteDocumento(Factura factura, MultipartFile archivo, Path directorio, String prefijo, Long tipoId, Long extensionId) throws IOException {
         String nombreOriginal = archivo.getOriginalFilename();
         String nombreUnico = UUID.randomUUID() + "_" + prefijo + nombreOriginal;
         Path destinoFinal = directorio.resolve(nombreUnico);
@@ -504,7 +605,7 @@ public class FacturaServiceImpl implements FacturaService {
         doc.setRuta(destinoFinal.toString());
         doc.setTamano(archivo.getSize());
         doc.setEstadoId(1L);
-        doc.setExtensionId(1L);
+        doc.setExtensionId(extensionId != null ? extensionId : 1L);
         doc.setTipoId(tipoId);
         doc.setFactura(factura);
 

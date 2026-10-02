@@ -8,7 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PageEvent } from '@angular/material/paginator';
-import { Subject, Subscription, throwError } from 'rxjs';
+import { forkJoin, Subject, Subscription, throwError } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
@@ -22,6 +22,8 @@ import { DocumentoService } from '../../services/documento.service';
 import { CausalDevolucionService } from '../../services/causal-devolucion.service';
 import { ObservacionService } from '../../services/observacion.service';
 import { FaseService } from '../../services/fase.service';
+import { ConfiguracionFaseExtensionService } from '../../services/configuracion-fase-extension.service';
+import { ExtensionService } from '../../services/extension.service';
 import { LoginService } from '../../services/login.service';
 import { AlertService } from '../../services/alert.service';
 
@@ -46,6 +48,8 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   // 💉 Inyecciones mediante Inject
   private loginService = inject(LoginService);
   private alertService = inject(AlertService);
+  private configuracionFaseService = inject(ConfiguracionFaseExtensionService);
+  private extensionService = inject(ExtensionService);
 
   // Control de pestañas y visores
   tabSeleccionada: number = 0;
@@ -60,6 +64,12 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   opcionesCausal: { value: any, label: string }[] = [];
   opcionesObservacion: { value: any, label: string }[] = [];
   mapaFases: { [key: number]: string } = {};
+
+  // 🛡️ Reglas dinámicas obtenidas de Configuración Fase/Extensión para Fase 2
+  acceptFase2: string = '.pdf';
+  maxMbFase2: number = 10;
+  extensionesPermitidasFase2: string[] = ['pdf'];
+  nombresExtensionesFase2: string = '.PDF';
 
   // 🎯 SUBJECT Y SUBSCRIPCIÓN PARA RETARDO DE FILTROS (DEBOUNCE 400ms)
   private filtroSubject = new Subject<{ [key: string]: string }>();
@@ -109,6 +119,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     this.cargarDatosSesion();
     this.cargarFases();
     this.cargarListasMaestras();
+    this.cargarConfiguracionFase2();
     this.configurarDebounceFiltros();
   }
 
@@ -227,6 +238,42 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
           label: o.descripcion
         }));
       this.opcionesObservacion.push({ value: 'OTRO', label: 'OTRO (Especificar texto libre...)' });
+    });
+  }
+
+  /**
+   * 🛡️ Carga la parametrización dinámica de extensiones y tamaños para Fase 2
+   */
+  private cargarConfiguracionFase2(): void {
+    forkJoin({
+      configs: this.configuracionFaseService.obtenerPorFase(2),
+      exts: this.extensionService.listar()
+    }).subscribe({
+      next: ({ configs, exts }) => {
+        const activas = (configs || []).filter((c: any) => !c.deletedAt);
+        if (activas.length > 0) {
+          const mapaExt: { [id: number]: string } = {};
+          (exts || []).forEach((e: any) => {
+            if (e.id) {
+              const cod = (e.codigo || e.descripcion || '').toLowerCase().replace('.', '').trim();
+              mapaExt[e.id] = cod;
+            }
+          });
+
+          this.extensionesPermitidasFase2 = activas
+            .map((c: any) => mapaExt[c.extensionId])
+            .filter(Boolean);
+
+          if (this.extensionesPermitidasFase2.length > 0) {
+            this.acceptFase2 = this.extensionesPermitidasFase2.map(e => `.${e}`).join(', ');
+            this.nombresExtensionesFase2 = this.extensionesPermitidasFase2.map(e => `.${e.toUpperCase()}`).join(', ');
+          }
+
+          const maximos = activas.map((c: any) => c.tamanoMaximoMb || 10);
+          this.maxMbFase2 = Math.max(...maximos);
+        }
+      },
+      error: (err) => console.warn('⚠️ No se pudo cargar configuración dinámica de Fase 2:', err)
     });
   }
 
@@ -358,10 +405,13 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
       {
         name: 'archivoCausacion',
         label: tieneSoporteCausacionActivo
-          ? 'Soporte de Causación (PDF) - Opcional (Ya existe uno activo)'
-          : 'Soporte de Causación (PDF) * [Requerido]',
+          ? 'Soporte de Causación - Opcional (Ya existe uno activo)'
+          : 'Soporte de Causación * [Requerido]',
         type: 'file',
-        accept: '.pdf',
+        accept: this.acceptFase2,
+        hint: `Formatos permitidos: ${this.nombresExtensionesFase2 || '.PDF'} | Tamaño máximo: ${this.maxMbFase2} MB`,
+        maxSizeMb: this.maxMbFase2,
+        allowedExtensions: this.extensionesPermitidasFase2,
         visible: false
       },
       {
@@ -455,8 +505,30 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
               }
 
               if (!archivoFile && !tieneSoporteActivo) {
-                this.alertService.advertencia('Debe adjuntar obligatoriamente el archivo PDF con el Soporte de Causación.', 'Archivo Requerido');
+                this.alertService.advertencia('Debe adjuntar obligatoriamente el Soporte de Causación.', 'Archivo Requerido');
                 return throwError(() => new Error('El archivo soporte de causación es obligatorio.'));
+              }
+
+              // 🛡️ Validación en frontend previa al envío
+              if (archivoFile) {
+                const nomLower = archivoFile.name.toLowerCase();
+                const ext = nomLower.includes('.') ? nomLower.substring(nomLower.lastIndexOf('.') + 1) : '';
+                if (this.extensionesPermitidasFase2.length > 0 && !this.extensionesPermitidasFase2.includes(ext)) {
+                  this.alertService.advertencia(
+                    `El formato .${ext.toUpperCase()} no está permitido. Formatos admitidos: ${this.nombresExtensionesFase2}`,
+                    'Extensión No Permitida'
+                  );
+                  return throwError(() => new Error('Extensión no permitida'));
+                }
+
+                if (archivoFile.size > this.maxMbFase2 * 1024 * 1024) {
+                  const pesoMb = (archivoFile.size / (1024 * 1024)).toFixed(2);
+                  this.alertService.advertencia(
+                    `El archivo pesa ${pesoMb} MB y supera el límite de ${this.maxMbFase2} MB configurado para la Fase 2.`,
+                    'Tamaño Máximo Excedido'
+                  );
+                  return throwError(() => new Error('Tamaño máximo excedido'));
+                }
               }
 
               this.alertService.cargando('Guardando causación y procesando...', 'Procesando Fase 2');

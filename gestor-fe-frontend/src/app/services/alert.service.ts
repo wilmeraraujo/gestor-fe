@@ -22,6 +22,55 @@ export class AlertService {
     });
   }
 
+  // 🍞 Toast compacto en la esquina superior derecha (top-end)
+  toastExito(mensaje: string): void {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: mensaje,
+      showConfirmButton: false,
+      timer: 2500,
+      timerProgressBar: true
+    });
+  }
+
+  toastError(mensaje: string): void {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'error',
+      title: mensaje,
+      showConfirmButton: false,
+      timer: 3500,
+      timerProgressBar: true
+    });
+  }
+
+  toastInfo(mensaje: string): void {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'info',
+      title: mensaje,
+      showConfirmButton: false,
+      timer: 2500,
+      timerProgressBar: true
+    });
+  }
+
+  toastAdvertencia(mensaje: string): void {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'warning',
+      title: mensaje,
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true
+    });
+  }
+
   // 🔴 Alerta de error
   error(mensaje: string, titulo: string = 'Error'): void {
     Swal.fire({

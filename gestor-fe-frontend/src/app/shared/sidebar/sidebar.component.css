@@ -40,7 +40,10 @@
   max-width: 100%;
   width: auto;
   object-fit: contain;
-  transition: max-height 0.2s ease, transform 0.2s ease;
+  transition: max-height 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+  /* Borde fino y definido siguiendo la figura (punto medio) */
+  filter: drop-shadow(0 0 1.5px #ffffff)
+          drop-shadow(0 0 1.5px rgba(255, 255, 255, 0.7));
 }
 
 /* MENU */

@@ -8,7 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PageEvent } from '@angular/material/paginator';
-import { Subject, Subscription, throwError } from 'rxjs';
+import { forkJoin, Subject, Subscription, throwError } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
@@ -22,6 +22,8 @@ import { DocumentoService } from '../../services/documento.service';
 import { CausalDevolucionService } from '../../services/causal-devolucion.service';
 import { ObservacionService } from '../../services/observacion.service';
 import { FaseService } from '../../services/fase.service';
+import { ConfiguracionFaseExtensionService } from '../../services/configuracion-fase-extension.service';
+import { ExtensionService } from '../../services/extension.service';
 import { LoginService } from '../../services/login.service';
 import { AlertService } from '../../services/alert.service';
 
@@ -46,6 +48,8 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
   // 💉 Inyecciones mediante Inject
   private loginService = inject(LoginService);
   private alertService = inject(AlertService);
+  private configuracionFaseService = inject(ConfiguracionFaseExtensionService);
+  private extensionService = inject(ExtensionService);
 
   tabSeleccionada: number = 0;
   facturaSeleccionada: Factura | null = null;
@@ -59,6 +63,12 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
   opcionesCausal: { value: any, label: string }[] = [];
   opcionesObservacion: { value: any, label: string }[] = [];
   mapaFases: { [key: number]: string } = {};
+
+  // 🛡️ Reglas dinámicas obtenidas de Configuración Fase/Extensión para Fase 4
+  acceptFase4: string = '.pdf';
+  maxMbFase4: number = 10;
+  extensionesPermitidasFase4: string[] = ['pdf'];
+  nombresExtensionesFase4: string = '.PDF';
 
   // 🎯 SUBJECT Y SUBSCRIPCIÓN PARA RETARDO DE FILTROS (DEBOUNCE 400ms)
   private filtroSubject = new Subject<{ [key: string]: string }>();
@@ -100,6 +110,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
     this.cargarDatosSesion();
     this.cargarFases();
     this.cargarListasMaestras();
+    this.cargarConfiguracionFase4();
     this.configurarDebounceFiltros();
   }
 
@@ -222,8 +233,41 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
   }
 
   /**
-   * 👁️ Carga los soportes documentales de la factura y pasa a Pestaña 2
+   * 🛡️ Carga la parametrización dinámica de extensiones y tamaños para Fase 4 (Tesorería)
    */
+  private cargarConfiguracionFase4(): void {
+    forkJoin({
+      configs: this.configuracionFaseService.obtenerPorFase(4),
+      exts: this.extensionService.listar()
+    }).subscribe({
+      next: ({ configs, exts }) => {
+        const activas = (configs || []).filter((c: any) => !c.deletedAt);
+        if (activas.length > 0) {
+          const mapaExt: { [id: number]: string } = {};
+          (exts || []).forEach((e: any) => {
+            if (e.id) {
+              const cod = (e.codigo || e.descripcion || '').toLowerCase().replace('.', '').trim();
+              mapaExt[e.id] = cod;
+            }
+          });
+
+          this.extensionesPermitidasFase4 = activas
+            .map((c: any) => mapaExt[c.extensionId])
+            .filter(Boolean);
+
+          if (this.extensionesPermitidasFase4.length > 0) {
+            this.acceptFase4 = this.extensionesPermitidasFase4.map(e => `.${e}`).join(', ');
+            this.nombresExtensionesFase4 = this.extensionesPermitidasFase4.map(e => `.${e.toUpperCase()}`).join(', ');
+          }
+
+          const maximos = activas.map((c: any) => c.tamanoMaximoMb || 10);
+          this.maxMbFase4 = Math.max(...maximos);
+        }
+      },
+      error: (err) => console.warn('⚠️ No se pudo cargar configuración dinámica de Fase 4:', err)
+    });
+  }
+
   /**
    * 👁️ Carga los soportes documentales de la factura y pasa a Pestaña 2
    */
@@ -341,19 +385,25 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
       {
         name: 'soporteTb',
         label: tieneTbActivo
-          ? 'Documento Registro Contable TB (PDF) - Opcional (Ya existe activo)'
-          : 'Documento Registro Contable TB (PDF) * [Requerido]',
+          ? 'Documento Registro Contable TB - Opcional (Ya existe activo)'
+          : 'Documento Registro Contable TB * [Requerido]',
         type: 'file',
-        accept: '.pdf',
+        accept: this.acceptFase4,
+        hint: `Formatos permitidos: ${this.nombresExtensionesFase4 || '.PDF'} | Tamaño máximo: ${this.maxMbFase4} MB`,
+        maxSizeMb: this.maxMbFase4,
+        allowedExtensions: this.extensionesPermitidasFase4,
         visible: false
       },
       {
         name: 'comprobantePago',
         label: tienePagoActivo
-          ? 'Comprobante de Pago Bancario (PDF) - Opcional (Ya existe activo)'
-          : 'Comprobante de Pago Bancario (PDF) * [Requerido]',
+          ? 'Comprobante de Pago Bancario - Opcional (Ya existe activo)'
+          : 'Comprobante de Pago Bancario * [Requerido]',
         type: 'file',
-        accept: '.pdf',
+        accept: this.acceptFase4,
+        hint: `Formatos permitidos: ${this.nombresExtensionesFase4 || '.PDF'} | Tamaño máximo: ${this.maxMbFase4} MB`,
+        maxSizeMb: this.maxMbFase4,
+        allowedExtensions: this.extensionesPermitidasFase4,
         visible: false
       },
       {
@@ -453,6 +503,50 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
               if (requiereTb || requierePago) {
                 this.alertService.advertencia('Debe adjuntar obligatoriamente los soportes de pago requeridos que no existan activos.', 'Archivos Requeridos');
                 return throwError(() => new Error('Los archivos de pago requeridos son obligatorios.'));
+              }
+
+              // 🛡️ Validación en frontend previa al envío para Soporte TB
+              if (archivoTb) {
+                const nomLower = archivoTb.name.toLowerCase();
+                const ext = nomLower.includes('.') ? nomLower.substring(nomLower.lastIndexOf('.') + 1) : '';
+                if (this.extensionesPermitidasFase4.length > 0 && !this.extensionesPermitidasFase4.includes(ext)) {
+                  this.alertService.advertencia(
+                    `El formato .${ext.toUpperCase()} no está permitido para el Soporte TB. Formatos admitidos: ${this.nombresExtensionesFase4}`,
+                    'Extensión No Permitida'
+                  );
+                  return throwError(() => new Error('Extensión no permitida'));
+                }
+
+                if (archivoTb.size > this.maxMbFase4 * 1024 * 1024) {
+                  const pesoMb = (archivoTb.size / (1024 * 1024)).toFixed(2);
+                  this.alertService.advertencia(
+                    `El archivo Soporte TB supera el límite de ${this.maxMbFase4} MB configurado para la Fase 4 (Pesa ${pesoMb} MB).`,
+                    'Tamaño Máximo Excedido'
+                  );
+                  return throwError(() => new Error('Tamaño máximo excedido'));
+                }
+              }
+
+              // 🛡️ Validación en frontend previa al envío para Comprobante de Pago
+              if (archivoComprobante) {
+                const nomLower = archivoComprobante.name.toLowerCase();
+                const ext = nomLower.includes('.') ? nomLower.substring(nomLower.lastIndexOf('.') + 1) : '';
+                if (this.extensionesPermitidasFase4.length > 0 && !this.extensionesPermitidasFase4.includes(ext)) {
+                  this.alertService.advertencia(
+                    `El formato .${ext.toUpperCase()} no está permitido para el Comprobante de Pago. Formatos admitidos: ${this.nombresExtensionesFase4}`,
+                    'Extensión No Permitida'
+                  );
+                  return throwError(() => new Error('Extensión no permitida'));
+                }
+
+                if (archivoComprobante.size > this.maxMbFase4 * 1024 * 1024) {
+                  const pesoMb = (archivoComprobante.size / (1024 * 1024)).toFixed(2);
+                  this.alertService.advertencia(
+                    `El Comprobante de Pago supera el límite de ${this.maxMbFase4} MB configurado para la Fase 4 (Pesa ${pesoMb} MB).`,
+                    'Tamaño Máximo Excedido'
+                  );
+                  return throwError(() => new Error('Tamaño máximo excedido'));
+                }
               }
 
               const tipoRegistroIdNum = model.tipoRegistroContableId

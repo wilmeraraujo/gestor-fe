@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.gestor_fe.core.dto.ConfiguracionFaseExtensionDto;
 import com.gestor_fe.core.dto.ConfiguracionSistemaDto;
+import com.gestor_fe.core.dto.ExtensionDto;
 import com.gestor_fe.core.dto.TipoDto;
 
 @FeignClient(name = "admin-service", url = "${admin-service.url}")
@@ -17,6 +18,9 @@ public interface AdminFeignClient {
 
     @GetMapping("/api/v1/admin/tipo")
     List<TipoDto> listarTipos();
+
+    @GetMapping("/api/v1/admin/extension")
+    List<ExtensionDto> listarExtensiones();
 
     // 🚀 Nuevos métodos para consumir la parametrización dinámica
     @GetMapping("/api/v1/admin/configuracion-fase/fase/{faseId}")

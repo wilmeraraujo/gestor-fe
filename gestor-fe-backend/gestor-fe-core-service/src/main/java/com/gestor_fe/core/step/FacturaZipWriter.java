@@ -27,6 +27,9 @@ public class FacturaZipWriter implements ItemWriter<Factura> {
     private final String rutaStorageValidos;
     private final Long identificadorCargue;
 
+    // ⚡ CACHÉ EN MEMORIA (Ámbito del Job/Step): Evita reconsultar los soportes del prestador en la BD por cada factura
+    private final java.util.Map<String, List<Documento>> soportesPorNitCache = new java.util.HashMap<>();
+
     public FacturaZipWriter(FacturaRepository facturaRepository, 
                             DocumentoRepository documentoRepository,
                             String rutaStorageValidos, 
@@ -74,8 +77,10 @@ public class FacturaZipWriter implements ItemWriter<Factura> {
             // =========================================================================================
             // 📸 2. SNAPSHOT (CONGELAMIENTO) DINÁMICO DE TODOS LOS SOPORTES ACTIVOS DEL PRESTADOR
             // =========================================================================================
-            // Consulta todos los documentos del prestador que no estén borrados (deletedAt IS NULL)
-            List<Documento> soportesPrestador = documentoRepository.findSoportesPrestadorByNit(factura.getNit());
+            // Consulta en caché o BD todos los documentos del prestador que no estén borrados (deletedAt IS NULL)
+            List<Documento> soportesPrestador = soportesPorNitCache.computeIfAbsent(factura.getNit(), 
+                nit -> documentoRepository.findSoportesPrestadorByNit(nit)
+            );
 
             for (Documento soporteOrigen : soportesPrestador) {
                 // Verificamos que el soporte esté activo y tenga ruta física configurada

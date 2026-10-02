@@ -55,7 +55,6 @@ export class SidebarComponent implements OnInit {
       expanded: false,
       visible: isAdminOGAdmin,
       children: [
-        { name: "Estado", icon: "check_circle", route: "/dashboard/admin/estado", visible: true },
         { name: "Observación", icon: "comment", route: "/dashboard/admin/observacion", visible: true },
         { name: "Causal devolución", icon: "assignment_return", route: "/dashboard/admin/causal-devolucion", visible: true },
         { name: "Tipo", icon: "category", route: "/dashboard/admin/tipo", visible: true },

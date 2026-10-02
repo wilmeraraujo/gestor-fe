@@ -51,10 +51,53 @@ export class CommonFormComponent implements OnInit {
     });
   }
 
-  // Capturar archivo cuando sea type === 'file'
+  // Capturar archivo cuando sea type === 'file' con validación dinámica
   onFileChange(event: any, fieldName: string): void {
     if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
+      const file: File = event.target.files[0];
+      const campo = this.campos.find(c => c.name === fieldName);
+
+      if (campo) {
+        const nombreLower = file.name.toLowerCase();
+        const ext = nombreLower.includes('.') ? nombreLower.substring(nombreLower.lastIndexOf('.') + 1) : '';
+
+        // 🛡️ Validación de extensión permitida
+        if (campo.allowedExtensions && Array.isArray(campo.allowedExtensions) && campo.allowedExtensions.length > 0) {
+          const permitidas = campo.allowedExtensions.map((e: string) => e.toLowerCase().replace('.', '').trim());
+          if (!permitidas.includes(ext)) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'Formato no permitido',
+              text: `El archivo "${file.name}" (.${ext.toUpperCase()}) no es válido. Formatos permitidos: .${permitidas.join(', .').toUpperCase()}`,
+              confirmButtonColor: '#1DA6BA'
+            });
+            event.target.value = '';
+            delete this.archivosSubidos[fieldName];
+            this.form.get(fieldName)?.setValue('');
+            return;
+          }
+        }
+
+        // 🛡️ Validación de tamaño máximo en MB
+        if (campo.maxSizeMb && campo.maxSizeMb > 0) {
+          const maxMb = campo.maxSizeMb;
+          const maxBytes = maxMb * 1024 * 1024;
+          if (file.size > maxBytes) {
+            const pesoRealMb = (file.size / (1024 * 1024)).toFixed(2);
+            Swal.fire({
+              icon: 'warning',
+              title: 'Archivo demasiado grande',
+              text: `El archivo "${file.name}" pesa ${pesoRealMb} MB y supera el tamaño máximo permitido de ${maxMb} MB.`,
+              confirmButtonColor: '#1DA6BA'
+            });
+            event.target.value = '';
+            delete this.archivosSubidos[fieldName];
+            this.form.get(fieldName)?.setValue('');
+            return;
+          }
+        }
+      }
+
       this.archivosSubidos[fieldName] = file;
       this.form.get(fieldName)?.setValue(file.name);
     }

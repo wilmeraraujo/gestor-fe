@@ -95,11 +95,12 @@ public class JobLoteCargueConfig {
     @StepScope
     public ItemProcessor<FacturaZipWrapperDto, Factura> itemProcessor(
             @Value("#{jobParameters['identificadorCargue']}") Long identificadorCargue,
+            @Value("#{jobParameters['usuario']}") String usuario,
             FacturaService facturaService,
             ErrorCargueService errorCargueService,
             DocumentoRepository documentoRepository,
             AdminFeignClient adminFeignClient) { // 👈 Inyección declarativa de Spring
-        return new FacturaZipProcessor(identificadorCargue, facturaService, errorCargueService, documentoRepository, adminFeignClient);
+        return new FacturaZipProcessor(identificadorCargue, usuario, facturaService, errorCargueService, documentoRepository, adminFeignClient);
     }
 
     @Bean

@@ -38,6 +38,7 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
     private static final Logger LOGGER = LoggerFactory.getLogger(FacturaZipProcessor.class);
 
     private final Long identificadorCargue;
+    private final String usuarioAutenticado;
     private final FacturaService facturaService;
     private final ErrorCargueService errorCargueService;
     private final DocumentoRepository documentoRepository;
@@ -48,12 +49,18 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
     private final Set<String> cufesInBatch = new HashSet<>();
     private final Set<String> nitFacturasInBatch = new HashSet<>();
 
+    // ⚡ CACHÉ EN MEMORIA (Ámbito de ejecución del Job): Evita llamadas redundantes a Feign y Base de Datos por cada factura
+    private List<TipoDto> tiposAdministrativosCache = null;
+    private final java.util.Map<String, Set<Long>> soportesCargadosPorNitCache = new java.util.HashMap<>();
+
     public FacturaZipProcessor(Long identificadorCargue,
+                               String usuarioAutenticado,
                                FacturaService facturaService,
                                ErrorCargueService errorCargueService,
                                DocumentoRepository documentoRepository,
                                AdminFeignClient adminFeignClient) {
         this.identificadorCargue = identificadorCargue;
+        this.usuarioAutenticado = usuarioAutenticado;
         this.facturaService = facturaService;
         this.errorCargueService = errorCargueService;
         this.documentoRepository = documentoRepository;
@@ -182,24 +189,49 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         String cufeClean = cufe.trim();
         String llaveNitFactura = nitClean + "_" + numFacturaClean;
 
+        String nitReferencia = (usuarioAutenticado != null && !usuarioAutenticado.isBlank()
+                && !usuarioAutenticado.equalsIgnoreCase("admin")
+                && !usuarioAutenticado.equalsIgnoreCase("gestor-fe-admin"))
+                ? usuarioAutenticado.trim()
+                : nitClean;
+
+        // =========================================================================
+        // 🛑 VALIDACIÓN 1.1: CORRESPONDENCIA DE NIT CON EL USUARIO AUTENTICADO
+        // =========================================================================
+        if (usuarioAutenticado != null && !usuarioAutenticado.isBlank() 
+                && !usuarioAutenticado.equalsIgnoreCase("admin") 
+                && !usuarioAutenticado.equalsIgnoreCase("gestor-fe-admin")) {
+            if (!nitClean.equalsIgnoreCase(usuarioAutenticado.trim())) {
+                String errorUsuario = String.format("El NIT emisor de la factura [%s] en el XML no coincide con el NIT del usuario autenticado [%s] para la factura [%s].",
+                        nitClean, usuarioAutenticado.trim(), numFacturaClean);
+                registrarError("NIT_NO_CORRESPONDE_USUARIO", "NIT_EMISOR", errorUsuario, nitClean);
+            }
+        }
+
         // =========================================================================
         // 🛑 VALIDACIÓN 2: VERIFICACIÓN DE SOPORTES DILIGENCIADOS POR PRESTADOR
         // =========================================================================
-        List<Documento> soportesPrestador = documentoRepository.findSoportesPrestadorByNit(nitClean);
-        
-        Set<Long> tiposCargados = soportesPrestador.stream()
-                .filter(d -> d.getTipoId() != null && d.getDeletedAt() == null)
-                .map(Documento::getTipoId)
-                .collect(Collectors.toSet());
+        // ⚡ Optimización: Consultar la BD solo una vez por NIT de referencia durante todo el lote
+        Set<Long> tiposCargados = soportesCargadosPorNitCache.computeIfAbsent(nitReferencia, nit -> {
+            List<Documento> soportes = documentoRepository.findSoportesPrestadorByNit(nit);
+            return soportes.stream()
+                    .filter(d -> d.getTipoId() != null && d.getDeletedAt() == null)
+                    .map(Documento::getTipoId)
+                    .collect(Collectors.toSet());
+        });
 
-        List<TipoDto> tiposAdministrativos = new ArrayList<>();
-        try {
-            if (adminFeignClient != null) {
-                tiposAdministrativos = adminFeignClient.listarTipos();
+        // ⚡ Optimización: Consultar Feign a admin-service una sola vez durante el Job
+        if (this.tiposAdministrativosCache == null) {
+            try {
+                if (adminFeignClient != null) {
+                    this.tiposAdministrativosCache = adminFeignClient.listarTipos();
+                }
+            } catch (Exception e) {
+                LOGGER.error("⚠️ No se pudo establecer comunicación Feign con admin-service: {}", e.getMessage());
+                this.tiposAdministrativosCache = new ArrayList<>();
             }
-        } catch (Exception e) {
-            LOGGER.error("⚠️ No se pudo establecer comunicación Feign con admin-service: {}", e.getMessage());
         }
+        List<TipoDto> tiposAdministrativos = this.tiposAdministrativosCache;
 
         List<String> faltantes = new ArrayList<>();
         if (tiposAdministrativos != null && !tiposAdministrativos.isEmpty()) {
@@ -214,8 +246,8 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
 
         if (!faltantes.isEmpty()) {
             String errorMsg = String.format("El prestador con NIT [%s] no puede radicar la factura [%s]. Soportes empresariales obligatorios pendientes por cargar: %s",
-                    nitClean, numFacturaClean, String.join(", ", faltantes));
-            registrarError("SOPORTES_PRESTADOR_INCOMPLETOS", "SOPORTES_EMPRESARIALES", errorMsg, nitClean);
+                    nitReferencia, numFacturaClean, String.join(", ", faltantes));
+            registrarError("SOPORTES_PRESTADOR_INCOMPLETOS", "SOPORTES_EMPRESARIALES", errorMsg, nitReferencia);
         }
 
         // =========================================================================

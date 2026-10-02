@@ -15,43 +15,22 @@
         <div class="botones-container">
 
           <!-- ➕ BOTÓN ADICIONAR / CARGAR PERSONALIZABLE -->
-          <button
-            *ngIf="mostrarAgregar"
-            type="button"
-            class="btn-icon-theme btn-add"
-            (click)="agregar.emit()"
+          <button *ngIf="mostrarAgregar" type="button" class="btn-icon-theme btn-add" (click)="agregar.emit()"
             [matTooltip]="tooltipAgregar">
             <mat-icon>add</mat-icon>
             <span>{{ textoBotonAgregar }}</span>
           </button>
 
           <!-- 🧹 BOTÓN LIMPIAR FILTROS (SIEMPRE VISIBLE) -->
-          <button
-            type="button"
-            class="btn-icon-theme btn-clear-filter"
-            (click)="limpiarFiltrosColumnas()"
+          <button type="button" class="btn-icon-theme btn-clear-filter" (click)="limpiarFiltrosColumnas()"
             matTooltip="Limpiar todos los filtros por columna">
             <mat-icon>filter_alt_off</mat-icon>
             <span>Limpiar</span>
           </button>
 
-          <!-- 🔄 BOTÓN REFRESCAR TABLA (REDONDO) -->
-          <button
-            *ngIf="mostrarRefrescar"
-            type="button"
-            class="btn-icon-theme btn-refresh-table"
-            (click)="onRefrescar()"
-            matTooltip="Refrescar tabla">
-            <mat-icon [class.spinning]="refrescando">refresh</mat-icon>
-          </button>
-
           <!-- 📊 BOTÓN DESCARGAR EXCEL (OPCIONAL) -->
-          <button
-            *ngIf="mostrarDescargarExcel"
-            type="button"
-            class="btn-icon-theme btn-export-excel"
-            (click)="descargarExcel.emit()"
-            [disabled]="descargandoExcel"
+          <button *ngIf="mostrarDescargarExcel" type="button" class="btn-icon-theme btn-export-excel"
+            (click)="descargarExcel.emit()" [disabled]="descargandoExcel"
             matTooltip="Descargar reporte en Excel según filtros aplicados">
             <mat-icon [class.spinning]="descargandoExcel">
               {{ descargandoExcel ? 'autorenew' : 'file_download' }}
@@ -59,13 +38,15 @@
             <span>{{ descargandoExcel ? 'Descargando...' : 'Descargar Excel' }}</span>
           </button>
 
+          <!-- 🔄 BOTÓN REFRESCAR TABLA (REDONDO) -->
+          <button *ngIf="mostrarRefrescar" type="button" class="btn-icon-theme btn-refresh-table"
+            (click)="onRefrescar()" matTooltip="Refrescar tabla">
+            <mat-icon [class.spinning]="refrescando">refresh</mat-icon>
+          </button>
+
           <!-- 🗑️ BOTÓN ELIMINACIÓN MASIVA (OPCIONAL) -->
-          <button
-            *ngIf="mostrarEliminarMasivo"
-            type="button"
-            class="btn-icon-theme btn-delete-bulk"
-            [disabled]="selection.selected.length === 0"
-            (click)="onEliminarMasivo()"
+          <button *ngIf="mostrarEliminarMasivo" type="button" class="btn-icon-theme btn-delete-bulk"
+            [disabled]="selection.selected.length === 0" (click)="onEliminarMasivo()"
             matTooltip="Eliminar soportes seleccionados">
             <mat-icon>delete_sweep</mat-icon>
             <span>Eliminación Masiva ({{ selection.selected.length }})</span>
@@ -82,40 +63,32 @@
   <mat-card-content class="card-content-custom">
 
     <div class="tabla-responsive">
-      <table
-        mat-table
-        [dataSource]="dataSource"
-        class="full-width-table">
+      <table mat-table [dataSource]="dataSource" class="full-width-table">
 
         <!-- CHECKBOX SELECCIÓN MÚLTIPLE -->
         <ng-container matColumnDef="select">
           <th mat-header-cell *matHeaderCellDef class="cell-checkbox">
-            <mat-checkbox
-              (change)="$event ? toggleAllRows() : null"
-              [checked]="selection.hasValue() && isAllSelected()"
+            <mat-checkbox (change)="$event ? toggleAllRows() : null" [checked]="selection.hasValue() && isAllSelected()"
               [indeterminate]="selection.hasValue() && !isAllSelected()">
             </mat-checkbox>
           </th>
           <td mat-cell *matCellDef="let row" class="cell-checkbox">
-            <mat-checkbox
-              (click)="$event.stopPropagation()"
-              (change)="$event ? selection.toggle(row) : null"
+            <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(row) : null"
               [checked]="selection.isSelected(row)">
             </mat-checkbox>
           </td>
         </ng-container>
 
         <!-- COLUMNAS DINÁMICAS DE DATOS -->
-        <ng-container
-          *ngFor="let col of columnas"
-          [matColumnDef]="col.field">
+        <ng-container *ngFor="let col of columnas" [matColumnDef]="col.field">
           <th mat-header-cell *matHeaderCellDef [class.col-id-cell]="col.field === 'id'">
             {{ col.header }}
           </th>
           <td mat-cell *matCellDef="let row" class="text-nowrap" [class.col-id-cell]="col.field === 'id'">
 
             <!-- 🏷️ BADGES DE ESTADO (ACTIVO/INACTIVO BASADO EN DELETEDAT O PROCESAMIENTO) -->
-            <ng-container *ngIf="col.field === 'estadoActivo' || col.field === 'deletedAt' || (col.field === 'estado' && (!row['estado'] || row['estado'] === 'ACTIVO' || row['estado'] === 'INACTIVO')); else checkEstadoNombre">
+            <ng-container
+              *ngIf="col.field === 'estadoActivo' || col.field === 'deletedAt' || (col.field === 'estado' && (!row['estado'] || row['estado'] === 'ACTIVO' || row['estado'] === 'INACTIVO')); else checkEstadoNombre">
               <span [class]="isActivo(row) ? 'badge-estado badge-verde' : 'badge-estado badge-rojo'">
                 <span class="badge-dot"></span>
                 <mat-icon class="icono-badge-estado">{{ isActivo(row) ? 'check' : 'close' }}</mat-icon>
@@ -128,15 +101,18 @@
                 <span [class]="obtenerClaseEstado(row[col.field])">
                   <span class="badge-dot"></span>
                   <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'PROCESANDO'">sync</mat-icon>
-                  <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'CARGADO' || row[col.field] === 'CARGUE FINALIZADO'">check</mat-icon>
-                  <mat-icon class="icono-badge-estado" *ngIf="row[col.field] === 'CON ERRORES' || row[col.field] === 'RECHAZADO'">close</mat-icon>
+                  <mat-icon class="icono-badge-estado"
+                    *ngIf="row[col.field] === 'CARGADO' || row[col.field] === 'CARGUE FINALIZADO'">check</mat-icon>
+                  <mat-icon class="icono-badge-estado"
+                    *ngIf="row[col.field] === 'CON ERRORES' || row[col.field] === 'RECHAZADO'">close</mat-icon>
                   <span>{{ row[col.field] }}</span>
                 </span>
               </ng-container>
             </ng-template>
 
             <ng-template #celdaTextoNormal>
-              <span class="celda-valor">{{ col.field === 'procesoId' ? (row['procesoNombre'] || row['procesoId']) : row[col.field] }}</span>
+              <span class="celda-valor">{{ col.field === 'procesoId' ? (row['procesoNombre'] || row['procesoId']) :
+                row[col.field] }}</span>
             </ng-template>
 
           </td>
@@ -152,90 +128,58 @@
             <div class="acciones-cell">
 
               <!-- 🔄 SPINNER EN PROCESAMIENTO -->
-              <mat-spinner
-                *ngIf="row.estadoNombre === 'PROCESANDO' || (!row.jobExecutionId && !row.exiteError)"
-                diameter="24"
-                matTooltip="Procesando lote en segundo plano...">
+              <mat-spinner *ngIf="row.estadoNombre === 'PROCESANDO' || (!row.jobExecutionId && !row.exiteError)"
+                diameter="24" matTooltip="Procesando lote en segundo plano...">
               </mat-spinner>
 
               <!-- ✏️ EDITAR -->
-              <button
-                *ngIf="mostrarEditar && row.estadoNombre !== 'PROCESANDO'"
-                mat-icon-button
-                class="btn-action btn-action-edit"
-                (click)="onEditar(row)"
-                matTooltip="Editar">
+              <button *ngIf="mostrarEditar && row.estadoNombre !== 'PROCESANDO'" mat-icon-button
+                class="btn-action btn-action-edit" (click)="onEditar(row)" matTooltip="Editar">
                 <mat-icon>edit</mat-icon>
               </button>
 
               <!-- 🧾 GESTIONAR FACTURA (OCULTO EN ANULADO, RECHAZADO, PROCESANDO) -->
-              <button
-                *ngIf="puedeGestionarFactura(row)"
-                mat-icon-button
-                class="btn-action btn-action-invoice"
-                (click)="onGestionarFactura(row)"
-                matTooltip="Gestionar">
+              <button *ngIf="puedeGestionarFactura(row)" mat-icon-button class="btn-action btn-action-invoice"
+                (click)="onGestionarFactura(row)" matTooltip="Gestionar">
                 <mat-icon>receipt_long</mat-icon>
               </button>
 
               <!-- 📄 DESCARGAR ERRORES -->
-              <button
-                *ngIf="mostrarDescargaErrores && (row.exiteError === true || row.exiteError === 'true')"
-                mat-icon-button
-                class="btn-action btn-action-error"
-                (click)="onDescargarErrores(row)"
+              <button *ngIf="mostrarDescargaErrores && (row.exiteError === true || row.exiteError === 'true')"
+                mat-icon-button class="btn-action btn-action-error" (click)="onDescargarErrores(row)"
                 matTooltip="Descargar Reporte de Errores (Excel)">
                 <mat-icon>insert_drive_file</mat-icon>
               </button>
 
               <!-- 📥 DESCARGAR REGISTRO -->
-              <button
-                *ngIf="mostrarDescargar && row.estadoNombre !== 'PROCESANDO'"
-                mat-icon-button
-                class="btn-action btn-action-download"
-                (click)="onDescargar(row)"
+              <button *ngIf="mostrarDescargar && row.estadoNombre !== 'PROCESANDO'" mat-icon-button
+                class="btn-action btn-action-download" (click)="onDescargar(row)"
                 matTooltip="Descargar soporte documental">
                 <mat-icon>file_download</mat-icon>
               </button>
 
               <!-- 👁️ VER DETALLE -->
-              <button
-                *ngIf="mostrarDetalle && row.estadoNombre !== 'PROCESANDO'"
-                mat-icon-button
-                class="btn-action btn-action-view"
-                (click)="onVerDetalle(row)"
-                matTooltip="Ver registros asociados">
+              <button *ngIf="mostrarDetalle && row.estadoNombre !== 'PROCESANDO'" mat-icon-button
+                class="btn-action btn-action-view" (click)="onVerDetalle(row)" matTooltip="Ver registros asociados">
                 <mat-icon>visibility</mat-icon>
               </button>
 
               <!-- 📜 HISTORIAL -->
-              <button
-                *ngIf="mostrarHistorial"
-                mat-icon-button
-                class="btn-action btn-action-history"
-                (click)="verHistorial.emit(row)"
-                matTooltip="Ver Trazabilidad / Historial de Gestiones">
+              <button *ngIf="mostrarHistorial" mat-icon-button class="btn-action btn-action-history"
+                (click)="verHistorial.emit(row)" matTooltip="Ver Trazabilidad / Historial de Gestiones">
                 <mat-icon>history</mat-icon>
               </button>
 
               <!-- 🔘 ACTIVAR / INACTIVAR DINÁMICO (VERDE ACTIVO / ROJO INACTIVO) -->
-              <button
-                *ngIf="mostrarActivarInactivar"
-                mat-icon-button
-                [class.btn-action-active]="isActivo(row)"
-                [class.btn-action-inactive]="!isActivo(row)"
-                class="btn-action"
-                (click)="onToggleEstado(row)"
+              <button *ngIf="mostrarActivarInactivar" mat-icon-button [class.btn-action-active]="isActivo(row)"
+                [class.btn-action-inactive]="!isActivo(row)" class="btn-action" (click)="onToggleEstado(row)"
                 [matTooltip]="isActivo(row) ? 'Inactivar Registro' : 'Activar Registro'">
                 <mat-icon>{{ isActivo(row) ? 'toggle_on' : 'toggle_off' }}</mat-icon>
               </button>
 
               <!-- 🗑️ ELIMINAR / INACTIVAR -->
-              <button
-                *ngIf="mostrarEliminar && row.permitirEliminar !== false"
-                mat-icon-button
-                class="btn-action btn-action-delete"
-                (click)="onEliminar(row)"
+              <button *ngIf="mostrarEliminar && row.permitirEliminar !== false" mat-icon-button
+                class="btn-action btn-action-delete" (click)="onEliminar(row)"
                 matTooltip="Eliminar / Inactivar Soporte">
                 <mat-icon>delete</mat-icon>
               </button>
@@ -253,16 +197,10 @@
         <ng-container *ngFor="let col of columnas" [matColumnDef]="'filter-' + col.field">
           <th mat-header-cell *matHeaderCellDef class="filter-header-cell" [class.col-id-cell]="col.field === 'id'">
             <div class="filter-cell-wrapper" *ngIf="col.filtrable !== false" (click)="enfocarFiltro($event, col.field)">
-              <mat-form-field
-                appearance="outline"
-                class="col-filter-input"
-                subscriptSizing="dynamic">
+              <mat-form-field appearance="outline" class="col-filter-input" subscriptSizing="dynamic">
 
-                <mat-select
-                  *ngIf="col.options; else selectEstadoDefault"
-                  [(ngModel)]="filtrosPorColumna[col.field]"
-                  (selectionChange)="aplicarFiltrosColumnas(col.field)"
-                  placeholder="Todos">
+                <mat-select *ngIf="col.options; else selectEstadoDefault" [(ngModel)]="filtrosPorColumna[col.field]"
+                  (selectionChange)="aplicarFiltrosColumnas(col.field)" placeholder="Todos">
                   <mat-option value="">Todos</mat-option>
                   <mat-option *ngFor="let opt of col.options" [value]="opt.value">
                     {{ opt.label }}
@@ -272,8 +210,7 @@
                 <ng-template #selectEstadoDefault>
                   <mat-select
                     *ngIf="col.field === 'estadoActivo' || col.field === 'deletedAt' || col.field === 'estado'; else inputFiltroTexto"
-                    [(ngModel)]="filtrosPorColumna[col.field]"
-                    (selectionChange)="aplicarFiltrosColumnas(col.field)"
+                    [(ngModel)]="filtrosPorColumna[col.field]" (selectionChange)="aplicarFiltrosColumnas(col.field)"
                     placeholder="Todos">
                     <mat-option value="">Todos</mat-option>
                     <mat-option value="ACTIVO">Activo</mat-option>
@@ -282,17 +219,12 @@
                 </ng-template>
 
                 <ng-template #inputFiltroTexto>
-                  <input
-                    matInput
-                    [(ngModel)]="filtrosPorColumna[col.field]"
-                    (input)="aplicarFiltrosColumnas(col.field)"
+                  <input matInput [(ngModel)]="filtrosPorColumna[col.field]" (input)="aplicarFiltrosColumnas(col.field)"
                     placeholder="Filtrar..." />
                 </ng-template>
 
               </mat-form-field>
-              <div
-                *ngIf="cargandoFiltro && campoFiltrando === col.field"
-                class="filter-loading-spinner"
+              <div *ngIf="cargandoFiltro && campoFiltrando === col.field" class="filter-loading-spinner"
                 title="Cargando...">
               </div>
             </div>
@@ -305,17 +237,10 @@
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns" class="encabezado-tabla"></tr>
 
-        <tr
-          mat-header-row
-          *matHeaderRowDef="filterColumns"
-          class="row-filtros"
-          style="display: table-row;">
+        <tr mat-header-row *matHeaderRowDef="filterColumns" class="row-filtros" style="display: table-row;">
         </tr>
 
-        <tr
-          mat-row
-          *matRowDef="let row; columns: displayedColumns;"
-          class="tabla-fila"
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="tabla-fila"
           [class.fila-seleccionada]="selection.isSelected(row)">
         </tr>
 
@@ -331,15 +256,9 @@
       <p class="empty-state-subtitle">Ingrese un filtro de búsqueda o limpie los criterios actuales.</p>
     </div>
 
-    <mat-paginator
-      #paginatorInferior
-      [length]="totalRegistros"
-      [pageSize]="totalPorPagina"
-      [pageSizeOptions]="pageSizeOptions"
-      showFirstLastButtons
-      (page)="onPaginar($event)">
+    <mat-paginator #paginatorInferior [length]="totalRegistros" [pageSize]="totalPorPagina"
+      [pageSizeOptions]="pageSizeOptions" showFirstLastButtons (page)="onPaginar($event)">
     </mat-paginator>
 
   </mat-card-content>
 </mat-card>
-

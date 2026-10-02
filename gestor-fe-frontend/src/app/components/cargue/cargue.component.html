@@ -18,6 +18,7 @@
   [tooltipAgregar]="tooltipAgregar"
   
   [mostrarAcciones]="true"
+  [mostrarRefrescar]="true"
   [mostrarDetalle]="false"
   [mostrarEditar]="false"
   [mostrarDescargaErrores]="true"
@@ -27,6 +28,7 @@
   (descargarErrores)="descargarExcelErrores($event)"
   (agregar)="agregar()"
   (buscar)="buscar($event)"
+  (refrescar)="calcularRangos()"
   (eliminar)="deletedAt($event)"
 >
 </app-data-table>
