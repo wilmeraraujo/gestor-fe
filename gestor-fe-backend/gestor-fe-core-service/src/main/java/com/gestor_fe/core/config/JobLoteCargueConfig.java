@@ -96,11 +96,15 @@ public class JobLoteCargueConfig {
     public ItemProcessor<FacturaZipWrapperDto, Factura> itemProcessor(
             @Value("#{jobParameters['identificadorCargue']}") Long identificadorCargue,
             @Value("#{jobParameters['usuario']}") String usuario,
+            @Value("#{jobParameters['esAdmin']}") String esAdminStr,
             FacturaService facturaService,
             ErrorCargueService errorCargueService,
             DocumentoRepository documentoRepository,
             AdminFeignClient adminFeignClient) { // 👈 Inyección declarativa de Spring
-        return new FacturaZipProcessor(identificadorCargue, usuario, facturaService, errorCargueService, documentoRepository, adminFeignClient);
+        boolean esAdmin = "true".equalsIgnoreCase(esAdminStr) 
+                || "admin".equalsIgnoreCase(usuario) 
+                || "gestor-fe-admin".equalsIgnoreCase(usuario);
+        return new FacturaZipProcessor(identificadorCargue, usuario, esAdmin, facturaService, errorCargueService, documentoRepository, adminFeignClient);
     }
 
     @Bean

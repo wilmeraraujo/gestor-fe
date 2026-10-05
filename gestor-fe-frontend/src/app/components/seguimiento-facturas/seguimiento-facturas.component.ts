@@ -330,6 +330,11 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
    * 📊 Descarga el reporte en Excel con los campos requeridos y filtros aplicados
    */
   descargarReporteExcel(): void {
+    if (this.esPrestador) {
+      this.alertService.advertencia('No cuenta con permisos para descargar el reporte en Excel.', 'Acción no permitida');
+      return;
+    }
+
     if (this.descargandoExcel) return;
 
     this.descargandoExcel = true;

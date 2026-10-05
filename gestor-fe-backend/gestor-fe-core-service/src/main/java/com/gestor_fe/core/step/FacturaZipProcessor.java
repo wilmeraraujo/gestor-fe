@@ -39,6 +39,7 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
 
     private final Long identificadorCargue;
     private final String usuarioAutenticado;
+    private final boolean esAdmin;
     private final FacturaService facturaService;
     private final ErrorCargueService errorCargueService;
     private final DocumentoRepository documentoRepository;
@@ -59,8 +60,19 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
                                ErrorCargueService errorCargueService,
                                DocumentoRepository documentoRepository,
                                AdminFeignClient adminFeignClient) {
+        this(identificadorCargue, usuarioAutenticado, false, facturaService, errorCargueService, documentoRepository, adminFeignClient);
+    }
+
+    public FacturaZipProcessor(Long identificadorCargue,
+                               String usuarioAutenticado,
+                               boolean esAdmin,
+                               FacturaService facturaService,
+                               ErrorCargueService errorCargueService,
+                               DocumentoRepository documentoRepository,
+                               AdminFeignClient adminFeignClient) {
         this.identificadorCargue = identificadorCargue;
         this.usuarioAutenticado = usuarioAutenticado;
+        this.esAdmin = esAdmin;
         this.facturaService = facturaService;
         this.errorCargueService = errorCargueService;
         this.documentoRepository = documentoRepository;
@@ -189,18 +201,17 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         String cufeClean = cufe.trim();
         String llaveNitFactura = nitClean + "_" + numFacturaClean;
 
-        String nitReferencia = (usuarioAutenticado != null && !usuarioAutenticado.isBlank()
-                && !usuarioAutenticado.equalsIgnoreCase("admin")
-                && !usuarioAutenticado.equalsIgnoreCase("gestor-fe-admin"))
-                ? usuarioAutenticado.trim()
-                : nitClean;
+        // Si es Administrador (admin o gestor-fe-admin), el NIT de referencia para validar soportes es el NIT del XML (nitClean)
+        // Si es Prestador (rol gestor-fe-prestador), el NIT de referencia es su usuario autenticado (que es su NIT)
+        String nitReferencia = esAdmin ? nitClean : (usuarioAutenticado != null && !usuarioAutenticado.isBlank() ? usuarioAutenticado.trim() : nitClean);
 
         // =========================================================================
         // 🛑 VALIDACIÓN 1.1: CORRESPONDENCIA DE NIT CON EL USUARIO AUTENTICADO
+        // Si NO es admin (es decir, es rol gestor-fe-prestador / usuario prestador),
+        // se valida estrictamente que el NIT del XML coincida con el usuario autenticado (NIT del prestador).
+        // Si es admin o gestor-fe-admin, se omite esta validación permitiendo cargar cualquier prestador.
         // =========================================================================
-        if (usuarioAutenticado != null && !usuarioAutenticado.isBlank() 
-                && !usuarioAutenticado.equalsIgnoreCase("admin") 
-                && !usuarioAutenticado.equalsIgnoreCase("gestor-fe-admin")) {
+        if (!esAdmin && usuarioAutenticado != null && !usuarioAutenticado.isBlank()) {
             if (!nitClean.equalsIgnoreCase(usuarioAutenticado.trim())) {
                 String errorUsuario = String.format("El NIT emisor de la factura [%s] en el XML no coincide con el NIT del usuario autenticado [%s] para la factura [%s].",
                         nitClean, usuarioAutenticado.trim(), numFacturaClean);

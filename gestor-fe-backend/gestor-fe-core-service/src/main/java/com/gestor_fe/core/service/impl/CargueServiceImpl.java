@@ -56,14 +56,21 @@ public class CargueServiceImpl implements CargueService {
     @Override
     @Async("taskExecutor")
     public void runBatchJobAsynchronously(File fileToImport, Cargue cargue) {
+        runBatchJobAsynchronously(fileToImport, cargue, false);
+    }
+
+    @Override
+    @Async("taskExecutor")
+    public void runBatchJobAsynchronously(File fileToImport, Cargue cargue, boolean esAdmin) {
         try {
-            LOGGER.info("=== 🚀 Hilo secundario arrancando Job de Spring Batch de forma asíncrona ===");
+            LOGGER.info("=== 🚀 Hilo secundario arrancando Job de Spring Batch de forma asíncrona (esAdmin={}) ===", esAdmin);
 
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("fullPathFileName", fileToImport.getAbsolutePath())
                     .addLong("identificadorCargue", cargue.getId())
                     .addString("nombreArchivo", cargue.getNombreArchivo())
                     .addString("usuario", cargue.getUsuario())
+                    .addString("esAdmin", esAdmin ? "true" : "false")
                     .addLong("timestamp", System.currentTimeMillis())
                     .toJobParameters();
 

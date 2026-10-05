@@ -147,9 +147,10 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
         if (result.isConfirmed) {
 
           const usuarioEnvio = this.loginService.getUserName();
+          const rolesEnvio = this.loginService.getUserRoles() || [];
           this.alertService.cargando('Subiendo archivo ZIP...', 'Procesando archivo');
 
-          this.service.cargarZip(file, usuarioEnvio).subscribe({
+          this.service.cargarZip(file, usuarioEnvio, rolesEnvio).subscribe({
             next: () => {
               this.alertService.cerrar(); // Cierra el modal de cargando
               this.calcularRangos();

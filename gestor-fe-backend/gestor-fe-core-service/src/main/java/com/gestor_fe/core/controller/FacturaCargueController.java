@@ -59,7 +59,8 @@ public class FacturaCargueController {
     @PostMapping("/procesar-zip")
     public ResponseEntity<?> procesarZipFacturas(
             @RequestParam("file") MultipartFile multipartFile,
-            @RequestParam("usuario") String usuario
+            @RequestParam("usuario") String usuario,
+            @RequestParam(value = "roles", required = false) List<String> roles
     ) {
         // 🛑 VALIDACIÓN 1: Archivo presente
         if (multipartFile == null || multipartFile.isEmpty()) {
@@ -114,8 +115,15 @@ public class FacturaCargueController {
 
             Cargue savedCargue = cargueService.save(cargue);
 
+            // Determinar si el usuario tiene rol administrativo (admin, gestor-fe-admin, gestor-fe-cargue)
+            boolean esAdmin = (roles != null && roles.stream().anyMatch(rol ->
+                    rol.equalsIgnoreCase("admin") ||
+                    rol.equalsIgnoreCase("gestor-fe-admin") ||
+                    rol.equalsIgnoreCase("gestor-fe-cargue")
+            )) || "admin".equalsIgnoreCase(usuario) || "gestor-fe-admin".equalsIgnoreCase(usuario) || "gestor-fe-cargue".equalsIgnoreCase(usuario);
+
             // Iniciar Batch de procesamiento del contenido interno del ZIP
-            cargueService.runBatchJobAsynchronously(zipToImport, savedCargue);
+            cargueService.runBatchJobAsynchronously(zipToImport, savedCargue, esAdmin);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(savedCargue);
 

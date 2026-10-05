@@ -24,7 +24,7 @@
           
           [mostrarHistorial]="!esPrestador"
           [mostrarGestionarFactura]="false"
-          [mostrarDescargarExcel]="true"
+          [mostrarDescargarExcel]="!esPrestador"
           [descargandoExcel]="descargandoExcel"
           
           (descargarExcel)="descargarReporteExcel()"

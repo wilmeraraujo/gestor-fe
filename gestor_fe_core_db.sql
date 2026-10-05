@@ -149,6 +149,9 @@ values ('2026-07-24 15:10:19.336','Calle 15 # 24-50','facturacion@clinicasolucio
 insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
 values ('2026-07-24 15:10:19.336','Calle 15 # 24-50','facturacion@clinicasoluciones.com',0,900077584,'CLINICA SOLUCIONES SALUD S.A.S','3001234567');
 
+insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
+values ('2026-07-24 15:10:19.336','CALLE 11A N 33 ESQUINA','facturacion@clinicasoluciones.com',0,814000337,'ASOCIACION MUTUAL ASSOLIDARIA','3009999999');
+
 --pasar a fase 1
 update gestor.factura 
 set estado = 'RADICADO' ,observacion = null , fase_id = 1 , 
@@ -426,5 +429,47 @@ INSERT INTO admin.configuracion_sistema (id, codigo, descripcion, valor, proceso
 
 --
 select * from admin.configuracion_fase_extension cfe order by id desc limit 10;
+
+-- 3. Inserción de los registros exactos de la vista
+INSERT INTO admin.configuracion_fase_extension (
+    id, 
+    codigo, 
+    fase_id, 
+    extension_id, 
+    descripcion, 
+    tamano_maximo_mb, 
+    obligatorio, 
+    permite_multiple, 
+    created_at, 
+    updated_at, 
+    deleted_at
+) VALUES 
+(
+    1, 
+    '1-3', 
+    1, -- Fase 1: RADICACION
+    3, -- Extensión 3: zip
+    'Cargar un archivo zip por cargue', 
+    50, 
+    TRUE, 
+    FALSE, 
+    NOW(), 
+    NOW(), 
+    NOW() -- deleted_at con valor => Estado: INACTIVO
+),
+(
+    2, 
+    '1-2', 
+    1, -- Fase 1: RADICACION
+    2, -- Extensión 2: pdf
+    'Extensión pdf para fase 1', 
+    10, 
+    TRUE, 
+    FALSE, 
+    NOW(), 
+    NOW(), 
+    NULL  -- deleted_at NULL => Estado: ACTIVO
+);
+
 
 
