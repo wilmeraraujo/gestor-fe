@@ -4,20 +4,12 @@
   <div class="header-left">
 
     <!-- TOGGLE -->
-    <button
-      (click)="toggleSidebar()"
-      class="header-toggle">
+    <button (click)="toggleSidebar()" class="header-toggle">
 
-      <svg xmlns="http://www.w3.org/2000/svg"
-           class="header-toggle-icon"
-           fill="none"
-           viewBox="0 0 24 24"
-           stroke="currentColor">
+      <svg xmlns="http://www.w3.org/2000/svg" class="header-toggle-icon" fill="none" viewBox="0 0 24 24"
+        stroke="currentColor">
 
-        <path stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16M4 18h16" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
 
       </svg>
 
@@ -25,6 +17,8 @@
 
     <!-- BREADCRUMB -->
     <div class="header-breadcrumb">
+
+      <img src="assets/images/logo-empresa.png" alt="Logo" class="header-logo">ASSOLIDARIA
 
       <span class="breadcrumb-item">GESTION</span>
 
@@ -44,10 +38,7 @@
     <!-- SEARCH -->
     <div class="header-search">
 
-      <input
-        type="text"
-        placeholder="Buscar..."
-        class="header-input">
+      <input type="text" placeholder="Buscar..." class="header-input">
 
     </div>
 
@@ -60,10 +51,8 @@
 
     </button>
 
-    <!-- USER -->
-    <app-user-menu
-      [user]="user"
-      [email]="email">
+    <!-- USER MENU -->
+    <app-user-menu [user]="user" [role]="role" [email]="email">
     </app-user-menu>
 
   </div>

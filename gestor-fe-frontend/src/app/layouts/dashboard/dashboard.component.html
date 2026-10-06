@@ -2,13 +2,14 @@
 
   <!-- SIDEBAR -->
   <app-sidebar
-    [collapsed]="sidebarCollapsed">
+    [collapsed]="sidebarCollapsed"
+    (hoverChange)="onSidebarHover($event)">
   </app-sidebar>
 
   <!-- MAIN -->
   <div
     class="dashboard-main"
-    [class.dashboard-main-collapsed]="sidebarCollapsed">
+    [class.dashboard-main-collapsed]="sidebarCollapsed && !sidebarHovered">
 
     <!-- HEADER -->
     <app-header

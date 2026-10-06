@@ -1,5 +1,6 @@
 package com.service.common.service;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -11,10 +12,16 @@ public interface GlobalService<E> {
 	
 	Page<E> findAll(Pageable pageable);
 	
+	Page<E> buscarPaginado(Map<String, String> filtros, Pageable pageable);
+	
 	Optional<E> findById(Long id);
 	
 	E save(E entity);
 	
+	E saveWithLog(E entity, String accion, String observacion, String username);
+	
 	void deleteById(Long id);
+
+	E toggleEstado(Long id, String observacion, String username);
 
 }

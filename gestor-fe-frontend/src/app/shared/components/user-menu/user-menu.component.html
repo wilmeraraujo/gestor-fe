@@ -2,7 +2,7 @@
   class="user-menu-container"
   (click)="stopPropagation($event)">
 
-  <!-- BUTTON -->
+  <!-- BUTTON HEADER -->
   <button
     class="header-user"
     (click)="toggleMenu()">
@@ -24,29 +24,22 @@
     <div class="dropdown-header">
 
       <div class="avatar">
-        {{ user.charAt(0) }}
+        {{ user.charAt(0).toUpperCase() }}
       </div>
 
       <h3>{{ user }}</h3>
 
-      <p>{{ email }}</p>
+      <!-- ETIQUETA ROL -->
+      <span class="role-badge" *ngIf="role">
+        {{ role }}
+      </span>
+
+      <p class="email-txt">{{ email }}</p>
 
     </div>
 
     <!-- BODY -->
     <div class="dropdown-body">
-
-      <button
-        class="dropdown-item"
-        (click)="perfil()">
-
-        <span class="material-icons">
-          person
-        </span>
-
-        Mi perfil
-
-      </button>
 
       <button
         class="dropdown-item"
