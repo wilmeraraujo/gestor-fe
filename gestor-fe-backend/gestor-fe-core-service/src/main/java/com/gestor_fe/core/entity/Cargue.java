@@ -46,6 +46,9 @@ public class Cargue {
     @Column(name = "job_execution_id")
     private Long jobExecutionId;
     
+    @Column(name = "movimiento_id")
+    private Long movimientoId;
+
     @Column(name = "created_at")  
     private LocalDateTime createdAt;
     

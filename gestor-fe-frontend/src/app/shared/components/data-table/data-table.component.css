@@ -125,6 +125,16 @@
   box-shadow: 0 6px 15px rgba(30, 58, 138, 0.35) !important;
 }
 
+/* 🏢 Botón Cargue Interno (Turquesa / Teal Vibrante Assolidaria) */
+.btn-cargue-interno {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+  box-shadow: 0 3px 10px rgba(13, 148, 136, 0.25) !important;
+}
+
+.btn-cargue-interno:hover {
+  box-shadow: 0 6px 15px rgba(13, 148, 136, 0.35) !important;
+}
+
 /* 🧹 Botón Limpiar Filtros (Gris Claro Elegante) */
 .btn-clear-filter {
   background: #e2e8f0 !important;
@@ -701,6 +711,18 @@
   color: #ffffff !important;
   transform: translateY(-2px) scale(1.05) !important;
   box-shadow: 0 4px 10px rgba(5, 104, 57, 0.3) !important;
+}
+
+/* 📋 Ficha / Detalle de Factura (Cyan Institucional #1DA6BA) */
+.btn-action-ficha {
+  background-color: #e0f7fa !important;
+  color: #00838f !important;
+}
+.btn-action-ficha:hover {
+  background-color: #1DA6BA !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 4px 10px rgba(29, 166, 186, 0.4) !important;
 }
 
 /* 📜 Historial (Teal / Turquesa) */

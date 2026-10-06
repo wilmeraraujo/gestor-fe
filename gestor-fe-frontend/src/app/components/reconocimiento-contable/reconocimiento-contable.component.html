@@ -22,13 +22,16 @@
           [mostrarAgregar]="false"
           [mostrarEditar]="false"
           [mostrarEliminar]="false"
+          [mostrarFichaFactura]="true"
           [mostrarDetalle]="true"
           [mostrarGestionarFactura]="esGestorF2"
 
           (filtrosChange)="onFiltrosChange($event)"
           (paginar)="paginar($event)"
+          (verFichaFactura)="abrirFichaFactura($event)"
           (verDetalle)="verSoportesFactura($event)"
           (gestionarFactura)="abrirModalGestionar($event)"
+          (refrescar)="onRefrescar()"
           (buscar)="buscar($event)">
         </app-data-table>
       </div>
@@ -54,6 +57,14 @@
           </div>
 
           <div class="d-flex gap-2">
+            <!-- 📋 BOTÓN PARA VER FICHA TÉCNICA E ÍTEMS DESDE EL VISOR -->
+            <button
+              mat-stroked-button
+              style="border-color: #1DA6BA; color: #1DA6BA;"
+              (click)="abrirFichaFactura(facturaSeleccionada)">
+              <mat-icon>list_alt</mat-icon> Ficha / Ítems
+            </button>
+
             <!-- 🧾 BOTÓN DE GESTIÓN DIRECTA DESDE EL VISOR -->
             <button
               *ngIf="esGestorF2"

@@ -65,16 +65,19 @@ public class CargueServiceImpl implements CargueService {
         try {
             LOGGER.info("=== 🚀 Hilo secundario arrancando Job de Spring Batch de forma asíncrona (esAdmin={}) ===", esAdmin);
 
-            JobParameters jobParameters = new JobParametersBuilder()
+            JobParametersBuilder jobParametersBuilder = new JobParametersBuilder()
                     .addString("fullPathFileName", fileToImport.getAbsolutePath())
                     .addLong("identificadorCargue", cargue.getId())
                     .addString("nombreArchivo", cargue.getNombreArchivo())
                     .addString("usuario", cargue.getUsuario())
                     .addString("esAdmin", esAdmin ? "true" : "false")
-                    .addLong("timestamp", System.currentTimeMillis())
-                    .toJobParameters();
+                    .addLong("timestamp", System.currentTimeMillis());
 
-            jobLauncher.run(procesarLoteFacturasJob, jobParameters);
+            if (cargue.getMovimientoId() != null) {
+                jobParametersBuilder.addLong("movimientoId", cargue.getMovimientoId());
+            }
+
+            jobLauncher.run(procesarLoteFacturasJob, jobParametersBuilder.toJobParameters());
 
         } catch (Exception e) {
             LOGGER.error("❌ Error crítico ejecutando el Job Asíncrono de Facturas: ", e);

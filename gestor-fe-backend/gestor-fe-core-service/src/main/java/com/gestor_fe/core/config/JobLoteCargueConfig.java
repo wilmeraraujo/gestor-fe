@@ -97,14 +97,16 @@ public class JobLoteCargueConfig {
             @Value("#{jobParameters['identificadorCargue']}") Long identificadorCargue,
             @Value("#{jobParameters['usuario']}") String usuario,
             @Value("#{jobParameters['esAdmin']}") String esAdminStr,
+            @Value("#{jobParameters['movimientoId']}") Long movimientoId,
             FacturaService facturaService,
             ErrorCargueService errorCargueService,
             DocumentoRepository documentoRepository,
             AdminFeignClient adminFeignClient) { // 👈 Inyección declarativa de Spring
         boolean esAdmin = "true".equalsIgnoreCase(esAdminStr) 
                 || "admin".equalsIgnoreCase(usuario) 
-                || "gestor-fe-admin".equalsIgnoreCase(usuario);
-        return new FacturaZipProcessor(identificadorCargue, usuario, esAdmin, facturaService, errorCargueService, documentoRepository, adminFeignClient);
+                || "gestor-fe-admin".equalsIgnoreCase(usuario)
+                || "gestor-fe-cargue".equalsIgnoreCase(usuario);
+        return new FacturaZipProcessor(identificadorCargue, usuario, esAdmin, movimientoId, facturaService, errorCargueService, documentoRepository, adminFeignClient);
     }
 
     @Bean

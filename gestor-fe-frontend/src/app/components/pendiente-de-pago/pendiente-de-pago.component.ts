@@ -14,6 +14,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { FichaFacturaModalComponent } from '../../shared/components/ficha-factura-modal/ficha-factura-modal.component';
 
 import { Factura } from '../../models/factura';
 import { Documento } from '../../models/documento';
@@ -602,11 +603,35 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
   }
 
   /**
+   * 🔄 Evento de refresco de tabla y catálogos
+   */
+  onRefrescar(): void {
+    this.cargarDatosPaginados();
+    this.cargarListasMaestras();
+  }
+
+  /**
    * 📟 Evento de paginación
    */
   override paginar(event: PageEvent): void {
     this.paginaActual = event.pageIndex;
     this.totalPorPagina = event.pageSize;
     this.cargarDatosPaginados();
+  }
+
+  /**
+   * 📋 Abre el modal con la ficha técnica detallada y los ítems de la factura
+   */
+  abrirFichaFactura(factura: Factura): void {
+    if (!factura) return;
+    this.dialog.open(FichaFacturaModalComponent, {
+      width: '950px',
+      maxWidth: '95vw',
+      panelClass: 'custom-ficha-dialog',
+      data: {
+        facturaId: factura.id,
+        factura: factura
+      }
+    });
   }
 }

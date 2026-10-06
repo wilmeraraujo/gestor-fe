@@ -111,6 +111,16 @@ export class CommonFormComponent implements OnInit {
 
     const formValues = { ...this.data, ...this.form.value };
 
+    // 📎 Adjuntar los archivos reales seleccionados
+    if (this.archivosSubidos && Object.keys(this.archivosSubidos).length > 0) {
+      formValues.archivosSubidos = this.archivosSubidos;
+      Object.keys(this.archivosSubidos).forEach(key => {
+        if (this.archivosSubidos[key] instanceof File) {
+          formValues[key] = this.archivosSubidos[key];
+        }
+      });
+    }
+
     // ⚡ Normalizar código (quitar espacios al inicio y final)
     if (formValues.codigo && typeof formValues.codigo === 'string') {
       formValues.codigo = formValues.codigo.trim();
@@ -141,7 +151,7 @@ export class CommonFormComponent implements OnInit {
       },
       error: (err: any) => {
         console.error(err);
-        const errorMsg = err.error?.error || err.error?.mensaje || (typeof err.error === 'string' ? err.error : 'Ocurrió un error al procesar la solicitud');
+        const errorMsg = err.error?.error || err.error?.mensaje || (typeof err.error === 'string' ? err.error : (err.message || 'Ocurrió un error al procesar la solicitud'));
         Swal.fire({
           icon: 'error',
           title: 'Error de Validación',

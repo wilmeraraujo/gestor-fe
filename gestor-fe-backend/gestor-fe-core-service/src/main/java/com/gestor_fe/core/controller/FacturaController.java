@@ -14,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.gestor_fe.core.dto.FacturaFilterDto;
 import com.gestor_fe.core.dto.GestionDto;
 import com.gestor_fe.core.entity.Factura;
+import com.gestor_fe.core.entity.FacturaItem;
+import com.gestor_fe.core.repository.FacturaItemRepository;
 import com.gestor_fe.core.service.FacturaService;
 
 @CrossOrigin(origins = "*")
@@ -22,14 +24,28 @@ import com.gestor_fe.core.service.FacturaService;
 public class FacturaController {
 
     private final FacturaService service;
+    private final FacturaItemRepository facturaItemRepository;
 
-    public FacturaController(FacturaService service) {
+    public FacturaController(FacturaService service, FacturaItemRepository facturaItemRepository) {
         this.service = service;
+        this.facturaItemRepository = facturaItemRepository;
     }
 
     // =========================================================================
     // 📋 CONSULTAS Y BANDEJAS DE LECTURA
     // =========================================================================
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtenerPorId(@PathVariable("id") Long id) {
+        return service.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/items")
+    public ResponseEntity<List<FacturaItem>> listarItems(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(facturaItemRepository.findByFacturaIdAndDeletedAtIsNullOrderByNumeroLineaAsc(id));
+    }
 
     @GetMapping("/prestador/{nit}")
     public ResponseEntity<?> findByNit(@PathVariable("nit") String nit, Pageable pageable) {

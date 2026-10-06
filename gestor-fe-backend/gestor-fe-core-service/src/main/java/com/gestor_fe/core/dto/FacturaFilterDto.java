@@ -15,6 +15,7 @@ public class FacturaFilterDto {
     private Long faseId;                    // Filtro específico por Fase/Etapa (1, 2, 3, 4, 5)
     private String numeroCausacion;         // Número de documento de causación
     private Long tipoRegistroContableId;    // FC, GV, ORC, NI
+    private Long movimientoId;              // Filtro por Movimiento
     private LocalDate fechaEmisionDesde;    // Rango fecha emisión desde
     private LocalDate fechaEmisionHasta;    // Rango fecha emisión hasta
     private BigDecimal valorTotalMin;       // Rango de valor mínimo

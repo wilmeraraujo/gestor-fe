@@ -8,12 +8,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PageEvent } from '@angular/material/paginator';
-import { forkJoin, Subject, Subscription, throwError } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { forkJoin, of, Subject, Subscription, throwError } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { FichaFacturaModalComponent } from '../../shared/components/ficha-factura-modal/ficha-factura-modal.component';
 
 import { Factura } from '../../models/factura';
 import { Documento } from '../../models/documento';
@@ -24,6 +25,7 @@ import { ObservacionService } from '../../services/observacion.service';
 import { FaseService } from '../../services/fase.service';
 import { ConfiguracionFaseExtensionService } from '../../services/configuracion-fase-extension.service';
 import { ExtensionService } from '../../services/extension.service';
+import { ClasificacionService } from '../../services/clasificacion.service';
 import { LoginService } from '../../services/login.service';
 import { AlertService } from '../../services/alert.service';
 
@@ -50,6 +52,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   private alertService = inject(AlertService);
   private configuracionFaseService = inject(ConfiguracionFaseExtensionService);
   private extensionService = inject(ExtensionService);
+  private clasificacionService = inject(ClasificacionService);
 
   // Control de pestañas y visores
   tabSeleccionada: number = 0;
@@ -78,13 +81,8 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   // DTO activo para la API con contexto de Fase 2
   filtrosActivos: any = { faseId: 2 };
 
-  // Opciones de Tipo de Registro Contable mapeadas con sus IDs numéricos
-  opcionesTipoRegistro = [
-    { value: 1, label: 'FC - Factura de Compra' },
-    { value: 2, label: 'GV - Gastos de Viáticos' },
-    { value: 3, label: 'ORC - Otros Registros Contables' },
-    { value: 4, label: 'NI - Nota Interna' }
-  ];
+  // Opciones de Tipo de Registro Contable (cargadas dinámicamente desde Clasificación)
+  opcionesTipoRegistro: { value: any, label: string }[] = [];
 
   columnas = [
     { field: 'id', header: 'ID' },
@@ -221,6 +219,20 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   }
 
   private cargarListasMaestras(): void {
+    this.clasificacionService.listar().subscribe({
+      next: (data) => {
+        this.opcionesTipoRegistro = (data || [])
+          .filter(c => !c.deletedAt)
+          .map(c => ({
+            value: c.id,
+            label: c.codigo ? `${c.codigo} - ${c.descripcion}` : c.descripcion
+          }));
+      },
+      error: (err) => {
+        console.error('Error al cargar tipos de registro contable (clasificación):', err);
+      }
+    });
+
     this.causalService.listar().subscribe(data => {
       this.opcionesCausal = (data || [])
         .filter(c => !c.deletedAt)
@@ -458,11 +470,22 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   }
 
   /**
-   * ⚙️ Abrir modal de causación / rechazo consultando previamente si existen soportes activos
+   * ⚙️ Abrir modal de causación / rechazo consultando previamente si existen soportes activos y cargando clasificaciones actualizadas
    */
   abrirModalGestionar(row: Factura): void {
-    this.documentoService.getSoportesActivosFactura(row.id).subscribe({
-      next: (docsActivos: Documento[]) => {
+    forkJoin({
+      docsActivos: this.documentoService.getSoportesActivosFactura(row.id).pipe(catchError(() => of([]))),
+      clasificaciones: this.clasificacionService.listar().pipe(catchError(() => of([])))
+    }).subscribe({
+      next: ({ docsActivos, clasificaciones }) => {
+        if (clasificaciones && clasificaciones.length > 0) {
+          this.opcionesTipoRegistro = clasificaciones
+            .filter(c => !c.deletedAt)
+            .map(c => ({
+              value: c.id,
+              label: c.codigo ? `${c.codigo} - ${c.descripcion}` : c.descripcion
+            }));
+        }
         const tieneSoporteCausacionActivo = (docsActivos || []).some(
           d => d.tipoId === 8 && (!d.ruta || (!d.ruta.includes('_TB_') && !d.ruta.includes('_PAGO_')))
         );
@@ -579,11 +602,35 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   }
 
   /**
+   * 🔄 Evento de refresco de tabla y catálogos
+   */
+  onRefrescar(): void {
+    this.cargarDatosPaginados();
+    this.cargarListasMaestras();
+  }
+
+  /**
    * 📟 Evento de paginación
    */
   override paginar(event: PageEvent): void {
     this.paginaActual = event.pageIndex;
     this.totalPorPagina = event.pageSize;
     this.cargarDatosPaginados();
+  }
+
+  /**
+   * 📋 Abre el modal con la ficha técnica detallada y los ítems de la factura
+   */
+  abrirFichaFactura(factura: Factura): void {
+    if (!factura) return;
+    this.dialog.open(FichaFacturaModalComponent, {
+      width: '950px',
+      maxWidth: '95vw',
+      panelClass: 'custom-ficha-dialog',
+      data: {
+        facturaId: factura.id,
+        factura: factura
+      }
+    });
   }
 }

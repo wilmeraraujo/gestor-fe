@@ -14,6 +14,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { FichaFacturaModalComponent } from '../../shared/components/ficha-factura-modal/ficha-factura-modal.component';
 
 import { Factura } from '../../models/factura';
 import { Documento } from '../../models/documento';
@@ -377,12 +378,36 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
   }
 
   /**
+   * 📋 Abre el modal con la ficha técnica detallada y los ítems de la factura
+   */
+  abrirFichaFactura(factura: Factura): void {
+    if (!factura) return;
+    this.dialog.open(FichaFacturaModalComponent, {
+      width: '950px',
+      maxWidth: '95vw',
+      panelClass: 'custom-ficha-dialog',
+      data: {
+        facturaId: factura.id,
+        factura: factura
+      }
+    });
+  }
+
+  /**
    * 🔎 Búsqueda global superior
    */
   buscar(texto: string): void {
     this.filtrosActivos.textoBusquedaGlobal = texto && texto.trim() !== '' ? texto.trim() : null;
     this.paginaActual = 0;
     this.cargarDatosPaginados();
+  }
+
+  /**
+   * 🔄 Evento de refresco de tabla y catálogos
+   */
+  onRefrescar(): void {
+    this.cargarDatosPaginados();
+    this.cargarListasMaestras();
   }
 
   /**

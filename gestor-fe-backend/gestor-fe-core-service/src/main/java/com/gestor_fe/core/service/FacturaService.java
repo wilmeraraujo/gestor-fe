@@ -1,6 +1,7 @@
 package com.gestor_fe.core.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import com.gestor_fe.core.entity.Factura;
 
 public interface FacturaService {
 
+    Optional<Factura> findById(Long id);
     Page<Factura> findByNitAndDeletedAtIsNull(String nit, Pageable pageable);
     Page<Factura> findByFaseIdAndDeletedAtIsNull(Long faseId, Pageable pageable);
     Page<Factura> findByFaseActiva(Long faseId, Pageable pageable);

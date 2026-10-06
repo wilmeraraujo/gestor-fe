@@ -1,0 +1,283 @@
+<div class="ficha-modal-container">
+
+  <!-- ========================================== -->
+  <!-- 🪟 ENCABEZADO DEL MODAL (NAVY + CYAN #1DA6BA) -->
+  <!-- ========================================== -->
+  <div class="modal-header d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-3">
+      <div class="header-icon-badge">
+        <mat-icon>receipt_long</mat-icon>
+      </div>
+      <div>
+        <h2 class="modal-title m-0">Ficha Técnica de Factura</h2>
+        <div class="modal-subtitle d-flex align-items-center gap-2 mt-1" *ngIf="factura">
+          <span class="badge-factura">No. {{ factura.numeroFactura || '---' }}</span>
+          <span *ngIf="factura.estado" class="badge-estado">{{ factura.estado }}</span>
+          <span *ngIf="factura.faseId" class="badge-fase">Fase {{ factura.faseId }}</span>
+        </div>
+      </div>
+    </div>
+
+    <button mat-icon-button (click)="cerrar()" class="btn-close-modal" matTooltip="Cerrar (Esc)">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- SPINNER DE CARGA -->
+  <div *ngIf="cargando" class="loading-overlay">
+    <mat-spinner diameter="44"></mat-spinner>
+    <p class="mt-2 text-muted fw-semibold">Consultando detalles de la factura e ítems...</p>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 📜 CONTENIDO PRINCIPAL SCROLLABLE          -->
+  <!-- ========================================== -->
+  <div mat-dialog-content class="modal-body-content" *ngIf="factura">
+
+    <!-- 1️⃣ PARTES DE LA OPERACIÓN (EMISOR Y CLIENTE) -->
+    <div class="section-title">
+      <mat-icon class="icon-institucional">groups</mat-icon>
+      <span>Partes de la Operación</span>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <!-- 🏢 EMISOR / PRESTADOR -->
+      <div class="col-md-6">
+        <div class="party-card emisor-card">
+          <div class="party-card-header d-flex align-items-center gap-2">
+            <mat-icon class="text-navy">storefront</mat-icon>
+            <span class="fw-bold text-navy">Emisor / Prestador</span>
+          </div>
+          <div class="party-card-body">
+            <div class="info-row">
+              <span class="info-label">Razón Social:</span>
+              <span class="info-value fw-semibold text-dark">{{ factura.razonSocialEmisor || 'N/A' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">NIT:</span>
+              <span class="info-value">{{ factura.nit }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 👤 CLIENTE / ADQUIRENTE -->
+      <div class="col-md-6">
+        <div class="party-card cliente-card">
+          <div class="party-card-header d-flex align-items-center gap-2">
+            <mat-icon class="text-cyan">business</mat-icon>
+            <span class="fw-bold text-cyan">Adquirente / Cliente</span>
+          </div>
+          <div class="party-card-body">
+            <div class="info-row">
+              <span class="info-label">Razón Social:</span>
+              <span class="info-value fw-semibold text-dark">{{ factura.razonSocialCliente || 'No especificada' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">NIT / Cédula:</span>
+              <span class="info-value">
+                {{ factura.nitCliente || 'N/A' }}<span *ngIf="factura.dvCliente">-{{ factura.dvCliente }}</span>
+              </span>
+            </div>
+            <div class="info-row" *ngIf="factura.direccionCliente">
+              <span class="info-label">Dirección:</span>
+              <span class="info-value">{{ factura.direccionCliente }}</span>
+            </div>
+            <div class="info-row" *ngIf="factura.ciudadCliente || factura.departamentoCliente">
+              <span class="info-label">Ciudad / Depto:</span>
+              <span class="info-value">
+                {{ factura.ciudadCliente || '' }}<span *ngIf="factura.ciudadCliente && factura.departamentoCliente"> - </span>{{ factura.departamentoCliente || '' }}
+              </span>
+            </div>
+            <div class="info-row" *ngIf="factura.emailCliente || factura.telefonoCliente">
+              <span class="info-label">Contacto:</span>
+              <span class="info-value">
+                <span *ngIf="factura.telefonoCliente">📞 {{ factura.telefonoCliente }} </span>
+                <span *ngIf="factura.emailCliente">✉️ {{ factura.emailCliente }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2️⃣ CONDICIONES DE PAGO Y TRAZABILIDAD -->
+    <div class="section-title">
+      <mat-icon class="icon-institucional">payment</mat-icon>
+      <span>Datos Comerciales y Fechas</span>
+    </div>
+
+    <div class="info-grid-chips mb-3">
+      <div class="chip-item">
+        <span class="chip-label">Fecha Emisión</span>
+        <span class="chip-value">{{ (factura.fechaEmision | date:'dd/MM/yyyy') || 'N/A' }}</span>
+      </div>
+      <div class="chip-item">
+        <span class="chip-label">Fecha Vencimiento</span>
+        <span class="chip-value text-danger fw-semibold">{{ (factura.fechaVencimiento | date:'dd/MM/yyyy') || 'N/A' }}</span>
+      </div>
+      <div class="chip-item">
+        <span class="chip-label">Forma de Pago</span>
+        <span class="chip-value">{{ factura.formaPago === '1' ? '1 (Contado)' : (factura.formaPago === '2' ? '2 (Crédito)' : (factura.formaPago || 'N/A')) }}</span>
+      </div>
+      <div class="chip-item">
+        <span class="chip-label">Medio de Pago</span>
+        <span class="chip-value">{{ factura.medioPago || 'N/A' }}</span>
+      </div>
+    </div>
+
+    <!-- CUFE BAR -->
+    <div class="cufe-box d-flex align-items-center justify-content-between mb-3" *ngIf="factura.cufe">
+      <div class="cufe-content text-truncate">
+        <span class="cufe-label fw-bold me-2">CUFE:</span>
+        <code class="cufe-code text-truncate" title="{{ factura.cufe }}">{{ factura.cufe }}</code>
+      </div>
+      <button mat-stroked-button class="btn-copy-cufe ms-2" (click)="copiarCufe()" [matTooltip]="cufeCopiado ? '¡Copiado!' : 'Copiar CUFE'">
+        <mat-icon>{{ cufeCopiado ? 'check' : 'content_copy' }}</mat-icon>
+        <span>{{ cufeCopiado ? 'Copiado' : 'Copiar' }}</span>
+      </button>
+    </div>
+
+    <!-- 3️⃣ RESUMEN FINANCIERO Y RETENCIONES -->
+    <div class="section-title">
+      <mat-icon class="icon-institucional">account_balance_wallet</mat-icon>
+      <span>Resumen Financiero</span>
+    </div>
+
+    <div class="financial-summary-grid mb-3">
+      <!-- Subtotal -->
+      <div class="kpi-card">
+        <span class="kpi-label">Subtotal</span>
+        <span class="kpi-value">
+          {{ ((factura.valorSubtotal && factura.valorSubtotal > 0) ? factura.valorSubtotal : ((factura.valorTotal || 0) - (factura.valorIva || 0))) | currency:'COP':'$':'1.0-0' }}
+        </span>
+      </div>
+
+      <!-- IVA -->
+      <div class="kpi-card">
+        <span class="kpi-label">IVA (Impuestos)</span>
+        <span class="kpi-value text-cyan">{{ (factura.valorIva || 0) | currency:'COP':'$':'1.0-0' }}</span>
+      </div>
+
+      <!-- Retenciones (si existen) -->
+      <div class="kpi-card kpi-retenciones" *ngIf="(factura.totalRetenciones && factura.totalRetenciones > 0) || (factura.valorRetefuente || factura.valorReteica || factura.valorReteiva)">
+        <span class="kpi-label">Total Retenciones</span>
+        <span class="kpi-value text-warning">- {{ (factura.totalRetenciones || ((factura.valorRetefuente || 0) + (factura.valorReteica || 0) + (factura.valorReteiva || 0))) | currency:'COP':'$':'1.0-0' }}</span>
+        <div class="retenciones-detalle">
+          <small *ngIf="factura.valorRetefuente">R.Fuente: {{ factura.valorRetefuente | currency:'COP':'$':'1.0-0' }} </small>
+          <small *ngIf="factura.valorReteica">| R.ICA: {{ factura.valorReteica | currency:'COP':'$':'1.0-0' }} </small>
+          <small *ngIf="factura.valorReteiva">| R.IVA: {{ factura.valorReteiva | currency:'COP':'$':'1.0-0' }}</small>
+        </div>
+      </div>
+
+      <!-- Total a Pagar -->
+      <div class="kpi-card kpi-total">
+        <span class="kpi-label text-institucional">TOTAL A PAGAR</span>
+        <span class="kpi-value total-destacado">{{ (factura.valorTotal || 0) | currency:'COP':'$':'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <!-- 4️⃣ NOTAS / OBSERVACIONES CONTRACTUALES -->
+    <div class="notes-box mb-3" *ngIf="factura.notas">
+      <div class="d-flex align-items-start gap-2">
+        <mat-icon class="icon-institucional mt-1">notes</mat-icon>
+        <div>
+          <span class="fw-bold d-block text-navy">Observaciones / Notas DIAN:</span>
+          <p class="m-0 text-muted notes-text">{{ factura.notas }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5️⃣ ÍTEMS / LÍNEAS FACTURADAS -->
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+      <div class="section-title m-0">
+        <mat-icon class="icon-institucional">list_alt</mat-icon>
+        <span>Líneas y Conceptos Facturados</span>
+      </div>
+      <span class="badge-items-count">{{ items.length }} {{ items.length === 1 ? 'ítem' : 'ítems' }}</span>
+    </div>
+
+    <!-- TABLA DE ÍTEMS -->
+    <div class="table-items-wrapper">
+      <table mat-table [dataSource]="items" class="table-items w-100" *ngIf="items && items.length > 0">
+
+        <!-- Columna Línea -->
+        <ng-container matColumnDef="linea">
+          <th mat-header-cell *matHeaderCellDef class="text-center col-xs">#</th>
+          <td mat-cell *matCellDef="let item" class="text-center fw-semibold text-muted">
+            {{ item.numeroLinea || '-' }}
+          </td>
+        </ng-container>
+
+        <!-- Columna Código -->
+        <ng-container matColumnDef="codigo">
+          <th mat-header-cell *matHeaderCellDef class="col-sm">Código</th>
+          <td mat-cell *matCellDef="let item" class="text-muted">
+            <code>{{ item.codigoProducto || 'N/A' }}</code>
+          </td>
+        </ng-container>
+
+        <!-- Columna Descripción -->
+        <ng-container matColumnDef="descripcion">
+          <th mat-header-cell *matHeaderCellDef>Descripción del Producto / Servicio</th>
+          <td mat-cell *matCellDef="let item" class="fw-medium text-dark item-desc-cell">
+            {{ item.descripcion }}
+          </td>
+        </ng-container>
+
+        <!-- Columna Cantidad -->
+        <ng-container matColumnDef="cantidad">
+          <th mat-header-cell *matHeaderCellDef class="text-center col-xs">Cant.</th>
+          <td mat-cell *matCellDef="let item" class="text-center fw-semibold">
+            {{ item.cantidad | number:'1.0-2' }}
+          </td>
+        </ng-container>
+
+        <!-- Columna Unidad -->
+        <ng-container matColumnDef="unidad">
+          <th mat-header-cell *matHeaderCellDef class="text-center col-xs">Unidad</th>
+          <td mat-cell *matCellDef="let item" class="text-center text-muted">
+            {{ item.unidadMedida || 'EA' }}
+          </td>
+        </ng-container>
+
+        <!-- Columna Precio Unitario -->
+        <ng-container matColumnDef="precioUnitario">
+          <th mat-header-cell *matHeaderCellDef class="text-end col-sm">Vlr. Unitario</th>
+          <td mat-cell *matCellDef="let item" class="text-end">
+            {{ (item.precioUnitario || 0) | currency:'COP':'$':'1.0-2' }}
+          </td>
+        </ng-container>
+
+        <!-- Columna Total -->
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef class="text-end col-sm">Total Línea</th>
+          <td mat-cell *matCellDef="let item" class="text-end fw-bold text-dark">
+            {{ (item.valorTotal || 0) | currency:'COP':'$':'1.0-0' }}
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnasItems" class="table-items-header"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnasItems;" class="table-items-row"></tr>
+      </table>
+
+      <!-- MENSAJE VACÍO SI NO HAY ITEMS -->
+      <div *ngIf="!cargando && (!items || items.length === 0)" class="empty-items-alert text-center p-4">
+        <mat-icon class="empty-icon text-muted">inventory_2</mat-icon>
+        <p class="m-0 text-muted fw-semibold">No se encontraron líneas de detalle registradas para esta factura.</p>
+        <small class="text-secondary">Factura cargada previamente o sin desglose de ítems en el XML.</small>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 🔘 PIE DE MODAL (ACCIONES INSTITUCIONALES) -->
+  <!-- ========================================== -->
+  <div mat-dialog-actions class="modal-footer d-flex justify-content-end p-3 border-top">
+    <button mat-button class="btn-modal-close" (click)="cerrar()">
+      <mat-icon>close</mat-icon> Cerrar
+    </button>
+  </div>
+
+</div>

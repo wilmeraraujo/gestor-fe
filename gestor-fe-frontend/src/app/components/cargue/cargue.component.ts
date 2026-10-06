@@ -1,12 +1,15 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, throwError } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { Cargue } from '../../models/cargue';
 import { CargueService } from '../../services/cargue.service';
+import { MovimientoService } from '../../services/movimiento.service';
 import { AlertService } from '../../services/alert.service';
 import { LoginService } from '../../services/login.service';
 
@@ -34,9 +37,13 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
 
   private sseSubscription?: Subscription;
 
+  opcionesMovimiento: { value: any, label: string }[] = [];
+  mapaMovimientos: { [id: number]: string } = {};
+
   columnas = [
-    { field: 'id', header: 'Id', filtrable: false },
+    { field: 'id', header: 'ID', filtrable: false },
     { field: 'nombreArchivo', header: 'Nombre del Archivo', filtrable: true },
+    { field: 'movimientoNombre', header: 'Tipo Movimiento', filtrable: true },
     { field: 'numeroRegistro', header: 'Facturas Procesadas', filtrable: true },
     { field: 'estadoNombre', header: 'Estado', filtrable: true },
     { field: 'usuario', header: 'Usuario', filtrable: true },
@@ -47,13 +54,16 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
     service: CargueService,
     private router: Router,
     private alertService: AlertService,
-    private loginService: LoginService
+    private loginService: LoginService,
+    private dialog: MatDialog,
+    private movimientoService: MovimientoService
   ) {
     super(service);
   }
 
   ngOnInit(): void {
     this.cargarDatosSesion();
+    this.cargarMovimientos();
     this.calcularRangos();
     this.iniciarSuscripcionSSE();
   }
@@ -87,8 +97,27 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
     });
   }
 
+  cargarMovimientos(): void {
+    this.movimientoService.listar().subscribe({
+      next: (movs) => {
+        this.opcionesMovimiento = (movs || [])
+          .filter(m => !m.deletedAt)
+          .map(m => ({
+            value: m.id,
+            label: m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion
+          }));
+
+        this.mapaMovimientos = (movs || []).reduce((acc: any, m) => {
+          acc[m.id] = m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion;
+          return acc;
+        }, {});
+      },
+      error: (err) => console.error('Error al cargar movimientos:', err)
+    });
+  }
+
   /**
-   * 🏷️ Asigna el texto descriptivo del estado
+   * 🏷️ Asigna el texto descriptivo del estado y del movimiento
    */
   private procesarEstados(cargues: Cargue[]): any[] {
     return (cargues || []).map(c => {
@@ -100,7 +129,8 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
 
       return {
         ...c,
-        estadoNombre: estadoTxt
+        estadoNombre: estadoTxt,
+        movimientoNombre: c.movimientoId ? (this.mapaMovimientos[c.movimientoId] || `Movimiento #${c.movimientoId}`) : 'Sin especificar'
       };
     });
   }
@@ -123,9 +153,125 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
   }
 
   agregar(): void {
+    // Cargue estándar de soportes de otros prestadores o prestador directo
     if (this.fileInput) {
       this.fileInput.nativeElement.click();
     }
+  }
+
+  abrirCargueInterno(): void {
+    // Cargue interno exclusivo con selección obligatoria de Tipo de Movimiento
+    this.abrirModalCargueAdmin();
+  }
+
+  private abrirModalCargueAdmin(): void {
+    this.movimientoService.listar().subscribe({
+      next: (movs) => {
+        this.opcionesMovimiento = (movs || [])
+          .filter(m => !m.deletedAt)
+          .map(m => ({
+            value: m.id,
+            label: m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion
+          }));
+
+        this.mapaMovimientos = (movs || []).reduce((acc: any, m) => {
+          acc[m.id] = m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion;
+          return acc;
+        }, {});
+
+        this.ejecutarModalCargue();
+      },
+      error: () => {
+        this.ejecutarModalCargue();
+      }
+    });
+  }
+
+  private ejecutarModalCargue(): void {
+    const dialogRef = this.dialog.open(ModalComponent, {
+      width: '550px',
+      data: {
+        titulo: 'Cargar Archivo ZIP de Facturas',
+        campos: [
+          {
+            name: 'movimientoId',
+            label: 'Tipo de Movimiento * [Requerido]',
+            type: 'select',
+            options: this.opcionesMovimiento,
+            required: true
+          },
+          {
+            name: 'archivoZip',
+            label: 'Archivo ZIP * [Requerido]',
+            type: 'file',
+            accept: '.zip',
+            required: true,
+            hint: 'Formatos admitidos: .ZIP'
+          }
+        ],
+        formData: {},
+        service: {
+          crear: (model: any) => {
+            let file: File | undefined = undefined;
+
+            if (model.archivoZip instanceof File) {
+              file = model.archivoZip;
+            } else if (model.archivosSubidos?.['archivoZip'] instanceof File) {
+              file = model.archivosSubidos['archivoZip'];
+            } else {
+              // Buscar específicamente en los inputs dentro del modal dialog
+              const inputs = document.querySelectorAll('mat-dialog-container input[type="file"]') as NodeListOf<HTMLInputElement>;
+              for (let i = 0; i < inputs.length; i++) {
+                if (inputs[i].files && inputs[i].files!.length > 0) {
+                  file = inputs[i].files![0];
+                  break;
+                }
+              }
+              if (!file) {
+                const allInputs = document.querySelectorAll('input[type="file"]') as NodeListOf<HTMLInputElement>;
+                for (let i = 0; i < allInputs.length; i++) {
+                  if (allInputs[i].files && allInputs[i].files!.length > 0) {
+                    file = allInputs[i].files![0];
+                    break;
+                  }
+                }
+              }
+            }
+
+            if (!model.movimientoId) {
+              this.alertService.advertencia('Debe seleccionar obligatoriamente el Tipo de Movimiento.', 'Campo Requerido');
+              return throwError(() => new Error('Debe seleccionar el Tipo de Movimiento.'));
+            }
+
+            if (!file) {
+              this.alertService.advertencia('Debe seleccionar un archivo comprimido .ZIP.', 'Archivo Requerido');
+              return throwError(() => new Error('Debe seleccionar un archivo ZIP.'));
+            }
+
+            if (!file.name.toLowerCase().endsWith('.zip')) {
+              this.alertService.advertencia('Formato inválido. El archivo debe ser extensión .zip', 'Formato no permitido');
+              return throwError(() => new Error('Formato inválido. El archivo debe tener extensión .zip'));
+            }
+
+            const usuarioEnvio = this.loginService.getUserName();
+            const rolesEnvio = this.loginService.getUserRoles() || [];
+
+            this.alertService.cargando('Subiendo archivo ZIP y procesando facturas...', 'Cargue Masivo');
+
+            return this.service.cargarZip(file, usuarioEnvio, rolesEnvio, Number(model.movimientoId));
+          }
+        }
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.alertService.exito('Cargue masivo iniciado correctamente.', 'Proceso en Marcha');
+        this.calcularRangos();
+        setTimeout(() => this.calcularRangos(), 1500);
+        setTimeout(() => this.calcularRangos(), 3500);
+      }
+    });
   }
 
   onFileSelected(event: Event): void {

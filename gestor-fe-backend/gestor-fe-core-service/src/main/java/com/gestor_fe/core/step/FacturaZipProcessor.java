@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.item.ItemProcessor;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import com.gestor_fe.core.client.AdminFeignClient;
@@ -29,6 +31,7 @@ import com.gestor_fe.core.dto.TipoDto;
 import com.gestor_fe.core.entity.Documento;
 import com.gestor_fe.core.entity.ErrorCargue;
 import com.gestor_fe.core.entity.Factura;
+import com.gestor_fe.core.entity.FacturaItem;
 import com.gestor_fe.core.repository.DocumentoRepository;
 import com.gestor_fe.core.service.ErrorCargueService;
 import com.gestor_fe.core.service.FacturaService;
@@ -40,6 +43,7 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
     private final Long identificadorCargue;
     private final String usuarioAutenticado;
     private final boolean esAdmin;
+    private final Long movimientoId;
     private final FacturaService facturaService;
     private final ErrorCargueService errorCargueService;
     private final DocumentoRepository documentoRepository;
@@ -60,7 +64,7 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
                                ErrorCargueService errorCargueService,
                                DocumentoRepository documentoRepository,
                                AdminFeignClient adminFeignClient) {
-        this(identificadorCargue, usuarioAutenticado, false, facturaService, errorCargueService, documentoRepository, adminFeignClient);
+        this(identificadorCargue, usuarioAutenticado, false, null, facturaService, errorCargueService, documentoRepository, adminFeignClient);
     }
 
     public FacturaZipProcessor(Long identificadorCargue,
@@ -70,9 +74,21 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
                                ErrorCargueService errorCargueService,
                                DocumentoRepository documentoRepository,
                                AdminFeignClient adminFeignClient) {
+        this(identificadorCargue, usuarioAutenticado, esAdmin, null, facturaService, errorCargueService, documentoRepository, adminFeignClient);
+    }
+
+    public FacturaZipProcessor(Long identificadorCargue,
+                               String usuarioAutenticado,
+                               boolean esAdmin,
+                               Long movimientoId,
+                               FacturaService facturaService,
+                               ErrorCargueService errorCargueService,
+                               DocumentoRepository documentoRepository,
+                               AdminFeignClient adminFeignClient) {
         this.identificadorCargue = identificadorCargue;
         this.usuarioAutenticado = usuarioAutenticado;
         this.esAdmin = esAdmin;
+        this.movimientoId = movimientoId;
         this.facturaService = facturaService;
         this.errorCargueService = errorCargueService;
         this.documentoRepository = documentoRepository;
@@ -181,6 +197,98 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         }
         if (ivaStr == null || ivaStr.isBlank()) {
             ivaStr = (String) xPath.compile("//TaxTotal/TaxAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+
+        // =========================================================================
+        // 👤 EXTRACCIÓN DE DATOS DEL CLIENTE / ADQUIRENTE (AccountingCustomerParty)
+        // =========================================================================
+        String nitCliente = (String) xPath.compile("//AccountingCustomerParty//CompanyID/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (nitCliente == null || nitCliente.isBlank()) {
+            nitCliente = (String) xPath.compile("//ReceiverParty//CompanyID/text()").evaluate(doc, XPathConstants.STRING);
+        }
+
+        String dvCliente = (String) xPath.compile("//AccountingCustomerParty//CompanyID/@schemeID").evaluate(docFactura, XPathConstants.STRING);
+        if (dvCliente == null || dvCliente.isBlank()) {
+            dvCliente = (String) xPath.compile("//ReceiverParty//CompanyID/@schemeID").evaluate(doc, XPathConstants.STRING);
+        }
+
+        String razonSocialCliente = (String) xPath.compile("//AccountingCustomerParty//PartyTaxScheme/RegistrationName/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (razonSocialCliente == null || razonSocialCliente.isBlank()) {
+            razonSocialCliente = (String) xPath.compile("//AccountingCustomerParty//PartyLegalEntity/RegistrationName/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+        if (razonSocialCliente == null || razonSocialCliente.isBlank()) {
+            razonSocialCliente = (String) xPath.compile("//AccountingCustomerParty//PartyName/Name/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+        if (razonSocialCliente == null || razonSocialCliente.isBlank()) {
+            razonSocialCliente = (String) xPath.compile("//ReceiverParty//RegistrationName/text()").evaluate(doc, XPathConstants.STRING);
+        }
+        if (razonSocialCliente == null || razonSocialCliente.isBlank()) {
+            String pNomCli = (String) xPath.compile("//AccountingCustomerParty//Person/FirstName/text()").evaluate(docFactura, XPathConstants.STRING);
+            String sNomCli = (String) xPath.compile("//AccountingCustomerParty//Person/MiddleName/text()").evaluate(docFactura, XPathConstants.STRING);
+            String pApeCli = (String) xPath.compile("//AccountingCustomerParty//Person/FamilyName/text()").evaluate(docFactura, XPathConstants.STRING);
+            String sApeCli = (String) xPath.compile("//AccountingCustomerParty//Person/SecondFamilyName/text()").evaluate(docFactura, XPathConstants.STRING);
+            if (pNomCli != null && !pNomCli.isBlank()) {
+                StringBuilder sbCli = new StringBuilder(pNomCli.trim());
+                if (sNomCli != null && !sNomCli.isBlank()) sbCli.append(" ").append(sNomCli.trim());
+                if (pApeCli != null && !pApeCli.isBlank()) sbCli.append(" ").append(pApeCli.trim());
+                if (sApeCli != null && !sApeCli.isBlank()) sbCli.append(" ").append(sApeCli.trim());
+                razonSocialCliente = sbCli.toString();
+            }
+        }
+
+        String direccionCliente = (String) xPath.compile("//AccountingCustomerParty//PhysicalLocation//AddressLine/Line/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (direccionCliente == null || direccionCliente.isBlank()) {
+            direccionCliente = (String) xPath.compile("//AccountingCustomerParty//RegistrationAddress//AddressLine/Line/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+
+        String ciudadCliente = (String) xPath.compile("//AccountingCustomerParty//PhysicalLocation//Address/CityName/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (ciudadCliente == null || ciudadCliente.isBlank()) {
+            ciudadCliente = (String) xPath.compile("//AccountingCustomerParty//RegistrationAddress/CityName/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+
+        String deptoCliente = (String) xPath.compile("//AccountingCustomerParty//PhysicalLocation//Address/CountrySubentity/text()").evaluate(docFactura, XPathConstants.STRING);
+        if (deptoCliente == null || deptoCliente.isBlank()) {
+            deptoCliente = (String) xPath.compile("//AccountingCustomerParty//RegistrationAddress/CountrySubentity/text()").evaluate(docFactura, XPathConstants.STRING);
+        }
+
+        String telCliente = (String) xPath.compile("//AccountingCustomerParty//Contact/Telephone/text()").evaluate(docFactura, XPathConstants.STRING);
+        String emailCliente = (String) xPath.compile("//AccountingCustomerParty//Contact/ElectronicMail/text()").evaluate(docFactura, XPathConstants.STRING);
+
+        // =========================================================================
+        // 💰 CONDICIONES COMERCIALES Y RETENCIONES
+        // =========================================================================
+        String fechaVencimientoStr = (String) xPath.compile("//DueDate/text()").evaluate(docFactura, XPathConstants.STRING);
+        String formaPago = (String) xPath.compile("//PaymentMeans/ID/text()").evaluate(docFactura, XPathConstants.STRING);
+        String medioPago = (String) xPath.compile("//PaymentMeans/PaymentMeansCode/text()").evaluate(docFactura, XPathConstants.STRING);
+
+        NodeList notasNodes = (NodeList) xPath.compile("//Note[normalize-space(text()) != '']").evaluate(docFactura, XPathConstants.NODESET);
+        StringBuilder notasSb = new StringBuilder();
+        if (notasNodes != null) {
+            for (int i = 0; i < notasNodes.getLength(); i++) {
+                String nTxt = notasNodes.item(i).getTextContent();
+                if (nTxt != null && !nTxt.trim().isEmpty()) {
+                    if (notasSb.length() > 0) notasSb.append(" | ");
+                    notasSb.append(nTxt.trim());
+                }
+            }
+        }
+        String notas = notasSb.length() > 0 ? notasSb.toString() : null;
+
+        String reteFuenteStr = (String) xPath.compile("//WithholdingTaxTotal[TaxSubtotal/TaxCategory/TaxScheme/ID='06' or TaxSubtotal/TaxCategory/TaxScheme/Name='ReteRenta' or TaxSubtotal/TaxCategory/TaxScheme/Name='ReteFuente']/TaxAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+        String reteIcaStr = (String) xPath.compile("//WithholdingTaxTotal[TaxSubtotal/TaxCategory/TaxScheme/ID='07' or TaxSubtotal/TaxCategory/TaxScheme/Name='ReteICA']/TaxAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+        String reteIvaStr = (String) xPath.compile("//WithholdingTaxTotal[TaxSubtotal/TaxCategory/TaxScheme/ID='05' or TaxSubtotal/TaxCategory/TaxScheme/Name='ReteIVA']/TaxAmount/text()").evaluate(docFactura, XPathConstants.STRING);
+
+        NodeList retNodes = (NodeList) xPath.compile("//WithholdingTaxTotal/TaxAmount/text()").evaluate(docFactura, XPathConstants.NODESET);
+        BigDecimal totalRetencionesCalc = BigDecimal.ZERO;
+        if (retNodes != null) {
+            for (int i = 0; i < retNodes.getLength(); i++) {
+                try {
+                    String v = retNodes.item(i).getTextContent();
+                    if (v != null && !v.isBlank()) {
+                        totalRetencionesCalc = totalRetencionesCalc.add(new BigDecimal(v.trim()));
+                    }
+                } catch (Exception ignored) {}
+            }
         }
 
         // =========================================================================
@@ -305,6 +413,7 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         factura.setNumeroFactura(numFacturaClean);
         factura.setCufe(cufeClean);
         factura.setIdentificadorCargue(identificadorCargue);
+        factura.setMovimientoId(this.movimientoId);
         factura.setLinea(currentLine);
 
         if (fechaStr != null && !fechaStr.isBlank()) {
@@ -328,6 +437,105 @@ public class FacturaZipProcessor implements ItemProcessor<FacturaZipWrapperDto, 
         }
         if (valorStr != null && !valorStr.isBlank()) {
             factura.setValorTotal(new BigDecimal(valorStr.trim()));
+        }
+
+        // 👤 Datos del Cliente
+        factura.setNitCliente(nitCliente != null && !nitCliente.isBlank() ? nitCliente.trim() : null);
+        factura.setDvCliente(dvCliente != null && !dvCliente.isBlank() ? dvCliente.trim() : null);
+        factura.setRazonSocialCliente(razonSocialCliente != null && !razonSocialCliente.isBlank() ? razonSocialCliente.trim() : null);
+        factura.setDireccionCliente(direccionCliente != null && !direccionCliente.isBlank() ? direccionCliente.trim() : null);
+        factura.setCiudadCliente(ciudadCliente != null && !ciudadCliente.isBlank() ? ciudadCliente.trim() : null);
+        factura.setDepartamentoCliente(deptoCliente != null && !deptoCliente.isBlank() ? deptoCliente.trim() : null);
+        factura.setTelefonoCliente(telCliente != null && !telCliente.isBlank() ? telCliente.trim() : null);
+        factura.setEmailCliente(emailCliente != null && !emailCliente.isBlank() ? emailCliente.trim() : null);
+
+        // 💰 Condiciones Comerciales y Notas
+        if (fechaVencimientoStr != null && !fechaVencimientoStr.isBlank()) {
+            try {
+                factura.setFechaVencimiento(LocalDate.parse(fechaVencimientoStr.trim()));
+            } catch (Exception ignored) {}
+        }
+        factura.setFormaPago(formaPago != null && !formaPago.isBlank() ? formaPago.trim() : null);
+        factura.setMedioPago(medioPago != null && !medioPago.isBlank() ? medioPago.trim() : null);
+        factura.setNotas(notas);
+
+        // 📊 Retenciones
+        if (reteFuenteStr != null && !reteFuenteStr.isBlank()) {
+            try { factura.setValorRetefuente(new BigDecimal(reteFuenteStr.trim())); } catch (Exception ignored) {}
+        }
+        if (reteIcaStr != null && !reteIcaStr.isBlank()) {
+            try { factura.setValorReteica(new BigDecimal(reteIcaStr.trim())); } catch (Exception ignored) {}
+        }
+        if (reteIvaStr != null && !reteIvaStr.isBlank()) {
+            try { factura.setValorReteiva(new BigDecimal(reteIvaStr.trim())); } catch (Exception ignored) {}
+        }
+        if (totalRetencionesCalc.compareTo(BigDecimal.ZERO) > 0) {
+            factura.setTotalRetenciones(totalRetencionesCalc);
+        }
+
+        // 📦 Extracción de Ítems / Líneas Facturadas (InvoiceLine con soporte universal de prefijos)
+        try {
+            NodeList lineNodes = (NodeList) xPath.compile("//*[local-name()='InvoiceLine']").evaluate(docFactura, XPathConstants.NODESET);
+            if (lineNodes != null && lineNodes.getLength() > 0) {
+                for (int i = 0; i < lineNodes.getLength(); i++) {
+                    Element lineElem = (Element) lineNodes.item(i);
+                    FacturaItem itemFactura = new FacturaItem();
+
+                    String numLineaStr = (String) xPath.compile(".//*[local-name()='ID']/text()").evaluate(lineElem, XPathConstants.STRING);
+                    if (numLineaStr != null && !numLineaStr.isBlank()) {
+                        try {
+                            itemFactura.setNumeroLinea(Integer.parseInt(numLineaStr.trim()));
+                        } catch (Exception e) {
+                            itemFactura.setNumeroLinea(i + 1);
+                        }
+                    } else {
+                        itemFactura.setNumeroLinea(i + 1);
+                    }
+
+                    String codProd = (String) xPath.compile(".//*[local-name()='SellersItemIdentification']/*[local-name()='ID']/text()").evaluate(lineElem, XPathConstants.STRING);
+                    if (codProd == null || codProd.isBlank()) {
+                        codProd = (String) xPath.compile(".//*[local-name()='StandardItemIdentification']/*[local-name()='ID']/text()").evaluate(lineElem, XPathConstants.STRING);
+                    }
+                    if (codProd == null || codProd.isBlank()) {
+                        codProd = (String) xPath.compile(".//*[local-name()='Item']/*[local-name()='SellersItemIdentification']/*[local-name()='ID']/text()").evaluate(lineElem, XPathConstants.STRING);
+                    }
+                    itemFactura.setCodigoProducto(codProd != null && !codProd.isBlank() ? codProd.trim() : null);
+
+                    String desc = (String) xPath.compile(".//*[local-name()='Item']/*[local-name()='Description']/text()").evaluate(lineElem, XPathConstants.STRING);
+                    if (desc == null || desc.isBlank()) {
+                        desc = (String) xPath.compile(".//*[local-name()='Description']/text()").evaluate(lineElem, XPathConstants.STRING);
+                    }
+                    itemFactura.setDescripcion(desc != null && !desc.isBlank() ? desc.trim() : null);
+
+                    String qtyStr = (String) xPath.compile(".//*[local-name()='InvoicedQuantity']/text()").evaluate(lineElem, XPathConstants.STRING);
+                    String unitCode = (String) xPath.compile(".//*[local-name()='InvoicedQuantity']/@unitCode").evaluate(lineElem, XPathConstants.STRING);
+                    if (qtyStr != null && !qtyStr.isBlank()) {
+                        try {
+                            itemFactura.setCantidad(new BigDecimal(qtyStr.trim()));
+                        } catch (Exception ignored) {}
+                    }
+                    itemFactura.setUnidadMedida(unitCode != null && !unitCode.isBlank() ? unitCode.trim() : null);
+
+                    String priceStr = (String) xPath.compile(".//*[local-name()='Price']/*[local-name()='PriceAmount']/text()").evaluate(lineElem, XPathConstants.STRING);
+                    if (priceStr != null && !priceStr.isBlank()) {
+                        try {
+                            itemFactura.setPrecioUnitario(new BigDecimal(priceStr.trim()));
+                        } catch (Exception ignored) {}
+                    }
+
+                    String totalLineStr = (String) xPath.compile(".//*[local-name()='LineExtensionAmount']/text()").evaluate(lineElem, XPathConstants.STRING);
+                    if (totalLineStr != null && !totalLineStr.isBlank()) {
+                        try {
+                            itemFactura.setValorTotal(new BigDecimal(totalLineStr.trim()));
+                        } catch (Exception ignored) {}
+                    }
+
+                    factura.addItem(itemFactura);
+                }
+                LOGGER.info("✅ Se extrajeron {} ítems para la factura {}", factura.getItems().size(), factura.getNumeroFactura());
+            }
+        } catch (Exception e) {
+            LOGGER.warn("⚠️ No se pudieron extraer ítems de factura: {}", e.getMessage());
         }
 
         factura.setEstado("RADICADO");

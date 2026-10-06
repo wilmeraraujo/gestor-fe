@@ -201,4 +201,11 @@ export class FacturaService extends CommonService<Factura> {
       }
     );
   }
+
+  /**
+   * 🛒 11. OBTENER ÍTEMS / LÍNEAS DE DETALLE DE LA FACTURA
+   */
+  public obtenerItems(facturaId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.endPointBase}/${facturaId}/items`);
+  }
 }

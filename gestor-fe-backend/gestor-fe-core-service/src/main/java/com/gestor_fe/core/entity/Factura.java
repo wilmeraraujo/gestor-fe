@@ -75,6 +75,60 @@ public class Factura {
 
     @Column(name = "valor_total")
     private BigDecimal valorTotal;
+
+    // =========================================================================
+    // 👤 DATOS DEL CLIENTE / ADQUIRENTE (AccountingCustomerParty)
+    // =========================================================================
+    @Column(name = "nit_cliente", length = 20)
+    private String nitCliente;
+
+    @Column(name = "dv_cliente", length = 2)
+    private String dvCliente;
+
+    @Column(name = "razon_social_cliente")
+    private String razonSocialCliente;
+
+    @Column(name = "direccion_cliente")
+    private String direccionCliente;
+
+    @Column(name = "ciudad_cliente", length = 100)
+    private String ciudadCliente;
+
+    @Column(name = "departamento_cliente", length = 100)
+    private String departamentoCliente;
+
+    @Column(name = "telefono_cliente", length = 50)
+    private String telefonoCliente;
+
+    @Column(name = "email_cliente")
+    private String emailCliente;
+
+    // =========================================================================
+    // 💰 CONDICIONES COMERCIALES Y RETENCIONES
+    // =========================================================================
+    @Column(name = "fecha_vencimiento")
+    private LocalDate fechaVencimiento;
+
+    @Column(name = "forma_pago", length = 20)
+    private String formaPago; // 1 = Contado, 2 = Crédito
+
+    @Column(name = "medio_pago", length = 50)
+    private String medioPago;
+
+    @Column(columnDefinition = "TEXT")
+    private String notas;
+
+    @Column(name = "valor_retefuente")
+    private BigDecimal valorRetefuente;
+
+    @Column(name = "valor_reteica")
+    private BigDecimal valorReteica;
+
+    @Column(name = "valor_reteiva")
+    private BigDecimal valorReteiva;
+
+    @Column(name = "total_retenciones")
+    private BigDecimal totalRetenciones;
     
     // =========================================================================
     // 📌 ESTADO ACTUAL Y ULTIMA CAUSACIÓN (Para consultas rápidas en Grillas)
@@ -94,6 +148,9 @@ public class Factura {
     @Column(name = "tipo_registro_contable_id", length = 10) // FC, GV, ORC, NI, TB
     private Long tipoRegistroContableId;
 
+    @Column(name = "movimiento_id")
+    private Long movimientoId;
+
     @Column(name = "numero_causacion", length = 50)
     private String numeroCausacion;
 
@@ -106,6 +163,22 @@ public class Factura {
     
     @Column(name = "deleted_at")
     private LocalDate deletedAt;
+
+    // =========================================================================
+    // RELACIÓN 0: Ítems / Líneas Facturadas (Productos o Servicios)
+    // =========================================================================
+    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @SQLRestriction("deleted_at IS NULL")
+    private List<FacturaItem> items = new ArrayList<>();
+
+    public void addItem(FacturaItem item) {
+        if (this.items == null) {
+            this.items = new ArrayList<>();
+        }
+        this.items.add(item);
+        item.setFactura(this);
+    }
 
     // =========================================================================
     // RELACIÓN 1: Documentos (XML, PDF Factura, Soporte Causación, TB, Pago)

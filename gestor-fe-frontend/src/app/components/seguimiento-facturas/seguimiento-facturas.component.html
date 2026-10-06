@@ -20,6 +20,7 @@
           [mostrarAgregar]="false"
           [mostrarEditar]="false"
           [mostrarEliminar]="false"
+          [mostrarFichaFactura]="true"
           [mostrarDetalle]="true"
           
           [mostrarHistorial]="!esPrestador"
@@ -31,6 +32,7 @@
           (refrescar)="cargarDatosPaginados()"
           (filtrosChange)="onFiltrosChange($event)"
           (paginar)="paginar($event)"
+          (verFichaFactura)="abrirFichaFactura($event)"
           (verDetalle)="verSoportesFactura($event)"
           (verHistorial)="verHistorialGestion($event)"
           (buscar)="buscar($event)">
@@ -54,7 +56,15 @@
             <span class="fw-bold">Razón Social: <span class="text-dark">{{ facturaSeleccionada.razonSocialEmisor }}</span></span>
           </div>
 
-          <div>
+          <div class="d-flex gap-2">
+            <!-- 📋 BOTÓN PARA VER FICHA TÉCNICA E ÍTEMS DESDE EL EXPEDIENTE -->
+            <button
+              mat-stroked-button
+              style="border-color: #1DA6BA; color: #1DA6BA;"
+              (click)="abrirFichaFactura(facturaSeleccionada)">
+              <mat-icon>list_alt</mat-icon> Ficha / Ítems
+            </button>
+
             <button mat-stroked-button color="primary" (click)="regresarABandeja()">
               <mat-icon>arrow_back</mat-icon> Volver a Seguimiento
             </button>

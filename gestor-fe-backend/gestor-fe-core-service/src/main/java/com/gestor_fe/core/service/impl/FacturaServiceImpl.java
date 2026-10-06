@@ -74,6 +74,12 @@ public class FacturaServiceImpl implements FacturaService {
 
     @Override
     @Transactional(readOnly = true)
+    public java.util.Optional<Factura> findById(Long id) {
+        return repository.findById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<Factura> findByNitAndDeletedAtIsNull(String nit, Pageable pageable) {
         return repository.findByNitAndDeletedAtIsNull(nit, pageable);
     }
@@ -211,6 +217,10 @@ public class FacturaServiceImpl implements FacturaService {
 
         if (filtro.getTipoRegistroContableId() != null) {
             predicates.add(cb.equal(root.get("tipoRegistroContableId"), filtro.getTipoRegistroContableId()));
+        }
+
+        if (filtro.getMovimientoId() != null) {
+            predicates.add(cb.equal(root.get("movimientoId"), filtro.getMovimientoId()));
         }
 
         if (filtro.getFechaEmisionDesde() != null) {

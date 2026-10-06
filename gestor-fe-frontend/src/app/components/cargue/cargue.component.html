@@ -1,7 +1,8 @@
-<!-- Input nativo oculto para seleccionar archivo ZIP -->
+<!-- Input nativo oculto para seleccionar archivo ZIP (exclusivo prestador) -->
 <input 
   type="file" 
   #fileInput 
+  id="prestadorDirectFileInput"
   style="display: none;" 
   accept=".zip" 
   (change)="onFileSelected($event)">
@@ -16,6 +17,11 @@
   
   [textoBotonAgregar]="textoBotonAgregar"
   [tooltipAgregar]="tooltipAgregar"
+  iconoAgregar="cloud_upload"
+  [mostrarCargueInterno]="esAdminOPerfilAdmin"
+  textoBotonCargueInterno="Cargue Interno"
+  tooltipCargueInterno="Cargar facturas internas con selección de movimiento"
+  iconoCargueInterno="cloud_upload"
   
   [mostrarAcciones]="true"
   [mostrarRefrescar]="true"
@@ -27,6 +33,7 @@
   (paginar)="paginar($event)"
   (descargarErrores)="descargarExcelErrores($event)"
   (agregar)="agregar()"
+  (cargueInterno)="abrirCargueInterno()"
   (buscar)="buscar($event)"
   (refrescar)="calcularRangos()"
   (eliminar)="deletedAt($event)"

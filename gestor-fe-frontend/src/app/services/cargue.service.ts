@@ -35,12 +35,15 @@ export class CargueService extends CommonService<Cargue> {
     return this.http.get<any>(`${this.endPointBase}/paginable/activos`, { params });
   }
 
-  public cargarZip(file: File, usuario: string, roles: string[] = []): Observable<Cargue> {
+  public cargarZip(file: File, usuario: string, roles: string[] = [], movimientoId?: number | null): Observable<Cargue> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('usuario', usuario);
     if (roles && roles.length > 0) {
       roles.forEach(rol => formData.append('roles', rol));
+    }
+    if (movimientoId !== undefined && movimientoId !== null) {
+      formData.append('movimientoId', movimientoId.toString());
     }
     const url = `${this.endPointBase}/procesar-zip`;
     return this.http.post<Cargue>(url, formData);

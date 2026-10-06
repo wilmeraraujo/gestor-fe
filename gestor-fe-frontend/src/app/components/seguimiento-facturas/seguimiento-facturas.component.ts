@@ -4,6 +4,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { KeycloakService } from 'keycloak-angular';
 import { PageEvent } from '@angular/material/paginator';
@@ -12,6 +13,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
+import { FichaFacturaModalComponent } from '../../shared/components/ficha-factura-modal/ficha-factura-modal.component';
 
 import { Factura } from '../../models/factura';
 import { Documento } from '../../models/documento';
@@ -56,6 +58,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   // 🚀 Inyección de Servicios
   private loginService = inject(LoginService);
   private alertService = inject(AlertService);
+  private dialog = inject(MatDialog);
 
   // 📊 Estado de descarga de Excel
   descargandoExcel: boolean = false;
@@ -366,6 +369,22 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
         this.alertService.cerrar();
         console.error('Error al exportar Excel:', err);
         this.alertService.error('Ocurrió un error al intentar generar el archivo Excel.', 'Error en la descarga');
+      }
+    });
+  }
+
+  /**
+   * 📋 Abre el modal con la ficha técnica detallada y los ítems de la factura
+   */
+  abrirFichaFactura(factura: Factura): void {
+    if (!factura) return;
+    this.dialog.open(FichaFacturaModalComponent, {
+      width: '950px',
+      maxWidth: '95vw',
+      panelClass: 'custom-ficha-dialog',
+      data: {
+        facturaId: factura.id,
+        factura: factura
       }
     });
   }

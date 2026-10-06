@@ -22,6 +22,7 @@ import { ConfiguracionSistemaComponent } from './components/admin/configuracion-
 import { ConfiguracionFaseExtensionComponent } from './components/admin/configuracion-fase-extension/configuracion-fase-extension.component';
 import { ProcesoComponent } from './components/admin/proceso/proceso.component';
 import { EstadisticaComponent } from './components/estadistica/estadistica.component';
+import { MovimientoComponent } from './components/admin/movimiento/movimiento.component';
 
 
 export const routes: Routes = [
@@ -89,6 +90,7 @@ export const routes: Routes = [
             component: ObservacionComponent
           },
           { path: 'proceso', component: ProcesoComponent },
+          { path: 'movimiento', component: MovimientoComponent },
           { path: 'configuracion-sistema', component: ConfiguracionSistemaComponent },
           { path: 'configuracion-fase-extension', component: ConfiguracionFaseExtensionComponent }
 

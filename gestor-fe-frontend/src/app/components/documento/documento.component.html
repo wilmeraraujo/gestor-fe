@@ -104,6 +104,7 @@
         [mostrarSeleccion]="true"
         [mostrarEliminarMasivo]="true"
         (paginar)="paginar($event)"
+        (refrescar)="calcularRangos()"
         (verDetalle)="cargarSoporteEnVisor($event)"
         (descargar)="descargarSoporte($event)"
         (eliminar)="eliminarSoporte($event)"

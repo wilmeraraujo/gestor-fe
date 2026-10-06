@@ -29,3 +29,10 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   stroke: #ffffff !important;
 }
 
+/* 🪟 REDONDEO ELEGANTE GLOBAL PARA MODAL DE FICHA */
+.custom-ficha-dialog .mat-mdc-dialog-surface,
+.mat-mdc-dialog-surface:has(.ficha-modal-container) {
+  border-radius: 22px !important;
+  overflow: hidden !important;
+}
+

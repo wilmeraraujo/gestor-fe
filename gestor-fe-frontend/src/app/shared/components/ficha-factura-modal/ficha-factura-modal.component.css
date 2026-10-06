@@ -1,0 +1,471 @@
+/* ========================================================
+   🪟 FICHA FACTURA MODAL - ESTILOS INSTITUCIONALES ASSOLIDARIA
+   Colores Refinados: Slate Navy Aclarado (#243447) & Cian (#1DA6BA)
+   ======================================================== */
+
+/* Redondeo suave en la superficie de Angular Material */
+:host {
+  display: block;
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+::ng-deep .mat-mdc-dialog-surface:has(.ficha-modal-container),
+::ng-deep .cdk-overlay-pane:has(.ficha-modal-container) .mat-mdc-dialog-surface {
+  border-radius: 22px !important;
+  overflow: hidden !important;
+  box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.2), 0 15px 15px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+.ficha-modal-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  background-color: #ffffff;
+  color: #1e293b;
+  font-family: inherit;
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+/* ==========================================
+   ENCABEZADO INSTITUCIONAL SUAVE
+   ========================================== */
+.modal-header {
+  padding: 18px 26px;
+  background: linear-gradient(135deg, #243447 0%, #2e435c 50%, #364e6b 100%);
+  color: #ffffff;
+  border-bottom: 3.5px solid #1DA6BA;
+  box-shadow: 0 4px 14px rgba(36, 52, 71, 0.22);
+  position: relative;
+  z-index: 2;
+}
+
+.header-icon-badge {
+  background: #1DA6BA;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  box-shadow: 0 3px 12px rgba(29, 166, 186, 0.45);
+}
+
+.header-icon-badge mat-icon {
+  font-size: 26px;
+  width: 26px;
+  height: 26px;
+  color: #ffffff;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+
+.modal-subtitle {
+  font-size: 0.85rem;
+}
+
+.badge-factura {
+  background: #1DA6BA;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(29, 166, 186, 0.3);
+}
+
+.badge-estado {
+  background: rgba(29, 166, 186, 0.18);
+  border: 1px solid rgba(29, 166, 186, 0.45);
+  color: #22d3ee;
+  font-weight: 600;
+  padding: 2.5px 9px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.badge-fase {
+  background: rgba(255, 255, 255, 0.14);
+  color: #f1f5f9;
+  font-weight: 500;
+  padding: 2.5px 9px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+}
+
+.btn-close-modal {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 50% !important;
+  opacity: 0.9;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, color 0.2s;
+}
+
+.btn-close-modal:hover {
+  opacity: 1;
+  background: rgba(29, 166, 186, 0.25) !important;
+  color: #22d3ee !important;
+  transform: rotate(90deg);
+}
+
+/* ==========================================
+   SPINNER DE CARGA
+   ========================================== */
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 35px;
+  background-color: #f8fafc;
+}
+
+/* ==========================================
+   CUERPO SCROLLABLE DEL MODAL
+   ========================================== */
+.modal-body-content {
+  padding: 22px 26px;
+  max-height: calc(85vh - 135px);
+  overflow-y: auto;
+  background-color: #f8fafc;
+}
+
+/* ==========================================
+   TÍTULOS DE SECCIÓN
+   ========================================== */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #243447;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+
+.icon-institucional {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: #1DA6BA !important;
+}
+
+.text-navy {
+  color: #243447 !important;
+}
+
+.text-cyan {
+  color: #1DA6BA !important;
+}
+
+/* ==========================================
+   TARJETAS EMISOR Y CLIENTE (REDONDEADAS)
+   ========================================== */
+.party-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  height: 100%;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.party-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.emisor-card {
+  border-left: 5px solid #2e435c;
+}
+
+.cliente-card {
+  border-left: 5px solid #1DA6BA;
+}
+
+.party-card-header {
+  font-size: 0.92rem;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 10px;
+}
+
+.info-row {
+  display: flex;
+  margin-bottom: 6px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.info-label {
+  width: 110px;
+  flex-shrink: 0;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.info-value {
+  color: #1e293b;
+  flex-grow: 1;
+  word-break: break-word;
+}
+
+/* ==========================================
+   CHIPS DE DATOS COMERCIALES (REDONDEADOS)
+   ========================================== */
+.info-grid-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.chip-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.chip-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.chip-value {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #243447;
+  margin-top: 2px;
+}
+
+/* ==========================================
+   BARRA CUFE (REDONDEADA)
+   ========================================== */
+.cufe-box {
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.cufe-label {
+  font-size: 0.8rem;
+  color: #243447;
+}
+
+.cufe-code {
+  font-size: 0.78rem;
+  color: #0f172a;
+  background: transparent;
+}
+
+.btn-copy-cufe {
+  font-size: 0.78rem !important;
+  line-height: 28px !important;
+  height: 28px !important;
+  padding: 0 12px !important;
+  color: #1DA6BA !important;
+  border-color: #1DA6BA !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease;
+}
+
+.btn-copy-cufe:hover {
+  background: #1DA6BA !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(29, 166, 186, 0.35);
+}
+
+.btn-copy-cufe mat-icon {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin-right: 4px;
+}
+
+/* ==========================================
+   RESUMEN FINANCIERO (KPIS REDONDEADOS)
+   ========================================== */
+.financial-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+}
+
+.kpi-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.kpi-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #243447;
+  margin-top: 3px;
+}
+
+.kpi-retenciones {
+  border-left: 4.5px solid #f59e0b;
+}
+
+.retenciones-detalle {
+  font-size: 0.7rem;
+  color: #92400e;
+  margin-top: 3px;
+}
+
+.kpi-total {
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+  border: 1px solid #99f6e4;
+  border-left: 5px solid #1DA6BA;
+}
+
+.text-institucional {
+  color: #0e7490 !important;
+  font-weight: 700 !important;
+}
+
+.total-destacado {
+  color: #0891b2 !important;
+  font-size: 1.3rem !important;
+}
+
+/* ==========================================
+   NOTAS DIAN (REDONDEADAS)
+   ========================================== */
+.notes-box {
+  background: #f0fdfa;
+  border-left: 4.5px solid #1DA6BA;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.notes-text {
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+/* ==========================================
+   TABLA DE ÍTEMS (REDONDEADA Y ELEGANTE)
+   ========================================== */
+.badge-items-count {
+  background: #243447;
+  color: #1DA6BA;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 14px;
+  letter-spacing: 0.03em;
+}
+
+.table-items-wrapper {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.table-items {
+  border-collapse: collapse;
+}
+
+.table-items-header th {
+  background: #243447 !important;
+  color: #ffffff !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  padding: 11px 14px !important;
+  border-bottom: 3px solid #1DA6BA !important;
+  letter-spacing: 0.02em;
+}
+
+.table-items-row td {
+  padding: 11px 14px !important;
+  font-size: 0.85rem !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.table-items-row:hover {
+  background-color: #f0fdfa !important;
+}
+
+.item-desc-cell {
+  max-width: 320px;
+  line-height: 1.35;
+}
+
+.col-xs {
+  width: 50px;
+}
+
+.col-sm {
+  width: 120px;
+}
+
+.empty-items-alert {
+  background: #f8fafc;
+}
+
+.empty-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  opacity: 0.4;
+  margin-bottom: 6px;
+}
+
+/* ==========================================
+   PIE DE MODAL (ACCIONES REDONDEADAS)
+   ========================================== */
+.modal-footer {
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  padding: 14px 26px !important;
+}
+
+.btn-modal-close {
+  background: #243447 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+  padding: 7px 24px !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 6px rgba(36, 52, 71, 0.15) !important;
+}
+
+.btn-modal-close:hover {
+  background: #1DA6BA !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(29, 166, 186, 0.4) !important;
+  transform: translateY(-1px);
+}

@@ -44,6 +44,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
 
   @Input() textoBotonAgregar: string = 'Adicionar';
   @Input() tooltipAgregar: string = 'Adicionar nuevo registro';
+  @Input() iconoAgregar: string = 'add';
 
   @Input() mostrarAgregar = true;
   @Input() mostrarAcciones = true;
@@ -60,10 +61,18 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
   @Input() mostrarRefrescar: boolean = true;
   @Input() mostrarDescargarExcel: boolean = false;
   @Input() descargandoExcel: boolean = false;
+  @Input() mostrarCargueInterno: boolean = false;
+  @Input() textoBotonCargueInterno: string = 'Cargue Interno';
+  @Input() tooltipCargueInterno: string = 'Cargue interno con selección de movimiento';
+  @Input() iconoCargueInterno: string = 'cloud_upload';
+  @Input() mostrarFichaFactura: boolean = false;
+  @Input() tooltipFichaFactura: string = 'Ver Ficha y Detalle de Ítems';
 
   @Output() filtrosChange = new EventEmitter<{ [key: string]: string }>();
   @Output() verHistorial = new EventEmitter<any>();
+  @Output() verFichaFactura = new EventEmitter<any>();
   @Output() agregar = new EventEmitter<void>();
+  @Output() cargueInterno = new EventEmitter<void>();
   @Output() editar = new EventEmitter<any>();
   @Output() eliminar = new EventEmitter<any>();
   @Output() toggleEstado = new EventEmitter<any>();
@@ -411,6 +420,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
 
   onVerDetalle(row: any): void {
     this.verDetalle.emit(row);
+  }
+
+  onVerFichaFactura(row: any): void {
+    this.verFichaFactura.emit(row);
   }
 
   onGestionarFactura(row: any): void {

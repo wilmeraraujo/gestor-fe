@@ -60,7 +60,8 @@ public class FacturaCargueController {
     public ResponseEntity<?> procesarZipFacturas(
             @RequestParam("file") MultipartFile multipartFile,
             @RequestParam("usuario") String usuario,
-            @RequestParam(value = "roles", required = false) List<String> roles
+            @RequestParam(value = "roles", required = false) List<String> roles,
+            @RequestParam(value = "movimientoId", required = false) Long movimientoId
     ) {
         // 🛑 VALIDACIÓN 1: Archivo presente
         if (multipartFile == null || multipartFile.isEmpty()) {
@@ -109,6 +110,7 @@ public class FacturaCargueController {
             Cargue cargue = new Cargue();
             cargue.setNombreArchivo(originalFileName);
             cargue.setUsuario(usuario);
+            cargue.setMovimientoId(movimientoId);
             cargue.setCreatedAt(LocalDateTime.now());
             cargue.setExiteError(false);
             cargue.setNumeroRegistro(0);

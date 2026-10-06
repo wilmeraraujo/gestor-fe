@@ -17,8 +17,15 @@
           <!-- ➕ BOTÓN ADICIONAR / CARGAR PERSONALIZABLE -->
           <button *ngIf="mostrarAgregar" type="button" class="btn-icon-theme btn-add" (click)="agregar.emit()"
             [matTooltip]="tooltipAgregar">
-            <mat-icon>add</mat-icon>
+            <mat-icon>{{ iconoAgregar }}</mat-icon>
             <span>{{ textoBotonAgregar }}</span>
+          </button>
+
+          <!-- 🏢 BOTÓN CARGUE INTERNO (CON MOVIMIENTO) -->
+          <button *ngIf="mostrarCargueInterno" type="button" class="btn-icon-theme btn-cargue-interno" (click)="cargueInterno.emit()"
+            [matTooltip]="tooltipCargueInterno">
+            <mat-icon>{{ iconoCargueInterno }}</mat-icon>
+            <span>{{ textoBotonCargueInterno }}</span>
           </button>
 
           <!-- 🧹 BOTÓN LIMPIAR FILTROS (SIEMPRE VISIBLE) -->
@@ -156,6 +163,13 @@
                 class="btn-action btn-action-download" (click)="onDescargar(row)"
                 matTooltip="Descargar soporte documental">
                 <mat-icon>file_download</mat-icon>
+              </button>
+
+              <!-- 📋 VER FICHA / ÍTEMS DE FACTURA -->
+              <button *ngIf="mostrarFichaFactura && row.estadoNombre !== 'PROCESANDO'" mat-icon-button
+                class="btn-action btn-action-ficha" (click)="onVerFichaFactura(row)"
+                [matTooltip]="tooltipFichaFactura">
+                <mat-icon>list_alt</mat-icon>
               </button>
 
               <!-- 👁️ VER DETALLE -->
