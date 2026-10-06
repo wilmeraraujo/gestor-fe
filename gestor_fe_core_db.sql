@@ -130,6 +130,7 @@ select * from gestor.cargue c order by id desc limit 10;
 select * from gestor.documento d order by id desc limit 20;
 select * from gestor.prestador p order by id desc limit 10;
 select * from gestor.factura f order by id desc limit 10;
+select * from gestor.factura_item fi order by id desc limit 10;
 select * from gestor.error_cargue ec order by id desc limit 10;
 
 select * from public.batch_job_execution bje order by bje.job_execution_id desc limit 10; 
@@ -158,17 +159,18 @@ set estado = 'RADICADO' ,observacion = null , fase_id = 1 ,
 causal_devolucion_id = null, numero_causacion=null,tipo_registro_contable=null 
 where id in (1);
 
-truncate table gestor.cargue restart identity CASCADE;
-truncate table gestor.error_cargue restart identity CASCADE;
-truncate table gestor.documento restart identity CASCADE;
-truncate table gestor.factura restart identity CASCADE;
-
-truncate table public.batch_job_execution restart identity CASCADE;
-truncate table public.batch_job_execution_context restart identity CASCADE; 
-truncate table public.batch_job_execution_params restart identity CASCADE; 
-truncate table public.batch_job_instance restart identity CASCADE; 
-truncate table public.batch_step_execution restart identity CASCADE; 
-truncate table public.batch_step_execution_context restart identity CASCADE;
+	truncate table gestor.cargue restart identity CASCADE;
+	truncate table gestor.error_cargue restart identity CASCADE;
+	truncate table gestor.documento restart identity CASCADE;
+	truncate table gestor.factura restart identity CASCADE;
+	truncate table gestor.factura_item restart identity CASCADE;
+	
+	truncate table public.batch_job_execution restart identity CASCADE;
+	truncate table public.batch_job_execution_context restart identity CASCADE; 
+	truncate table public.batch_job_execution_params restart identity CASCADE; 
+	truncate table public.batch_job_instance restart identity CASCADE; 
+	truncate table public.batch_step_execution restart identity CASCADE; 
+	truncate table public.batch_step_execution_context restart identity CASCADE;
 
 ALTER TABLE gestor.documento ADD COLUMN created_at TIMESTAMP(6) NOT NULL;
 ALTER TABLE gestor.factura ADD COLUMN created_at TIMESTAMP(6) NOT NULL;
