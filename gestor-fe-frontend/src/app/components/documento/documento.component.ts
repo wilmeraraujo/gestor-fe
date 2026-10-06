@@ -50,8 +50,8 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
   filtro = {
     numeroFactura: '',
     nit: '',
-    tipoId: null as number | null,
-    extensionId: null as number | null
+    codigoTipo: null as string | null,
+    codigoExtension: null as string | null
   };
 
   tiposLista: any[] = [];
@@ -179,8 +179,8 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
     this.service.filtrarDocumentosPaginado(
       colNumeroFactura,
       colNit,
-      this.filtro.tipoId,
-      this.filtro.extensionId,
+      this.filtro.codigoTipo,
+      this.filtro.codigoExtension,
       this.paginaActual.toString(),
       this.totalPorPagina.toString(),
       colNombre,
@@ -201,8 +201,8 @@ export class DocumentoComponent extends CommonListarComponent<Documento, Documen
   limpiar(): void {
     this.filtro.nit = '';
     this.filtro.numeroFactura = '';
-    this.filtro.tipoId = null;
-    this.filtro.extensionId = null;
+    this.filtro.codigoTipo = null;
+    this.filtro.codigoExtension = null;
     this.pdfUrlSafe = null;
     this.documentoActivo = '';
     this.aplicandoFiltro = false;

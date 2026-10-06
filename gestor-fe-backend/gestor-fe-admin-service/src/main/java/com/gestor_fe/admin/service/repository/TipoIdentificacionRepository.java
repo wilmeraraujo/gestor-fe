@@ -11,11 +11,13 @@ import org.springframework.stereotype.Repository;
 import com.gestor_fe.admin.service.model.entity.TipoIdentificacion;
 
 @Repository
-public interface TipoIdentificacionRepository extends JpaRepository<TipoIdentificacion, Long>{
+public interface TipoIdentificacionRepository extends JpaRepository<TipoIdentificacion, Long> {
 
-	Page<TipoIdentificacion> findByDeletedAtIsNull(Pageable pageable);
-	
-	@Query("select x from TipoIdentificacion x where deletedAt is null and upper(x.descripcion) like upper(concat('%', ?1, '%'))")
-	List<TipoIdentificacion> findByDescripcion(String desc);
-	
+    Page<TipoIdentificacion> findByDeletedAtIsNull(Pageable pageable);
+
+    @Query("select x from TipoIdentificacion x where deletedAt is null and upper(x.descripcion) like upper(concat('%', ?1, '%'))")
+    List<TipoIdentificacion> findByDescripcion(String desc);
+
+    @Query("select x from TipoIdentificacion x where deletedAt is null and x.codigo = ?1")
+    TipoIdentificacion findByCodigo(String codigo);
 }

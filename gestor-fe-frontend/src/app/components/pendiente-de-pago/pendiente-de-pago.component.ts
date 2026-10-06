@@ -217,7 +217,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
       this.opcionesCausal = (data || [])
         .filter(c => !c.deletedAt)
         .map(c => ({
-          value: c.id,
+          value: c.codigo || c.id,
           label: `${c.codigo || ''} - ${c.descripcion}`
         }));
     });
@@ -372,7 +372,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
           this.toggleCampoVisibilidad(campos, form, 'comprobantePago', isAprobado, !tienePagoActivo);
 
           // CAMPOS DE RECHAZO
-          this.toggleCampoVisibilidad(campos, form, 'causalDevolucionId', isRechazado, true);
+          this.toggleCampoVisibilidad(campos, form, 'codigoCausalDevolucion', isRechazado, true);
           this.toggleCampoVisibilidad(campos, form, 'observacionId', isRechazado, true);
         }
       },
@@ -408,7 +408,7 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
         visible: false
       },
       {
-        name: 'causalDevolucionId',
+        name: 'codigoCausalDevolucion',
         label: 'Causal de Devolución',
         type: 'select',
         options: this.opcionesCausal,
@@ -550,15 +550,13 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
                 }
               }
 
-              const tipoRegistroIdNum = model.tipoRegistroContableId
-                ? Number(model.tipoRegistroContableId)
-                : (row.tipoRegistroContableId ? Number(row.tipoRegistroContableId) : undefined);
+              const codigoTipoRegistro = model.codigoTipoRegistroContable || row.codigoTipoRegistroContable;
 
               this.alertService.cargando('Registrando pago y subiendo soportes...', 'Procesando Tesorería');
 
               return this.service.procesarPagoFase4(
                 row.id,
-                tipoRegistroIdNum,
+                codigoTipoRegistro,
                 model.numeroCausacion,
                 usuarioAccion,
                 archivoTb,
@@ -568,9 +566,6 @@ export class PendienteDePagoComponent extends CommonListarComponent<Factura, Fac
             } else {
               model.usuario = usuarioAccion;
 
-              if (model.causalDevolucionId) {
-                model.causalDevolucionId = Number(model.causalDevolucionId);
-              }
               if (model.observacionId && model.observacionId !== 'OTRO') {
                 model.observacion = model.observacionId;
               }

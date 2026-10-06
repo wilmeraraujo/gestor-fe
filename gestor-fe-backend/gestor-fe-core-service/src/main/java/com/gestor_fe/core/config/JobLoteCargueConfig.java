@@ -97,7 +97,7 @@ public class JobLoteCargueConfig {
             @Value("#{jobParameters['identificadorCargue']}") Long identificadorCargue,
             @Value("#{jobParameters['usuario']}") String usuario,
             @Value("#{jobParameters['esAdmin']}") String esAdminStr,
-            @Value("#{jobParameters['movimientoId']}") Long movimientoId,
+            @Value("#{jobParameters['codigoMovimiento']}") String codigoMovimiento,
             FacturaService facturaService,
             ErrorCargueService errorCargueService,
             DocumentoRepository documentoRepository,
@@ -106,7 +106,7 @@ public class JobLoteCargueConfig {
                 || "admin".equalsIgnoreCase(usuario) 
                 || "gestor-fe-admin".equalsIgnoreCase(usuario)
                 || "gestor-fe-cargue".equalsIgnoreCase(usuario);
-        return new FacturaZipProcessor(identificadorCargue, usuario, esAdmin, movimientoId, facturaService, errorCargueService, documentoRepository, adminFeignClient);
+        return new FacturaZipProcessor(identificadorCargue, usuario, esAdmin, codigoMovimiento, facturaService, errorCargueService, documentoRepository, adminFeignClient);
     }
 
     @Bean

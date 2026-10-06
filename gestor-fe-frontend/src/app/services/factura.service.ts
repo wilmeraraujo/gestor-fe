@@ -118,13 +118,15 @@ export class FacturaService extends CommonService<Factura> {
    */
   public procesarCausacionFase2(
     id: number,
-    tipoRegistroContableId: number,
+    codigoTipoRegistroContable: string | number,
     numeroCausacion: string,
     usuario?: string,
     archivo?: any
   ): Observable<Factura> {
     const formData = new FormData();
-    formData.append('tipoRegistroContableId', tipoRegistroContableId ? tipoRegistroContableId.toString() : '');
+    const codigoStr = codigoTipoRegistroContable ? codigoTipoRegistroContable.toString() : '';
+    formData.append('codigoTipoRegistroContable', codigoStr);
+    formData.append('tipoRegistroContableId', codigoStr);
     formData.append('numeroCausacion', numeroCausacion || '');
 
     // 👈 Adjunta el usuario al FormData
@@ -146,14 +148,16 @@ export class FacturaService extends CommonService<Factura> {
    */
   public procesarPagoFase4(
     id: number,
-    tipoRegistroContableId?: number,
+    codigoTipoRegistroContable?: string | number,
     numeroCausacion?: string,
     usuario?: string,
     soporteTb?: any,
     comprobantePago?: any
   ): Observable<Factura> {
     const formData = new FormData();
-    formData.append('tipoRegistroContableId', tipoRegistroContableId ? tipoRegistroContableId.toString() : '');
+    const codigoStr = codigoTipoRegistroContable ? codigoTipoRegistroContable.toString() : '';
+    formData.append('codigoTipoRegistroContable', codigoStr);
+    formData.append('tipoRegistroContableId', codigoStr);
     formData.append('numeroCausacion', numeroCausacion || '');
 
     // 👈 Adjunta el usuario al FormData

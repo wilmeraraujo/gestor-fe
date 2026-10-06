@@ -17,7 +17,7 @@ public interface PrestadorService {
     Page<Prestador> listarPrestadores(Pageable pageable);
 
     // --- Operaciones de Soportes / Documentos del Prestador ---
-    Documento cargarSoporte(String nitPrestador, Long tipoId, Long extensionId, MultipartFile archivo);
+    Documento cargarSoporte(String nitPrestador, String codigoTipo, String codigoExtension, MultipartFile archivo);
     Page<Documento> listarSoportes(Long prestadorId, Pageable pageable);
     void eliminarSoporte(Long documentoId);
 }

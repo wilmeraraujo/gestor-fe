@@ -27,68 +27,64 @@ import com.service.common.controller.GlobalController;
 @RequestMapping("/api/v1/admin/tipo-identificacion")
 public class TipoIdentificacionController extends GlobalController<TipoIdentificacion, TipoIdentificacionService> {
 
-	private final TipoIdentificacionService service;
-	
-	public TipoIdentificacionController(TipoIdentificacionService service) {
-		this.service = service;
-	}
-	
-	@GetMapping("/buscar/{desc}")
-	public ResponseEntity<?> filter(@PathVariable String desc){
-		return ResponseEntity.ok(service.findByDescripcion(desc));
-	}
-	
-	@GetMapping("/paginable/activos")
-	public ResponseEntity<?> listAll(Pageable pageable) {
+    public TipoIdentificacionController(TipoIdentificacionService service) {
+        this.service = service;
+    }
 
-	    Pageable sortedPageable = PageRequest.of(
-	            pageable.getPageNumber(),
-	            pageable.getPageSize(),
-	            Sort.by(Sort.Direction.DESC, "id"));
+    @GetMapping("/buscar/{desc}")
+    public ResponseEntity<?> filter(@PathVariable String desc) {
+        return ResponseEntity.ok(service.findByDescripcion(desc));
+    }
 
-	    return ResponseEntity.ok()
-	            .body(service.findByDeletedAtIsNull(sortedPageable));
-	}
-	
-	@PutMapping("/deleted-at/{id}")
-	public ResponseEntity<?> addDeletedAt(@PathVariable Long id){
-		Optional<TipoIdentificacion> ti = service.findById(id);
-		
-		if (ti.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-		
-		TipoIdentificacion tiDb = ti.get();
-		tiDb.setDeletedAt(LocalDateTime.now());
-		return ResponseEntity.status(HttpStatus.CREATED).body(service.save(tiDb));
-	}
-	
-	@PutMapping("/{id}")
-	public ResponseEntity<?> edit(@Validated @RequestBody TipoIdentificacion ti,
-			BindingResult result,
-			@PathVariable(name = "id") Long id,
-			jakarta.servlet.http.HttpServletRequest request) {
-		
-		if (result.hasErrors()) {
-			return this.validar(result);
-		}
+    @GetMapping("/paginable/activos")
+    public ResponseEntity<?> listAll(Pageable pageable) {
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(Sort.Direction.ASC, "codigo"));
 
-		Optional<TipoIdentificacion> objeto = service.findById(id);
-		if (objeto.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
+        return ResponseEntity.ok()
+                .body(service.findByDeletedAtIsNull(sortedPageable));
+    }
 
-		TipoIdentificacion tiDb = objeto.get();
-		String oldCodigo = tiDb.getCodigo();
-		String oldDescripcion = tiDb.getDescripcion();
+    @PutMapping("/deleted-at/{id}")
+    public ResponseEntity<?> addDeletedAt(@PathVariable Long id) {
+        Optional<TipoIdentificacion> x = service.findById(id);
 
-		tiDb.setCodigo(ti.getCodigo());
-		tiDb.setDescripcion(ti.getDescripcion());
-		tiDb.setDeletedAt(ti.getDeletedAt());
+        if (x.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
-		String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + ti.getCodigo() + " | Descripción: " + ti.getDescripcion() + "]";
-		String username = this.extraerUsername(request, null);
-		return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(tiDb, "EDITAR", observacion, username));
-	}
-	
+        TipoIdentificacion xDb = x.get();
+        xDb.setDeletedAt(LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.save(xDb));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> edit(@Validated @RequestBody TipoIdentificacion x,
+            BindingResult result,
+            @PathVariable(name = "id") Long id,
+            jakarta.servlet.http.HttpServletRequest request) {
+
+        if (result.hasErrors()) {
+            return this.validar(result);
+        }
+
+        Optional<TipoIdentificacion> objeto = service.findById(id);
+        if (objeto.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        TipoIdentificacion xDb = objeto.get();
+        String oldCodigo = xDb.getCodigo();
+        String oldDescripcion = xDb.getDescripcion();
+
+        xDb.setCodigo(x.getCodigo());
+        xDb.setDescripcion(x.getDescripcion());
+        xDb.setDeletedAt(x.getDeletedAt());
+
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
+        String username = this.extraerUsername(request, null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(xDb, "EDITAR", observacion, username));
+    }
 }

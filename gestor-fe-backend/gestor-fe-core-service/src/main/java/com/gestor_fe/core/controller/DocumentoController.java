@@ -39,11 +39,16 @@ public class DocumentoController {
     public ResponseEntity<?> buscarDocumentos(
             @RequestParam(value = "numeroFactura", required = false) String numeroFactura, 
             @RequestParam(value = "nit", required = false) String nit,                     
-            @RequestParam(value = "tipoId", required = false) Long tipoId,
-            @RequestParam(value = "extensionId", required = false) Long extensionId,
+            @RequestParam(value = "codigoTipo", required = false) String codigoTipo,
+            @RequestParam(value = "tipoId", required = false) String tipoIdFallback,
+            @RequestParam(value = "codigoExtension", required = false) String codigoExtension,
+            @RequestParam(value = "extensionId", required = false) String extensionIdFallback,
             @RequestParam(value = "nombreOriginal", required = false) String nombreOriginal,
             @RequestParam(value = "id", required = false) Long id,
             Pageable pageable) {
+
+        String tipoFinal = (codigoTipo != null && !codigoTipo.isBlank()) ? codigoTipo : tipoIdFallback;
+        String extensionFinal = (codigoExtension != null && !codigoExtension.isBlank()) ? codigoExtension : extensionIdFallback;
 
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
@@ -51,7 +56,7 @@ public class DocumentoController {
                 Sort.by(Sort.Direction.DESC, "id"));
 
         return ResponseEntity.ok()
-                .body(service.filtrarDocumentos(numeroFactura, nit, tipoId, extensionId, nombreOriginal, id, sortedPageable));
+                .body(service.filtrarDocumentos(numeroFactura, nit, tipoFinal, extensionFinal, nombreOriginal, id, sortedPageable));
     }
 
     // 👁️ 2. VISOR INLINE DE SOPORTES (¡Versión Segura Anti-Nulls!)

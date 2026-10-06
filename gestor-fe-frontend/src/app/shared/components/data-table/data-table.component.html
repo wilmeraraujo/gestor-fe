@@ -1,15 +1,18 @@
-<mat-card class="card">
+<!-- 🎴 CARD 1: TÍTULO DEL SUBMÓDULO (SEPARADO AL INICIO) -->
+<mat-card class="card card-titulo-header" *ngIf="titulo">
+  <div class="titulo-container">
+    <h1 class="titulo-tabla">{{ titulo }}</h1>
+  </div>
+</mat-card>
 
-  <!-- HEADER CON TÍTULO Y BÚSQUEDA A LA IZQUIERDA -->
+<!-- 🎴 CARD 2: ACCIONES, FILTROS, TABLA Y PAGINADOR -->
+<mat-card class="card card-tabla-main">
+
+  <!-- HEADER CON BOTONES Y ACCIONES A LA IZQUIERDA -->
   <mat-card-header class="card-header-custom">
     <div class="header-content-stacked">
 
-      <!-- 1️⃣ TÍTULO -->
-      <div class="titulo-container" *ngIf="titulo">
-        <h1 class="titulo-tabla">{{ titulo }}</h1>
-      </div>
-
-      <!-- 2️⃣ BUSCADOR Y BOTONES ABAJO A LA IZQUIERDA -->
+      <!-- BOTONES ACCIONES -->
       <div class="acciones-header-left">
 
         <div class="botones-container">

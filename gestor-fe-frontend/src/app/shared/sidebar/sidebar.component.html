@@ -63,7 +63,9 @@
         class="sidebar-submenu">
 
         <li *ngFor="let child of item.children">
+          <!-- CASO A: CHILD ES RUTA DIRECTA -->
           <a
+            *ngIf="child.route && !child.children"
             [routerLink]="child.route"
             routerLinkActive="sidebar-active"
             class="sidebar-subitem"
@@ -79,6 +81,47 @@
               {{ child.name }}
             </span>
           </a>
+
+          <!-- CASO B: CHILD ES UN SUBGRUPO (ej: DIAN, Ubicación, Configuración) -->
+          <div
+            *ngIf="child.children"
+            class="sidebar-subitem sidebar-subgroup-header"
+            [title]="child.name"
+            (click)="toggleSubMenu(item, child, $event)">
+
+            <span class="material-icons sidebar-subicon">
+              {{ child.icon }}
+            </span>
+
+            <span class="sidebar-subtext font-semibold">
+              {{ child.name }}
+            </span>
+
+            <span class="material-icons sidebar-subarrow">
+              {{ child.expanded ? 'expand_less' : 'expand_more' }}
+            </span>
+          </div>
+
+          <!-- SUB-SUBMENU (NIVEL 3: CATÁLOGOS DIAN, UBICACIÓN) -->
+          <ul
+            *ngIf="child.children && child.expanded"
+            class="sidebar-sub-submenu">
+            <li *ngFor="let subChild of child.children">
+              <a
+                [routerLink]="subChild.route"
+                routerLinkActive="sidebar-active"
+                class="sidebar-sub-subitem"
+                [title]="subChild.name">
+                <span class="material-icons sidebar-sub-subicon">
+                  {{ subChild.icon }}
+                </span>
+                <span class="sidebar-sub-subtext">
+                  {{ subChild.name }}
+                </span>
+              </a>
+            </li>
+          </ul>
+
         </li>
 
       </ul>

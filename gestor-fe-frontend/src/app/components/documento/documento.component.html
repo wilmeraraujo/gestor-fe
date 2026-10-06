@@ -3,7 +3,7 @@
   <!-- 1. BARRA SUPERIOR DE FILTROS EN UNA SOLA LÍNEA -->
   <div class="row mb-2">
     <div class="col-12">
-      <mat-card class="p-2 shadow-sm">
+      <mat-card class="card-filtro-busqueda shadow-sm">
         <mat-card-header class="mb-1">
           <mat-card-title class="fs-6 d-flex align-items-center m-0">
             <mat-icon class="me-2 text-primary">filter_alt</mat-icon> Panel de Búsqueda Avanzada
@@ -34,9 +34,9 @@
             <div class="col-xl-3 col-lg-3 col-md-3">
               <mat-form-field appearance="outline" class="w-100 dense-form" subscriptSizing="dynamic">
                 <mat-label>Tipo</mat-label>
-                <mat-select [(ngModel)]="filtro.tipoId">
+                <mat-select [(ngModel)]="filtro.codigoTipo">
                   <mat-option [value]="null">Todos</mat-option>
-                  <mat-option *ngFor="let t of tiposLista" [value]="t.id">
+                  <mat-option *ngFor="let t of tiposLista" [value]="t.codigo || t.id">
                     {{ t.descripcion }}
                   </mat-option>
                 </mat-select>
@@ -47,9 +47,9 @@
             <div class="col-xl-2 col-lg-3 col-md-3">
               <mat-form-field appearance="outline" class="w-100 dense-form" subscriptSizing="dynamic">
                 <mat-label>Extensión</mat-label>
-                <mat-select [(ngModel)]="filtro.extensionId">
+                <mat-select [(ngModel)]="filtro.codigoExtension">
                   <mat-option [value]="null">Todas</mat-option>
-                  <mat-option *ngFor="let ext of extensionesLista" [value]="ext.id">
+                  <mat-option *ngFor="let ext of extensionesLista" [value]="ext.codigo || ext.descripcion">
                     {{ ext.descripcion | uppercase }}
                   </mat-option>
                 </mat-select>

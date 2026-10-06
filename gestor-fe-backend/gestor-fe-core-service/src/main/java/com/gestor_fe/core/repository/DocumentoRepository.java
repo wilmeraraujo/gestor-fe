@@ -29,10 +29,10 @@ public interface DocumentoRepository extends JpaRepository<Documento, Long>, Jpa
     List<Documento> findByFacturaIdAndDeletedAtIsNull(Long facturaId);
 
     // 🧾 3c. Obtener documentos activos de una factura filtrados por tipo
-    List<Documento> findByFacturaIdAndTipoIdAndDeletedAtIsNull(Long facturaId, Long tipoId);
+    List<Documento> findByFacturaIdAndCodigoTipoAndDeletedAtIsNull(Long facturaId, String codigoTipo);
 
     // 🔍 4. Buscar un documento específico por tipo (Útil para saber si ya existe el RUT o Cámara de Comercio)
-    Optional<Documento> findByPrestadorIdAndTipoIdAndDeletedAtIsNull(Long prestadorId, Long tipoId);
+    Optional<Documento> findByPrestadorIdAndCodigoTipoAndDeletedAtIsNull(Long prestadorId, String codigoTipo);
     
     
     /**

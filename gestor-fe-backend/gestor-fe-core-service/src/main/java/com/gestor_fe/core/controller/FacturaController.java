@@ -124,24 +124,34 @@ public class FacturaController {
     @PostMapping(value = "/{id}/causacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Factura> procesarCausacionFase2(
             @PathVariable("id") Long id,
-            @RequestParam("tipoRegistroContableId") Long tipoRegistroContableId,
+            @RequestParam(value = "codigoTipoRegistroContable", required = false) String codigoTipoRegistroContable,
+            @RequestParam(value = "tipoRegistroContableId", required = false) String tipoRegistroContableIdFallback,
             @RequestParam("numeroCausacion") String numeroCausacion,
             @RequestParam(value = "usuario", required = false) String usuario, // 👈 Captura el usuario
             @RequestParam(value = "archivo", required = false) MultipartFile archivo) {
 
-        return ResponseEntity.ok(service.procesarCausacionFase2(id, tipoRegistroContableId, numeroCausacion, usuario, archivo));
+        String codigoFinal = (codigoTipoRegistroContable != null && !codigoTipoRegistroContable.isBlank()) 
+                ? codigoTipoRegistroContable 
+                : tipoRegistroContableIdFallback;
+
+        return ResponseEntity.ok(service.procesarCausacionFase2(id, codigoFinal, numeroCausacion, usuario, archivo));
     }
 
     // 💸 FASE 4: Registrar pago y soportes + Usuario
     @PostMapping(value = "/{id}/pago", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Factura> procesarPagoFase4(
             @PathVariable("id") Long id,
-            @RequestParam(value = "tipoRegistroContableId", required = false) Long tipoRegistroContableId,
+            @RequestParam(value = "codigoTipoRegistroContable", required = false) String codigoTipoRegistroContable,
+            @RequestParam(value = "tipoRegistroContableId", required = false) String tipoRegistroContableIdFallback,
             @RequestParam(value = "numeroCausacion", required = false) String numeroCausacion,
             @RequestParam(value = "usuario", required = false) String usuario, // 👈 Captura el usuario
             @RequestParam(value = "soporteTb", required = false) MultipartFile soporteTb,
             @RequestParam(value = "comprobantePago", required = false) MultipartFile comprobantePago) {
 
-        return ResponseEntity.ok(service.procesarPagoFase4(id, tipoRegistroContableId, numeroCausacion, usuario, soporteTb, comprobantePago));
+        String codigoFinal = (codigoTipoRegistroContable != null && !codigoTipoRegistroContable.isBlank()) 
+                ? codigoTipoRegistroContable 
+                : tipoRegistroContableIdFallback;
+
+        return ResponseEntity.ok(service.procesarPagoFase4(id, codigoFinal, numeroCausacion, usuario, soporteTb, comprobantePago));
     }
 }

@@ -61,8 +61,11 @@ public class FacturaCargueController {
             @RequestParam("file") MultipartFile multipartFile,
             @RequestParam("usuario") String usuario,
             @RequestParam(value = "roles", required = false) List<String> roles,
-            @RequestParam(value = "movimientoId", required = false) Long movimientoId
+            @RequestParam(value = "codigoMovimiento", required = false) String codigoMovimiento,
+            @RequestParam(value = "movimientoId", required = false) String movimientoIdFallback
     ) {
+        String movFinal = (codigoMovimiento != null && !codigoMovimiento.isBlank()) ? codigoMovimiento : movimientoIdFallback;
+
         // 🛑 VALIDACIÓN 1: Archivo presente
         if (multipartFile == null || multipartFile.isEmpty()) {
             return ResponseEntity.badRequest().body("Debe adjuntar un archivo válido.");
@@ -110,7 +113,7 @@ public class FacturaCargueController {
             Cargue cargue = new Cargue();
             cargue.setNombreArchivo(originalFileName);
             cargue.setUsuario(usuario);
-            cargue.setMovimientoId(movimientoId);
+            cargue.setCodigoMovimiento(movFinal);
             cargue.setCreatedAt(LocalDateTime.now());
             cargue.setExiteError(false);
             cargue.setNumeroRegistro(0);

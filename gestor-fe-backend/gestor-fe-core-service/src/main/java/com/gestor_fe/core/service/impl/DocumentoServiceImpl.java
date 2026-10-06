@@ -62,12 +62,12 @@ public class DocumentoServiceImpl implements DocumentoService {
 
     // 🚀 BÚSQUEDA AVANZADA COMBINADA Y PAGINADA CON CRITERIA API
     @Override
-    public Page<Documento> filtrarDocumentos(String numeroFactura, String nit, Long tipoId, Long extensionId, Pageable pageable) {
-        return filtrarDocumentos(numeroFactura, nit, tipoId, extensionId, null, null, pageable);
+    public Page<Documento> filtrarDocumentos(String numeroFactura, String nit, String codigoTipo, String codigoExtension, Pageable pageable) {
+        return filtrarDocumentos(numeroFactura, nit, codigoTipo, codigoExtension, null, null, pageable);
     }
 
     @Override
-    public Page<Documento> filtrarDocumentos(String numeroFactura, String nit, Long tipoId, Long extensionId, String nombreOriginal, Long id, Pageable pageable) {
+    public Page<Documento> filtrarDocumentos(String numeroFactura, String nit, String codigoTipo, String codigoExtension, String nombreOriginal, Long id, Pageable pageable) {
         Specification<Documento> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             
@@ -87,26 +87,17 @@ public class DocumentoServiceImpl implements DocumentoService {
                 ));
             }
 
-            // 4. Filtro por Tipo de Documento (RUT=1, CAMARA=2, CERTIFICACION=3, CONTRATO=4, PDF FACTURA=5, XML FACTURA=6, etc.)
-            if (tipoId != null && tipoId > 0) {
-                predicates.add(criteriaBuilder.equal(root.get("tipoId"), tipoId));
+            // 4. Filtro por Tipo de Documento
+            if (codigoTipo != null && !codigoTipo.isBlank()) {
+                predicates.add(criteriaBuilder.equal(root.get("codigoTipo"), codigoTipo.trim()));
             }
 
-            // 5. Filtro por Extensión de Documento (1 = PDF, 2 = XML, 3 = ZIP)
-            if (extensionId != null && extensionId > 0) {
-                if (extensionId == 1L) {
-                    // PDF: extension_id = 1 o nombreOriginal finalizado en .pdf
-                    Predicate byExt = criteriaBuilder.equal(root.get("extensionId"), 1L);
-                    Predicate byName = criteriaBuilder.like(criteriaBuilder.lower(root.get("nombreOriginal")), "%.pdf");
-                    predicates.add(criteriaBuilder.or(byExt, byName));
-                } else if (extensionId == 2L) {
-                    // XML: extension_id = 2 o nombreOriginal finalizado en .xml
-                    Predicate byExt = criteriaBuilder.equal(root.get("extensionId"), 2L);
-                    Predicate byName = criteriaBuilder.like(criteriaBuilder.lower(root.get("nombreOriginal")), "%.xml");
-                    predicates.add(criteriaBuilder.or(byExt, byName));
-                } else {
-                    predicates.add(criteriaBuilder.equal(root.get("extensionId"), extensionId));
-                }
+            // 5. Filtro por Extensión de Documento
+            if (codigoExtension != null && !codigoExtension.isBlank()) {
+                String extTrim = codigoExtension.trim();
+                Predicate byExt = criteriaBuilder.equal(root.get("codigoExtension"), extTrim);
+                Predicate byName = criteriaBuilder.like(criteriaBuilder.lower(root.get("nombreOriginal")), "%." + extTrim.toLowerCase().replace(".", ""));
+                predicates.add(criteriaBuilder.or(byExt, byName));
             }
             
             // 6. Filtros avanzados cruzados por Factura (Número o NIT)

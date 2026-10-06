@@ -168,8 +168,9 @@ export class PrestadorComponent implements OnInit {
         const listaDocs: Documento[] = response.content || response;
 
         listaDocs.forEach(doc => {
-          if (doc.tipoId) {
-            this.soportesCargados.set(Number(doc.tipoId), doc);
+          const key = doc.codigoTipo ? Number(doc.codigoTipo) : (doc.tipoId ? Number(doc.tipoId) : null);
+          if (key !== null) {
+            this.soportesCargados.set(key, doc);
           }
         });
       },
@@ -199,19 +200,21 @@ export class PrestadorComponent implements OnInit {
     const archivo: File = event.target.files[0];
     if (!archivo || !this.prestadorActual) return;
 
-    let extensionId = 1;
+    let codigoExtension = '02';
     const nameLower = archivo.name.toLowerCase();
     if (nameLower.endsWith('.pdf')) {
-      extensionId = 1;
+      codigoExtension = '02';
     } else if (nameLower.endsWith('.xml')) {
-      extensionId = 2;
+      codigoExtension = '01';
     } else if (nameLower.endsWith('.zip')) {
-      extensionId = 3;
+      codigoExtension = '03';
     }
 
     this.alertService.cargando(`Cargando soporte ${tipo.descripcion || tipo.codigo}`, 'Subiendo archivo...');
 
-    this.prestadorService.cargarSoporte(this.prestadorActual.nit, Number(tipo.id), extensionId, archivo).subscribe({
+    const codTipo = tipo.codigo || (tipo.id ? String(tipo.id) : '');
+
+    this.prestadorService.cargarSoporte(this.prestadorActual.nit, codTipo, codigoExtension, archivo).subscribe({
       next: (docGuardado) => {
         this.soportesCargados.set(Number(tipo.id), docGuardado);
         this.alertService.cerrar();

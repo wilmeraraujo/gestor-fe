@@ -103,12 +103,16 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
         this.opcionesMovimiento = (movs || [])
           .filter(m => !m.deletedAt)
           .map(m => ({
-            value: m.id,
+            value: m.codigo || m.id,
             label: m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion
           }));
 
         this.mapaMovimientos = (movs || []).reduce((acc: any, m) => {
-          acc[m.id] = m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion;
+          const key = m.codigo || m.id;
+          acc[key] = m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion;
+          if (m.id) {
+            acc[m.id] = m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion;
+          }
           return acc;
         }, {});
       },
@@ -127,10 +131,13 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
         estadoTxt = c.exiteError ? 'CON ERRORES' : 'CARGADO';
       }
 
+      const movKey = c.codigoMovimiento;
+      const movLabel = movKey ? (this.mapaMovimientos[movKey as any] || `Movimiento ${movKey}`) : 'Sin especificar';
+
       return {
         ...c,
         estadoNombre: estadoTxt,
-        movimientoNombre: c.movimientoId ? (this.mapaMovimientos[c.movimientoId] || `Movimiento #${c.movimientoId}`) : 'Sin especificar'
+        movimientoNombre: movLabel
       };
     });
   }
@@ -170,12 +177,16 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
         this.opcionesMovimiento = (movs || [])
           .filter(m => !m.deletedAt)
           .map(m => ({
-            value: m.id,
+            value: m.codigo || m.id,
             label: m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion
           }));
 
         this.mapaMovimientos = (movs || []).reduce((acc: any, m) => {
-          acc[m.id] = m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion;
+          const key = m.codigo || m.id;
+          acc[key] = m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion;
+          if (m.id) {
+            acc[m.id] = m.codigo ? `${m.codigo} - ${m.descripcion}` : m.descripcion;
+          }
           return acc;
         }, {});
 
@@ -194,7 +205,7 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
         titulo: 'Cargar Archivo ZIP de Facturas',
         campos: [
           {
-            name: 'movimientoId',
+            name: 'codigoMovimiento',
             label: 'Tipo de Movimiento * [Requerido]',
             type: 'select',
             options: this.opcionesMovimiento,
@@ -238,7 +249,8 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
               }
             }
 
-            if (!model.movimientoId) {
+            const movValue = model.codigoMovimiento || model.movimientoId;
+            if (!movValue) {
               this.alertService.advertencia('Debe seleccionar obligatoriamente el Tipo de Movimiento.', 'Campo Requerido');
               return throwError(() => new Error('Debe seleccionar el Tipo de Movimiento.'));
             }
@@ -258,7 +270,7 @@ export class CargueComponent extends CommonListarComponent<Cargue, CargueService
 
             this.alertService.cargando('Subiendo archivo ZIP y procesando facturas...', 'Cargue Masivo');
 
-            return this.service.cargarZip(file, usuarioEnvio, rolesEnvio, Number(model.movimientoId));
+            return this.service.cargarZip(file, usuarioEnvio, rolesEnvio, movValue);
           }
         }
       }

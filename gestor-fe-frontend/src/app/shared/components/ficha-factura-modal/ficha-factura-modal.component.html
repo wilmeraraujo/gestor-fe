@@ -12,6 +12,8 @@
         <h2 class="modal-title m-0">Ficha Técnica de Factura</h2>
         <div class="modal-subtitle d-flex align-items-center gap-2 mt-1" *ngIf="factura">
           <span class="badge-factura">No. {{ factura.numeroFactura || '---' }}</span>
+          <span *ngIf="factura.codigoTipoDocumento" class="badge-fase">{{ obtenerDescripcionTipoDoc(factura.codigoTipoDocumento) }}</span>
+          <span *ngIf="factura.moneda && factura.moneda !== 'COP'" class="badge-factura">{{ factura.moneda }}</span>
           <span *ngIf="factura.estado" class="badge-estado">{{ factura.estado }}</span>
           <span *ngIf="factura.faseId" class="badge-fase">Fase {{ factura.faseId }}</span>
         </div>
@@ -54,8 +56,26 @@
               <span class="info-value fw-semibold text-dark">{{ factura.razonSocialEmisor || 'N/A' }}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">NIT:</span>
-              <span class="info-value">{{ factura.nit }}</span>
+              <span class="info-label">Identificación:</span>
+              <span class="info-value">
+                <small *ngIf="factura.codigoTipoIdentificacionEmisor" class="text-secondary fw-semibold">{{ obtenerDescripcionTipoIdentificacion(factura.codigoTipoIdentificacionEmisor) }}: </small>
+                {{ factura.nit }}<span *ngIf="factura.dv">-{{ factura.dv }}</span>
+                <small *ngIf="factura.codigoTipoPersonaEmisor" class="text-muted ms-1">({{ factura.codigoTipoPersonaEmisor === '1' ? 'Pers. Jurídica' : 'Pers. Natural' }})</small>
+              </span>
+            </div>
+            <div class="info-row" *ngIf="factura.codigoResponsabilidadFiscalEmisor">
+              <span class="info-label">Resp. Fiscal:</span>
+              <span class="info-value"><code class="p-1 bg-light border rounded">{{ obtenerDescripcionRespFiscal(factura.codigoResponsabilidadFiscalEmisor) }}</code></span>
+            </div>
+            <div class="info-row" *ngIf="factura.direccion">
+              <span class="info-label">Dirección:</span>
+              <span class="info-value">{{ factura.direccion }}</span>
+            </div>
+            <div class="info-row" *ngIf="factura.codigoMunicipio || factura.codigoDepartamento">
+              <span class="info-label">Ubicación:</span>
+              <span class="info-value">
+                {{ obtenerDescripcionMunicipio(factura.codigoMunicipio) }}<span *ngIf="factura.codigoMunicipio && factura.codigoDepartamento">, </span>{{ obtenerDescripcionDepartamento(factura.codigoDepartamento) }}
+              </span>
             </div>
           </div>
         </div>
@@ -74,10 +94,16 @@
               <span class="info-value fw-semibold text-dark">{{ factura.razonSocialCliente || 'No especificada' }}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">NIT / Cédula:</span>
+              <span class="info-label">Identificación:</span>
               <span class="info-value">
+                <small *ngIf="factura.codigoTipoIdentificacionCliente" class="text-secondary fw-semibold">{{ obtenerDescripcionTipoIdentificacion(factura.codigoTipoIdentificacionCliente) }}: </small>
                 {{ factura.nitCliente || 'N/A' }}<span *ngIf="factura.dvCliente">-{{ factura.dvCliente }}</span>
+                <small *ngIf="factura.codigoTipoPersonaCliente" class="text-muted ms-1">({{ factura.codigoTipoPersonaCliente === '1' ? 'Pers. Jurídica' : 'Pers. Natural' }})</small>
               </span>
+            </div>
+            <div class="info-row" *ngIf="factura.codigoResponsabilidadFiscalCliente">
+              <span class="info-label">Resp. Fiscal:</span>
+              <span class="info-value"><code class="p-1 bg-light border rounded">{{ obtenerDescripcionRespFiscal(factura.codigoResponsabilidadFiscalCliente) }}</code></span>
             </div>
             <div class="info-row" *ngIf="factura.direccionCliente">
               <span class="info-label">Dirección:</span>
@@ -86,15 +112,19 @@
             <div class="info-row" *ngIf="factura.ciudadCliente || factura.departamentoCliente">
               <span class="info-label">Ciudad / Depto:</span>
               <span class="info-value">
-                {{ factura.ciudadCliente || '' }}<span *ngIf="factura.ciudadCliente && factura.departamentoCliente"> - </span>{{ factura.departamentoCliente || '' }}
+                {{ obtenerDescripcionMunicipio(factura.ciudadCliente) }}<span *ngIf="factura.ciudadCliente && factura.departamentoCliente">, </span>{{ obtenerDescripcionDepartamento(factura.departamentoCliente) }}
               </span>
             </div>
-            <div class="info-row" *ngIf="factura.emailCliente || factura.telefonoCliente">
+            <div class="info-row align-items-start" *ngIf="factura.emailCliente || factura.telefonoCliente">
               <span class="info-label">Contacto:</span>
-              <span class="info-value">
-                <span *ngIf="factura.telefonoCliente">📞 {{ factura.telefonoCliente }} </span>
-                <span *ngIf="factura.emailCliente">✉️ {{ factura.emailCliente }}</span>
-              </span>
+              <div class="info-value">
+                <div *ngIf="factura.telefonoCliente" class="mb-1">📞 <strong>{{ factura.telefonoCliente }}</strong></div>
+                <div class="email-list d-flex flex-wrap gap-1" *ngIf="factura.emailCliente">
+                  <span *ngFor="let mail of obtenerListaEmails(factura.emailCliente)" class="email-chip" [matTooltip]="mail">
+                    ✉️ {{ mail }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -110,7 +140,7 @@
     <div class="info-grid-chips mb-3">
       <div class="chip-item">
         <span class="chip-label">Fecha Emisión</span>
-        <span class="chip-value">{{ (factura.fechaEmision | date:'dd/MM/yyyy') || 'N/A' }}</span>
+        <span class="chip-value">{{ (factura.fechaEmision | date:'dd/MM/yyyy') || 'N/A' }} <small *ngIf="factura.horaEmision" class="text-muted">({{ factura.horaEmision }})</small></span>
       </div>
       <div class="chip-item">
         <span class="chip-label">Fecha Vencimiento</span>
@@ -118,11 +148,23 @@
       </div>
       <div class="chip-item">
         <span class="chip-label">Forma de Pago</span>
-        <span class="chip-value">{{ factura.formaPago === '1' ? '1 (Contado)' : (factura.formaPago === '2' ? '2 (Crédito)' : (factura.formaPago || 'N/A')) }}</span>
+        <span class="chip-value">{{ factura.codigoFormaPago === '1' ? '1 (Contado)' : (factura.codigoFormaPago === '2' ? '2 (Crédito)' : (factura.codigoFormaPago || 'N/A')) }}</span>
       </div>
       <div class="chip-item">
         <span class="chip-label">Medio de Pago</span>
-        <span class="chip-value">{{ factura.medioPago || 'N/A' }}</span>
+        <span class="chip-value">{{ obtenerDescripcionMedioPago(factura.codigoMedioPago) }}</span>
+      </div>
+      <div class="chip-item" *ngIf="factura.codigoTipoOperacion">
+        <span class="chip-label">Operación DIAN</span>
+        <span class="chip-value text-dark fw-semibold">{{ obtenerDescripcionTipoOperacion(factura.codigoTipoOperacion) }}</span>
+      </div>
+      <div class="chip-item" *ngIf="factura.moneda">
+        <span class="chip-label">Moneda</span>
+        <span class="chip-value fw-bold">{{ factura.moneda }} <span *ngIf="factura.tasaCambio"> (TRM: {{ factura.tasaCambio | number:'1.2-2' }})</span></span>
+      </div>
+      <div class="chip-item" *ngIf="factura.numeroCausacion">
+        <span class="chip-label">No. Causación</span>
+        <span class="chip-value text-primary fw-bold">{{ factura.numeroCausacion }}</span>
       </div>
     </div>
 
@@ -147,7 +189,7 @@
     <div class="financial-summary-grid mb-3">
       <!-- Subtotal -->
       <div class="kpi-card">
-        <span class="kpi-label">Subtotal</span>
+        <span class="kpi-label">Subtotal Factura</span>
         <span class="kpi-value">
           {{ ((factura.valorSubtotal && factura.valorSubtotal > 0) ? factura.valorSubtotal : ((factura.valorTotal || 0) - (factura.valorIva || 0))) | currency:'COP':'$':'1.0-0' }}
         </span>
@@ -157,6 +199,12 @@
       <div class="kpi-card">
         <span class="kpi-label">IVA (Impuestos)</span>
         <span class="kpi-value text-cyan">{{ (factura.valorIva || 0) | currency:'COP':'$':'1.0-0' }}</span>
+      </div>
+
+      <!-- Impoconsumo si existe -->
+      <div class="kpi-card" *ngIf="factura.valorImpoconsumo && factura.valorImpoconsumo > 0">
+        <span class="kpi-label">Impoconsumo (INC)</span>
+        <span class="kpi-value text-secondary">{{ factura.valorImpoconsumo | currency:'COP':'$':'1.0-0' }}</span>
       </div>
 
       <!-- Retenciones (si existen) -->
@@ -170,10 +218,17 @@
         </div>
       </div>
 
-      <!-- Total a Pagar -->
+      <!-- Total Factura Bruto -->
       <div class="kpi-card kpi-total">
-        <span class="kpi-label text-institucional">TOTAL A PAGAR</span>
+        <span class="kpi-label text-institucional">TOTAL FACTURADO</span>
         <span class="kpi-value total-destacado">{{ (factura.valorTotal || 0) | currency:'COP':'$':'1.0-0' }}</span>
+      </div>
+
+      <!-- Neto a Girar / Pagar (Tesorería) -->
+      <div class="kpi-card kpi-neto" *ngIf="(factura.totalRetenciones && factura.totalRetenciones > 0) || (factura.valorRetefuente || factura.valorReteica || factura.valorReteiva)">
+        <span class="kpi-label text-success fw-bold">NETO A GIRAR (PAGO)</span>
+        <span class="kpi-value text-success total-neto">{{ calcularNetoAGirar() | currency:'COP':'$':'1.0-0' }}</span>
+        <small class="text-muted" style="font-size: 0.68rem;">Total menos retenciones aplicadas</small>
       </div>
     </div>
 
@@ -221,7 +276,12 @@
         <ng-container matColumnDef="descripcion">
           <th mat-header-cell *matHeaderCellDef>Descripción del Producto / Servicio</th>
           <td mat-cell *matCellDef="let item" class="fw-medium text-dark item-desc-cell">
-            {{ item.descripcion }}
+            <div>{{ item.descripcion }}</div>
+            <div class="d-flex align-items-center gap-2 mt-1" *ngIf="item.codigoUnspsc || item.porcentajeIva !== undefined || item.valorDescuento">
+              <span *ngIf="item.codigoUnspsc" class="badge bg-light text-secondary border small">UNSPSC: {{ item.codigoUnspsc }}</span>
+              <span *ngIf="item.porcentajeIva !== undefined && item.porcentajeIva !== null" class="badge bg-info-subtle text-info small">IVA {{ item.porcentajeIva }}%</span>
+              <span *ngIf="item.valorDescuento" class="badge bg-warning-subtle text-warning small">Desc: -{{ item.valorDescuento | currency:'COP':'$':'1.0-0' }}</span>
+            </div>
           </td>
         </ng-container>
 
@@ -237,7 +297,7 @@
         <ng-container matColumnDef="unidad">
           <th mat-header-cell *matHeaderCellDef class="text-center col-xs">Unidad</th>
           <td mat-cell *matCellDef="let item" class="text-center text-muted">
-            {{ item.unidadMedida || 'EA' }}
+            {{ obtenerDescripcionUnidad(item.unidadMedida) }}
           </td>
         </ng-container>
 

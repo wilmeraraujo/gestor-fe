@@ -212,7 +212,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
       this.opcionesCausal = (data || [])
         .filter(c => !c.deletedAt)
         .map(c => ({
-          value: c.id,
+          value: c.codigo || c.id,
           label: `${c.codigo || ''} - ${c.descripcion}`
         }));
     });
@@ -292,12 +292,12 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
         ],
         onChange: (val: string, campos: any[], form: FormGroup) => {
           const isRechazado = val === 'RECHAZADO';
-          this.toggleCampoVisibilidad(campos, form, 'causalDevolucionId', isRechazado);
+          this.toggleCampoVisibilidad(campos, form, 'codigoCausalDevolucion', isRechazado);
           this.toggleCampoVisibilidad(campos, form, 'observacionId', isRechazado);
         }
       },
       {
-        name: 'causalDevolucionId',
+        name: 'codigoCausalDevolucion',
         label: 'Causal de Devolución / Anulación',
         type: 'select',
         options: this.opcionesCausal,
@@ -351,8 +351,8 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
         formData: { id: row.id },
         service: {
           editar: (model: any) => {
-            if (model.causalDevolucionId) {
-              model.causalDevolucionId = Number(model.causalDevolucionId);
+            if (model.codigoCausalDevolucion) {
+              model.codigoCausalDevolucion = String(model.codigoCausalDevolucion);
             }
 
             if (model.observacionId && model.observacionId !== 'OTRO') {

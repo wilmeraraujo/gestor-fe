@@ -198,25 +198,19 @@
 
 
 /* =========================================================================
-   3. ESTILIZADO DE TARJETAS (CARDS MÁS REDONDEADAS Y ELEGANTES)
+   3. ESTILIZADO DE TARJETAS LOCALES
    ========================================================================= */
 
-/* Unificación total de tarjetas con un redondeo pronunciado de 18px */
-:host ::ng-deep mat-card,
-:host ::ng-deep .card,
-.modulo-documentos mat-card,
-mat-card {
-  margin: 0 !important;
-  padding: 8px !important;       /* Espaciado interno compacto */
-  border-radius: 18px !important; /* 👈 Súper redondeado moderno de esquinas */
-  overflow: hidden !important;    /* Evita que cabeceras cuadren y dañen la curva */
+.card-filtro-busqueda {
+  padding: 12px 16px !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
 }
 
-/* Ajusta de forma compacta y simétrica el encabezado de las tarjetas */
-:host ::ng-deep mat-card-header {
-  padding: 0 4px 4px 4px !important;
+.card-filtro-busqueda mat-card-header {
+  padding: 0 0 6px 0 !important;
 }
-
 
 /* =========================================================================
    4. VISOR DE PDF INTERACTIVO
@@ -225,6 +219,10 @@ mat-card {
 .visor-card {
   display: flex;
   flex-direction: column;
+  border-radius: 16px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  overflow: hidden !important;
 }
 
 .visor-card mat-card-content {
@@ -237,5 +235,5 @@ mat-card {
 iframe {
   width: 100%;
   height: 100%;
-  border-radius: 12px !important; 
+  border-radius: 0 0 16px 16px !important; 
 }

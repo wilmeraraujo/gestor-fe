@@ -63,11 +63,16 @@ public class PrestadorController {
     @PostMapping(value = "/soportes/cargar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Documento> cargarSoporte(
             @RequestParam("nitPrestador") String nitPrestador,
-            @RequestParam("tipoId") Long tipoId,
-            @RequestParam("extensionId") Long extensionId,
+            @RequestParam(value = "codigoTipo", required = false) String codigoTipo,
+            @RequestParam(value = "tipoId", required = false) String tipoIdFallback,
+            @RequestParam(value = "codigoExtension", required = false) String codigoExtension,
+            @RequestParam(value = "extensionId", required = false) String extensionIdFallback,
             @RequestPart("archivo") MultipartFile archivo) {
 
-        Documento soporteGuardado = prestadorService.cargarSoporte(nitPrestador, tipoId, extensionId, archivo);
+        String tipoFinal = (codigoTipo != null && !codigoTipo.isBlank()) ? codigoTipo : tipoIdFallback;
+        String extensionFinal = (codigoExtension != null && !codigoExtension.isBlank()) ? codigoExtension : extensionIdFallback;
+
+        Documento soporteGuardado = prestadorService.cargarSoporte(nitPrestador, tipoFinal, extensionFinal, archivo);
         return new ResponseEntity<>(soporteGuardado, HttpStatus.CREATED);
     }
 

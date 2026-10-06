@@ -1,5 +1,4 @@
-import { Global } from "./global";
+import { Global } from './global';
 
-export class TipoIdentificacion extends Global{
-
+export interface TipoIdentificacion extends Global {
 }

@@ -12,11 +12,11 @@ public interface DocumentoService {
 
     Page<Documento> findByDeletedAtIsNull(Pageable pageable);
     
-    // Método para filtrar documentos de forma dinámica y paginada por nit, factura, tipoId y extensionId
-    Page<Documento> filtrarDocumentos(String numeroFactura, String nit, Long tipoId, Long extensionId, Pageable pageable);
+    // Método para filtrar documentos de forma dinámica y paginada por nit, factura, codigoTipo y codigoExtension
+    Page<Documento> filtrarDocumentos(String numeroFactura, String nit, String codigoTipo, String codigoExtension, Pageable pageable);
     
     // Método sobrecargado con soporte para filtrado por nombreOriginal e id desde la tabla
-    Page<Documento> filtrarDocumentos(String numeroFactura, String nit, Long tipoId, Long extensionId, String nombreOriginal, Long id, Pageable pageable);
+    Page<Documento> filtrarDocumentos(String numeroFactura, String nit, String codigoTipo, String codigoExtension, String nombreOriginal, Long id, Pageable pageable);
     
     // Método para recuperar un documento físico del disco por su ID
     Resource descargarDocumento(Long id);

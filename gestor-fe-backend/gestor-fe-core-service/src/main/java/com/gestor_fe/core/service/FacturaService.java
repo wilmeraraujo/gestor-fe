@@ -23,8 +23,8 @@ public interface FacturaService {
     Factura procesarTransicionFase(Long id, Long faseActualId, GestionDto dto);
 
     // MÉTODOS MULTIPART CON PARÁMETRO 'USUARIO'
-    Factura procesarCausacionFase2(Long id, Long tipoRegistroContableId, String numeroCausacion, String usuario, MultipartFile archivoCausacion);
-    Factura procesarPagoFase4(Long id, Long tipoRegistroContableId, String numeroCausacion, String usuario, MultipartFile soporteTb, MultipartFile comprobantePago);
+    Factura procesarCausacionFase2(Long id, String codigoTipoRegistroContable, String numeroCausacion, String usuario, MultipartFile archivoCausacion);
+    Factura procesarPagoFase4(Long id, String codigoTipoRegistroContable, String numeroCausacion, String usuario, MultipartFile soporteTb, MultipartFile comprobantePago);
 
     // AUXILIARES Y CRITERIA
     List<String> findExistingCufes(List<String> cufes);

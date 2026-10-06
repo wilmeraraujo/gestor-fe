@@ -1,5 +1,12 @@
 <div class="container-fluid p-2">
 
+  <!-- 🎴 CARD DE TÍTULO PRINCIPAL (POR ENCIMA DE LOS TABS) -->
+  <mat-card class="card card-titulo-submodulo" *ngIf="titulo">
+    <div class="titulo-container">
+      <h1 class="titulo-tabla">{{ titulo }}</h1>
+    </div>
+  </mat-card>
+
   <mat-tab-group [(selectedIndex)]="tabSeleccionada" animationDuration="200ms">
     
     <!-- PESTAÑA 1: BANDEJA GLOBAL DE SEGUIMIENTO -->
@@ -10,7 +17,6 @@
 
       <div class="pt-3">
         <app-data-table
-          [titulo]="titulo"
           [columnas]="columnas"
           [datos]="lista"
           [totalRegistros]="totalRegistros"

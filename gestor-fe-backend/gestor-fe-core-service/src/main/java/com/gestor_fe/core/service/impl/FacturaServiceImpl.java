@@ -215,12 +215,12 @@ public class FacturaServiceImpl implements FacturaService {
             predicates.add(cb.like(cb.upper(root.get("numeroCausacion")), "%" + filtro.getNumeroCausacion().trim().toUpperCase() + "%"));
         }
 
-        if (filtro.getTipoRegistroContableId() != null) {
-            predicates.add(cb.equal(root.get("tipoRegistroContableId"), filtro.getTipoRegistroContableId()));
+        if (filtro.getCodigoTipoRegistroContable() != null && !filtro.getCodigoTipoRegistroContable().isBlank()) {
+            predicates.add(cb.equal(root.get("codigoTipoRegistroContable"), filtro.getCodigoTipoRegistroContable()));
         }
 
-        if (filtro.getMovimientoId() != null) {
-            predicates.add(cb.equal(root.get("movimientoId"), filtro.getMovimientoId()));
+        if (filtro.getCodigoMovimiento() != null && !filtro.getCodigoMovimiento().isBlank()) {
+            predicates.add(cb.equal(root.get("codigoMovimiento"), filtro.getCodigoMovimiento()));
         }
 
         if (filtro.getFechaEmisionDesde() != null) {
@@ -283,16 +283,16 @@ public class FacturaServiceImpl implements FacturaService {
                     factura.setEstado("EN GESTIÓN");
                     factura.setFaseId(2L);
                     factura.setObservacion(null);
-                    factura.setCausalDevolucionId(null);
+                    factura.setCodigoCausalDevolucion(null);
                     factura.setDeletedAt(null);
                 } else {
                     factura.setEstado("ANULADO");
                     factura.setFaseId(1L);
-                    factura.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    factura.setCodigoCausalDevolucion(dto.getCodigoCausalDevolucion());
                     factura.setObservacion(dto.getObservacion());
                     factura.setDeletedAt(LocalDate.now());
 
-                    gestion.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    gestion.setCodigoCausalDevolucion(dto.getCodigoCausalDevolucion());
                     gestion.setObservacion(dto.getObservacion());
                 }
                 break;
@@ -300,21 +300,21 @@ public class FacturaServiceImpl implements FacturaService {
             case 2:
                 if (esAprobado) {
                     factura.setEstado("CAUSADO");
-                    factura.setTipoRegistroContableId(dto.getTipoRegistroContableId());
+                    factura.setCodigoTipoRegistroContable(dto.getCodigoTipoRegistroContable());
                     factura.setNumeroCausacion(dto.getNumeroCausacion());
                     factura.setFaseId(3L);
                     factura.setObservacion(null);
-                    factura.setCausalDevolucionId(null);
+                    factura.setCodigoCausalDevolucion(null);
 
-                    gestion.setTipoRegistroContableId(dto.getTipoRegistroContableId());
+                    gestion.setCodigoTipoRegistroContable(dto.getCodigoTipoRegistroContable());
                     gestion.setNumeroCausacion(dto.getNumeroCausacion());
                 } else {
                     factura.setEstado("RECHAZADO");
                     factura.setFaseId(1L);
-                    factura.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    factura.setCodigoCausalDevolucion(dto.getCodigoCausalDevolucion());
                     factura.setObservacion(dto.getObservacion());
 
-                    gestion.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    gestion.setCodigoCausalDevolucion(dto.getCodigoCausalDevolucion());
                     gestion.setObservacion(dto.getObservacion());
                 }
                 break;
@@ -324,14 +324,14 @@ public class FacturaServiceImpl implements FacturaService {
                     factura.setEstado("IMPUESTOS VERIFICADOS");
                     factura.setFaseId(4L);
                     factura.setObservacion(null);
-                    factura.setCausalDevolucionId(null);
+                    factura.setCodigoCausalDevolucion(null);
                 } else {
                     factura.setEstado("RECHAZADO");
                     factura.setFaseId(2L);
-                    factura.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    factura.setCodigoCausalDevolucion(dto.getCodigoCausalDevolucion());
                     factura.setObservacion(dto.getObservacion());
 
-                    gestion.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    gestion.setCodigoCausalDevolucion(dto.getCodigoCausalDevolucion());
                     gestion.setObservacion(dto.getObservacion());
                 }
                 break;
@@ -339,20 +339,20 @@ public class FacturaServiceImpl implements FacturaService {
             case 4:
                 if (esAprobado) {
                     factura.setEstado("PAGADO");
-                    factura.setTipoRegistroContableId(dto.getTipoRegistroContableId());
+                    factura.setCodigoTipoRegistroContable(dto.getCodigoTipoRegistroContable());
                     factura.setFaseId(4L);
                     factura.setObservacion(null);
-                    factura.setCausalDevolucionId(null);
+                    factura.setCodigoCausalDevolucion(null);
 
-                    gestion.setTipoRegistroContableId(dto.getTipoRegistroContableId());
+                    gestion.setCodigoTipoRegistroContable(dto.getCodigoTipoRegistroContable());
                     gestion.setNumeroCausacion(dto.getNumeroCausacion());
                 } else {
                     factura.setEstado("RECHAZADO");
                     factura.setFaseId(3L);
-                    factura.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    factura.setCodigoCausalDevolucion(dto.getCodigoCausalDevolucion());
                     factura.setObservacion(dto.getObservacion());
 
-                    gestion.setCausalDevolucionId(dto.getCausalDevolucionId());
+                    gestion.setCodigoCausalDevolucion(dto.getCodigoCausalDevolucion());
                     gestion.setObservacion(dto.getObservacion());
                 }
                 break;
@@ -373,16 +373,16 @@ public class FacturaServiceImpl implements FacturaService {
 
     @Override
     @Transactional
-    public Factura procesarCausacionFase2(Long id, Long tipoRegistroContableId, String numeroCausacion, String usuario, MultipartFile archivoCausacion) {
+    public Factura procesarCausacionFase2(Long id, String codigoTipoRegistroContable, String numeroCausacion, String usuario, MultipartFile archivoCausacion) {
         Factura factura = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Factura no encontrada con el ID: " + id));
 
         factura.setEstado("CAUSADO");
-        factura.setTipoRegistroContableId(tipoRegistroContableId);
+        factura.setCodigoTipoRegistroContable(codigoTipoRegistroContable);
         factura.setNumeroCausacion(numeroCausacion);
         factura.setFaseId(3L);
         factura.setObservacion(null);
-        factura.setCausalDevolucionId(null);
+        factura.setCodigoCausalDevolucion(null);
 
         // ⚡ ASIGNACIÓN RIGUROSA DE USUARIO
         String usuarioAccion = (usuario != null && !usuario.isBlank()) ? usuario.trim() : "SISTEMA";
@@ -392,21 +392,21 @@ public class FacturaServiceImpl implements FacturaService {
         gestion.setFaseId(2L);
         gestion.setAccion("APROBADO");
         gestion.setEstadoResultado("CAUSADO");
-        gestion.setTipoRegistroContableId(tipoRegistroContableId);
+        gestion.setCodigoTipoRegistroContable(codigoTipoRegistroContable);
         gestion.setNumeroCausacion(numeroCausacion);
-        gestion.setUsuario(usuarioAccion); // 👈 CORRECCIÓN CRÍTICA: Se guarda el usuario en la auditoría
+        gestion.setUsuario(usuarioAccion); // 👈 Guardar el usuario en la auditoría
 
         factura.addGestion(gestion);
 
         if (archivoCausacion != null && !archivoCausacion.isEmpty()) {
             // 🛡️ VALIDACIÓN DINÁMICA DE EXTENSIÓN Y TAMAÑO SEGÚN CONFIGURACIÓN FASE 2
-            Long extensionId = validarArchivoSegunConfiguracionFase(archivoCausacion, 2L, "Soporte de Causación");
+            String codigoExtension = validarArchivoSegunConfiguracionFase(archivoCausacion, 2L, "Soporte de Causación");
 
             try {
                 // 🔄 Inactivar lógicamente cualquier soporte de causación previo activo
                 if (factura.getDocumentos() != null) {
                     for (Documento doc : factura.getDocumentos()) {
-                        if (doc.getDeletedAt() == null && doc.getTipoId() != null && doc.getTipoId() == 8L && (doc.getRuta() == null || !doc.getRuta().contains("_TB_") && !doc.getRuta().contains("_PAGO_"))) {
+                        if (doc.getDeletedAt() == null && doc.getCodigoTipo() != null && "8".equals(doc.getCodigoTipo()) && (doc.getRuta() == null || !doc.getRuta().contains("_TB_") && !doc.getRuta().contains("_PAGO_"))) {
                             doc.setDeletedAt(LocalDate.now());
                         }
                     }
@@ -430,9 +430,9 @@ public class FacturaServiceImpl implements FacturaService {
                 docCausacion.setNombreOriginal(nombreOriginal);
                 docCausacion.setRuta(destinoFinal.toString());
                 docCausacion.setTamano(archivoCausacion.getSize());
-                docCausacion.setEstadoId(1L);
-                docCausacion.setExtensionId(extensionId != null ? extensionId : 1L);
-                docCausacion.setTipoId(8L);
+                docCausacion.setCodigoEstado("01");
+                docCausacion.setCodigoExtension(codigoExtension != null ? codigoExtension : "02");
+                docCausacion.setCodigoTipo("08");
                 docCausacion.setFactura(factura);
 
                 factura.addDocumento(docCausacion);
@@ -447,20 +447,20 @@ public class FacturaServiceImpl implements FacturaService {
 
     @Override
     @Transactional
-    public Factura procesarPagoFase4(Long id, Long tipoRegistroContableId, String numeroCausacion, String usuario, MultipartFile soporteTb, MultipartFile comprobantePago) {
+    public Factura procesarPagoFase4(Long id, String codigoTipoRegistroContable, String numeroCausacion, String usuario, MultipartFile soporteTb, MultipartFile comprobantePago) {
         Factura factura = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Factura no encontrada con el ID: " + id));
 
         factura.setEstado("PAGADO");
-        if (tipoRegistroContableId != null) {
-            factura.setTipoRegistroContableId(tipoRegistroContableId);
+        if (codigoTipoRegistroContable != null && !codigoTipoRegistroContable.isBlank()) {
+            factura.setCodigoTipoRegistroContable(codigoTipoRegistroContable);
         }
         if (numeroCausacion != null && !numeroCausacion.isBlank()) {
             factura.setNumeroCausacion(numeroCausacion);
         }
         factura.setFaseId(4L);
         factura.setObservacion(null);
-        factura.setCausalDevolucionId(null);
+        factura.setCodigoCausalDevolucion(null);
 
         // ⚡ ASIGNACIÓN RIGUROSA DE USUARIO
         String usuarioAccion = (usuario != null && !usuario.isBlank()) ? usuario.trim() : "SISTEMA";
@@ -470,21 +470,21 @@ public class FacturaServiceImpl implements FacturaService {
         gestion.setFaseId(4L);
         gestion.setAccion("APROBADO");
         gestion.setEstadoResultado("PAGADO");
-        gestion.setTipoRegistroContableId(tipoRegistroContableId);
+        gestion.setCodigoTipoRegistroContable(codigoTipoRegistroContable);
         gestion.setNumeroCausacion(numeroCausacion);
-        gestion.setUsuario(usuarioAccion); // 👈 CORRECCIÓN CRÍTICA: Se guarda el usuario en la auditoría
+        gestion.setUsuario(usuarioAccion); // 👈 Guardar el usuario en la auditoría
 
         factura.addGestion(gestion);
 
         // 🛡️ VALIDACIÓN DINÁMICA DE EXTENSIÓN Y TAMAÑO SEGÚN CONFIGURACIÓN FASE 4
-        Long extensionIdTb = null;
+        String codigoExtensionTb = null;
         if (soporteTb != null && !soporteTb.isEmpty()) {
-            extensionIdTb = validarArchivoSegunConfiguracionFase(soporteTb, 4L, "Documento Registro Contable TB");
+            codigoExtensionTb = validarArchivoSegunConfiguracionFase(soporteTb, 4L, "Documento Registro Contable TB");
         }
 
-        Long extensionIdPago = null;
+        String codigoExtensionPago = null;
         if (comprobantePago != null && !comprobantePago.isEmpty()) {
-            extensionIdPago = validarArchivoSegunConfiguracionFase(comprobantePago, 4L, "Comprobante de Pago Bancario");
+            codigoExtensionPago = validarArchivoSegunConfiguracionFase(comprobantePago, 4L, "Comprobante de Pago Bancario");
         }
 
         String nitCarpeta = factura.getNit().replaceAll("[\\\\/:*?\"<>|]", "_").trim();
@@ -498,12 +498,12 @@ public class FacturaServiceImpl implements FacturaService {
 
             if (soporteTb != null && !soporteTb.isEmpty()) {
                 inactivarDocumentoPrevioPorPrefijo(factura, "_TB_");
-                guardarSoporteDocumento(factura, soporteTb, directorioFactura, "TB_", 8L, extensionIdTb);
+                guardarSoporteDocumento(factura, soporteTb, directorioFactura, "TB_", "08", codigoExtensionTb);
             }
 
             if (comprobantePago != null && !comprobantePago.isEmpty()) {
                 inactivarDocumentoPrevioPorPrefijo(factura, "_PAGO_");
-                guardarSoporteDocumento(factura, comprobantePago, directorioFactura, "PAGO_", 8L, extensionIdPago);
+                guardarSoporteDocumento(factura, comprobantePago, directorioFactura, "PAGO_", "08", codigoExtensionPago);
             }
 
         } catch (IOException e) {
@@ -517,9 +517,9 @@ public class FacturaServiceImpl implements FacturaService {
      * 🛡️ Valida que un archivo cumpla con las extensiones permitidas y el tamaño máximo en MB
      * configurado dinámicamente en el módulo de administración para la fase especificada.
      */
-    private Long validarArchivoSegunConfiguracionFase(MultipartFile archivo, Long faseId, String campoNombre) {
+    private String validarArchivoSegunConfiguracionFase(MultipartFile archivo, Long faseId, String campoNombre) {
         if (archivo == null || archivo.isEmpty()) {
-            return 1L;
+            return "02";
         }
 
         String nombreArchivo = archivo.getOriginalFilename();
@@ -535,25 +535,27 @@ public class FacturaServiceImpl implements FacturaService {
 
             if (configs != null && !configs.isEmpty()) {
                 Map<Long, String> extMap = new HashMap<>();
+                Map<Long, String> extCodMap = new HashMap<>();
                 if (extensiones != null) {
                     for (ExtensionDto e : extensiones) {
                         if (e.getId() != null) {
                             String code = (e.getCodigo() != null && !e.getCodigo().isBlank()) ? e.getCodigo() : e.getDescripcion();
                             if (code != null) {
                                 extMap.put(e.getId(), code.toLowerCase().replace(".", "").trim());
+                                extCodMap.put(e.getId(), (e.getCodigo() != null && !e.getCodigo().isBlank()) ? e.getCodigo() : e.getDescripcion());
                             }
                         }
                     }
                 }
 
                 ConfiguracionFaseExtensionDto configCoincidente = null;
-                Long extensionIdCoincidente = null;
+                String codigoExtensionCoincidente = null;
 
                 for (ConfiguracionFaseExtensionDto c : configs) {
                     String extConfig = extMap.get(c.getExtensionId());
                     if (extConfig != null && extConfig.equalsIgnoreCase(extArchivo)) {
                         configCoincidente = c;
-                        extensionIdCoincidente = c.getExtensionId();
+                        codigoExtensionCoincidente = extCodMap.get(c.getExtensionId());
                         break;
                     }
                 }
@@ -582,7 +584,7 @@ public class FacturaServiceImpl implements FacturaService {
                     ));
                 }
 
-                return extensionIdCoincidente;
+                return codigoExtensionCoincidente != null ? codigoExtensionCoincidente : extArchivo.toUpperCase();
             }
         } catch (IllegalArgumentException e) {
             throw e;
@@ -590,7 +592,7 @@ public class FacturaServiceImpl implements FacturaService {
             LOGGER.warn("⚠️ No se pudo consultar la parametrización vía Feign para Fase {}: {}", faseId, e.getMessage());
         }
 
-        return 1L;
+        return "02";
     }
 
     private void inactivarDocumentoPrevioPorPrefijo(Factura factura, String prefijo) {
@@ -603,7 +605,7 @@ public class FacturaServiceImpl implements FacturaService {
         }
     }
 
-    private void guardarSoporteDocumento(Factura factura, MultipartFile archivo, Path directorio, String prefijo, Long tipoId, Long extensionId) throws IOException {
+    private void guardarSoporteDocumento(Factura factura, MultipartFile archivo, Path directorio, String prefijo, String codigoTipo, String codigoExtension) throws IOException {
         String nombreOriginal = archivo.getOriginalFilename();
         String nombreUnico = UUID.randomUUID() + "_" + prefijo + nombreOriginal;
         Path destinoFinal = directorio.resolve(nombreUnico);
@@ -614,9 +616,9 @@ public class FacturaServiceImpl implements FacturaService {
         doc.setNombreOriginal(nombreOriginal);
         doc.setRuta(destinoFinal.toString());
         doc.setTamano(archivo.getSize());
-        doc.setEstadoId(1L);
-        doc.setExtensionId(extensionId != null ? extensionId : 1L);
-        doc.setTipoId(tipoId);
+        doc.setCodigoEstado("01");
+        doc.setCodigoExtension(codigoExtension != null ? codigoExtension : "02");
+        doc.setCodigoTipo(codigoTipo);
         doc.setFactura(factura);
 
         factura.addDocumento(doc);

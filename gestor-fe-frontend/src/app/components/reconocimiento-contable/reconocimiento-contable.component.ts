@@ -224,7 +224,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         this.opcionesTipoRegistro = (data || [])
           .filter(c => !c.deletedAt)
           .map(c => ({
-            value: c.id,
+            value: c.codigo || c.id,
             label: c.codigo ? `${c.codigo} - ${c.descripcion}` : c.descripcion
           }));
       },
@@ -237,7 +237,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
       this.opcionesCausal = (data || [])
         .filter(c => !c.deletedAt)
         .map(c => ({
-          value: c.id,
+          value: c.codigo || c.id,
           label: `${c.codigo || ''} - ${c.descripcion}`
         }));
     });
@@ -311,7 +311,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         const rawDocs = res.content || [];
         this.soportesFactura = rawDocs.map((doc: any) => ({
           ...doc,
-          permitirEliminar: this.esGestorF2 && row.faseId === 2 && doc.tipoId === 8
+          permitirEliminar: this.esGestorF2 && row.faseId === 2 && (doc.codigoTipo === '08' || doc.codigoTipo === '8' || doc.tipoId === 8)
         }));
         this.tabSeleccionada = 1;
       },
@@ -390,18 +390,18 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
           const isRechazado = val === 'RECHAZADO';
 
           // CAMPOS DE APROBACIÓN
-          this.toggleCampoVisibilidad(campos, form, 'tipoRegistroContableId', isAprobado, true);
+          this.toggleCampoVisibilidad(campos, form, 'codigoTipoRegistroContable', isAprobado, true);
           this.toggleCampoVisibilidad(campos, form, 'numeroCausacion', isAprobado, true);
           // Si ya existe soporte activo, adjuntar uno nuevo es OPCIONAL; si no existe, es REQUERIDO
           this.toggleCampoVisibilidad(campos, form, 'archivoCausacion', isAprobado, !tieneSoporteCausacionActivo);
 
           // CAMPOS DE RECHAZO
-          this.toggleCampoVisibilidad(campos, form, 'causalDevolucionId', isRechazado, true);
+          this.toggleCampoVisibilidad(campos, form, 'codigoCausalDevolucion', isRechazado, true);
           this.toggleCampoVisibilidad(campos, form, 'observacionId', isRechazado, true);
         }
       },
       {
-        name: 'tipoRegistroContableId',
+        name: 'codigoTipoRegistroContable',
         label: 'Tipo de Registro Contable',
         type: 'select',
         options: this.opcionesTipoRegistro,
@@ -427,7 +427,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         visible: false
       },
       {
-        name: 'causalDevolucionId',
+        name: 'codigoCausalDevolucion',
         label: 'Causal de Devolución',
         type: 'select',
         options: this.opcionesCausal,
@@ -482,12 +482,12 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
           this.opcionesTipoRegistro = clasificaciones
             .filter(c => !c.deletedAt)
             .map(c => ({
-              value: c.id,
+              value: c.codigo || c.id,
               label: c.codigo ? `${c.codigo} - ${c.descripcion}` : c.descripcion
             }));
         }
         const tieneSoporteCausacionActivo = (docsActivos || []).some(
-          d => d.tipoId === 8 && (!d.ruta || (!d.ruta.includes('_TB_') && !d.ruta.includes('_PAGO_')))
+          d => (d.codigoTipo === '08' || d.codigoTipo === '8' || d.codigoTipo === 'SOPORTE_CAUSACION' || d.tipoId === 8) && (!d.ruta || (!d.ruta.includes('_TB_') && !d.ruta.includes('_PAGO_')))
         );
         this.ejecutarModalGestionar(row, tieneSoporteCausacionActivo);
       },
@@ -505,7 +505,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         campos: this.getCamposGestion(tieneSoporteActivo),
         formData: {
           id: row.id,
-          tipoRegistroContableId: row.tipoRegistroContableId ? String(row.tipoRegistroContableId) : '',
+          codigoTipoRegistroContable: row.codigoTipoRegistroContable || '',
           numeroCausacion: row.numeroCausacion || ''
         },
         service: {
@@ -558,7 +558,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
 
               return this.service.procesarCausacionFase2(
                 row.id,
-                Number(model.tipoRegistroContableId),
+                model.codigoTipoRegistroContable,
                 model.numeroCausacion,
                 usuarioAccion,
                 archivoFile
@@ -567,9 +567,6 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
             } else {
               model.usuario = usuarioAccion;
 
-              if (model.causalDevolucionId) {
-                model.causalDevolucionId = Number(model.causalDevolucionId);
-              }
               if (model.observacionId && model.observacionId !== 'OTRO') {
                 model.observacion = model.observacionId;
               }

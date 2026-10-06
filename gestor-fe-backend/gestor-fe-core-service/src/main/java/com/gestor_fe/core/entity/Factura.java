@@ -13,6 +13,8 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SQLRestriction;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Data
 @Entity
 @Table(name = "factura", schema = "gestor")
@@ -76,9 +78,66 @@ public class Factura {
     @Column(name = "valor_total")
     private BigDecimal valorTotal;
 
+    @Column(name = "codigo_tipo_documento", length = 50)
+    private String codigoTipoDocumento; // 01 = Factura Venta, 02 = Exportación, 03/04 = Contingencia, 91 = NC, 92 = ND
+
+    @Column(name = "codigo_tipo_operacion", length = 50)
+    private String codigoTipoOperacion; // 10 = Estándar, 09 = AIU, 11 = Mandatos, etc.
+
+    @Column(name = "codigo_ambiente_ejecucion", length = 50)
+    private String codigoAmbienteEjecucion; // 1 = Producción, 2 = Pruebas
+
+    @Column(length = 10)
+    private String moneda; // COP, USD, EUR
+
+    @Column(name = "tasa_cambio", precision = 18, scale = 4)
+    private BigDecimal tasaCambio;
+
+    @Column(name = "fecha_tasa_cambio")
+    private LocalDate fechaTasaCambio;
+
+    @Column(name = "codigo_tipo_identificacion_emisor", length = 50)
+    private String codigoTipoIdentificacionEmisor; // 31 = NIT, 13 = CC, 22 = CE, 41 = Pasaporte
+
+    @Column(name = "codigo_tipo_persona_emisor", length = 50)
+    private String codigoTipoPersonaEmisor; // 1 = Jurídica, 2 = Natural
+
+    @Column(name = "codigo_responsabilidad_fiscal_emisor", length = 150)
+    private String codigoResponsabilidadFiscalEmisor; // O-13, O-15, O-23, O-47, R-99-PN
+
+    @Column(name = "hora_emision", length = 30)
+    private String horaEmision;
+
+    @Column(name = "valor_bruto", precision = 18, scale = 2)
+    private BigDecimal valorBruto; // Total valor bruto antes de tributos y descuentos (LineExtensionAmount)
+
+    @Column(name = "total_descuentos", precision = 18, scale = 2)
+    private BigDecimal totalDescuentos;
+
+    @Column(name = "total_cargos", precision = 18, scale = 2)
+    private BigDecimal totalCargos;
+
+    @Column(name = "total_anticipos", precision = 18, scale = 2)
+    private BigDecimal totalAnticipos;
+
+    @Column(name = "valor_impoconsumo", precision = 18, scale = 2)
+    private BigDecimal valorImpoconsumo; // Impoconsumo (Código 04)
+
+    @Column(name = "otros_impuestos", precision = 18, scale = 2)
+    private BigDecimal otrosImpuestos;
+
     // =========================================================================
     // 👤 DATOS DEL CLIENTE / ADQUIRENTE (AccountingCustomerParty)
     // =========================================================================
+    @Column(name = "codigo_tipo_identificacion_cliente", length = 50)
+    private String codigoTipoIdentificacionCliente;
+
+    @Column(name = "codigo_tipo_persona_cliente", length = 50)
+    private String codigoTipoPersonaCliente;
+
+    @Column(name = "codigo_responsabilidad_fiscal_cliente", length = 150)
+    private String codigoResponsabilidadFiscalCliente;
+
     @Column(name = "nit_cliente", length = 20)
     private String nitCliente;
 
@@ -109,25 +168,25 @@ public class Factura {
     @Column(name = "fecha_vencimiento")
     private LocalDate fechaVencimiento;
 
-    @Column(name = "forma_pago", length = 20)
-    private String formaPago; // 1 = Contado, 2 = Crédito
+    @Column(name = "codigo_forma_pago", length = 50)
+    private String codigoFormaPago; // 1 = Contado, 2 = Crédito
 
-    @Column(name = "medio_pago", length = 50)
-    private String medioPago;
+    @Column(name = "codigo_medio_pago", length = 50)
+    private String codigoMedioPago;
 
     @Column(columnDefinition = "TEXT")
     private String notas;
 
-    @Column(name = "valor_retefuente")
+    @Column(name = "valor_retefuente", precision = 18, scale = 2)
     private BigDecimal valorRetefuente;
 
-    @Column(name = "valor_reteica")
+    @Column(name = "valor_reteica", precision = 18, scale = 2)
     private BigDecimal valorReteica;
 
-    @Column(name = "valor_reteiva")
+    @Column(name = "valor_reteiva", precision = 18, scale = 2)
     private BigDecimal valorReteiva;
 
-    @Column(name = "total_retenciones")
+    @Column(name = "total_retenciones", precision = 18, scale = 2)
     private BigDecimal totalRetenciones;
     
     // =========================================================================
@@ -142,14 +201,14 @@ public class Factura {
     @Column(length = 1000)
     private String observacion;
 
-    @Column(name = "causal_devolucion_id")
-    private Long causalDevolucionId;
+    @Column(name = "codigo_causal_devolucion", length = 50)
+    private String codigoCausalDevolucion;
 
-    @Column(name = "tipo_registro_contable_id", length = 10) // FC, GV, ORC, NI, TB
-    private Long tipoRegistroContableId;
+    @Column(name = "codigo_tipo_registro_contable", length = 50) // FC, GV, ORC, NI, TB
+    private String codigoTipoRegistroContable;
 
-    @Column(name = "movimiento_id")
-    private Long movimientoId;
+    @Column(name = "codigo_movimiento", length = 50)
+    private String codigoMovimiento;
 
     @Column(name = "numero_causacion", length = 50)
     private String numeroCausacion;
@@ -214,4 +273,13 @@ public class Factura {
         this.gestiones.add(gestion);
         gestion.setFactura(this);
     }
+
+    // =========================================================================
+    // 🔗 RELACIÓN 3: Lote / Evento de Cargue Origen
+    // =========================================================================
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "identificador_cargue", insertable = false, updatable = false)
+    @JsonIgnoreProperties({"facturas", "errores"})
+    @ToString.Exclude
+    private Cargue cargue;
 }

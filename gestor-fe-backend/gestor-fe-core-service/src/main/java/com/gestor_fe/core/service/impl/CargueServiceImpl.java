@@ -73,8 +73,8 @@ public class CargueServiceImpl implements CargueService {
                     .addString("esAdmin", esAdmin ? "true" : "false")
                     .addLong("timestamp", System.currentTimeMillis());
 
-            if (cargue.getMovimientoId() != null) {
-                jobParametersBuilder.addLong("movimientoId", cargue.getMovimientoId());
+            if (cargue.getCodigoMovimiento() != null && !cargue.getCodigoMovimiento().isBlank()) {
+                jobParametersBuilder.addString("codigoMovimiento", cargue.getCodigoMovimiento());
             }
 
             jobLauncher.run(procesarLoteFacturasJob, jobParametersBuilder.toJobParameters());

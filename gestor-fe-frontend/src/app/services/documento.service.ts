@@ -38,8 +38,8 @@ export class DocumentoService extends CommonService<Documento> {
   public filtrarDocumentosPaginado(
     numeroFactura: string, 
     nit: string, 
-    tipoId: number | null, 
-    extensionId: number | null, 
+    codigoTipo: string | number | null, 
+    codigoExtension: string | number | null, 
     page: string | number, 
     size: string | number,
     nombreOriginal?: string | null,
@@ -49,7 +49,7 @@ export class DocumentoService extends CommonService<Documento> {
   public filtrarDocumentosPaginado(
     numeroFactura: string, 
     nit: string, 
-    tipoId: number | null, 
+    codigoTipo: string | number | null, 
     page: string | number, 
     size: string | number
   ): Observable<any>;
@@ -57,31 +57,31 @@ export class DocumentoService extends CommonService<Documento> {
   public filtrarDocumentosPaginado(
     numeroFactura: string, 
     nit: string, 
-    arg3: number | null, 
+    arg3: string | number | null, 
     arg4?: any, 
     arg5?: any, 
     arg6?: any,
     arg7?: any,
     arg8?: any
   ): Observable<any> {
-    let finalTipoId: number | null = null;
-    let finalExtensionId: number | null = null;
+    let finalCodigoTipo: string | null = null;
+    let finalCodigoExtension: string | null = null;
     let page: string | number = '0';
     let size: string | number = '10';
     let nombreOriginal: string | null = null;
     let id: number | null = null;
 
     if (arg6 !== undefined) {
-      // 6-8 Argumentos: (numeroFactura, nit, tipoId, extensionId, page, size, nombreOriginal, id)
-      finalTipoId = arg3;
-      finalExtensionId = (typeof arg4 === 'number') ? arg4 : null;
+      // 6-8 Argumentos: (numeroFactura, nit, codigoTipo, codigoExtension, page, size, nombreOriginal, id)
+      finalCodigoTipo = arg3 !== null && arg3 !== undefined ? String(arg3) : null;
+      finalCodigoExtension = arg4 !== null && arg4 !== undefined ? String(arg4) : null;
       page = arg5 !== undefined ? arg5 : '0';
       size = arg6 !== undefined ? arg6 : '10';
       nombreOriginal = arg7 || null;
       id = (typeof arg8 === 'number') ? arg8 : null;
     } else {
-      // 5 Argumentos: (numeroFactura, nit, tipoId, page, size)
-      finalTipoId = arg3;
+      // 5 Argumentos: (numeroFactura, nit, codigoTipo, page, size)
+      finalCodigoTipo = arg3 !== null && arg3 !== undefined ? String(arg3) : null;
       page = arg4 !== undefined ? arg4 : '0';
       size = arg5 !== undefined ? arg5 : '10';
     }
@@ -100,12 +100,14 @@ export class DocumentoService extends CommonService<Documento> {
       params = params.set('nit', nit.trim());
     }
     
-    if (finalTipoId !== null && finalTipoId !== undefined && finalTipoId > 0) {
-      params = params.set('tipoId', finalTipoId.toString());
+    if (finalCodigoTipo !== null && finalCodigoTipo !== undefined && finalCodigoTipo.trim() !== '' && finalCodigoTipo !== '0') {
+      params = params.set('codigoTipo', finalCodigoTipo.trim());
+      params = params.set('tipoId', finalCodigoTipo.trim());
     }
 
-    if (finalExtensionId !== null && finalExtensionId !== undefined && finalExtensionId > 0) {
-      params = params.set('extensionId', finalExtensionId.toString());
+    if (finalCodigoExtension !== null && finalCodigoExtension !== undefined && finalCodigoExtension.trim() !== '' && finalCodigoExtension !== '0') {
+      params = params.set('codigoExtension', finalCodigoExtension.trim());
+      params = params.set('extensionId', finalCodigoExtension.trim());
     }
 
     if (nombreOriginal && nombreOriginal.trim() !== '') {

@@ -7,9 +7,9 @@ export interface Gestion {
   faseId: number;
   accion: 'APROBADO' | 'RECHAZADO' | string;
   estadoResultado: string; // Ej: 'EN GESTIÓN', 'CAUSADO', 'IMPUESTOS VERIFICADOS', 'PAGADO', 'ANULADO'
-  tipoRegistroContableId?: number | null; // ID mapeado a la tabla maestra de tipos de registro
+  codigoTipoRegistroContable?: string | null; // Código mapeado a la tabla maestra de tipos de registro
   numeroCausacion?: string | null;
-  causalDevolucionId?: number | null;
+  codigoCausalDevolucion?: string | null;
   observacion?: string | null;
   usuario?: string | null;
   createdAt?: Date | string;

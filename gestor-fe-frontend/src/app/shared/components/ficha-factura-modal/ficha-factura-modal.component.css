@@ -348,6 +348,33 @@
   border-left: 5px solid #1DA6BA;
 }
 
+.kpi-neto {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #86efac;
+  border-left: 5px solid #16a34a;
+}
+
+.total-neto {
+  color: #15803d !important;
+  font-size: 1.3rem !important;
+}
+
+.email-list {
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.email-chip {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  word-break: break-all;
+  display: inline-block;
+}
+
 .text-institucional {
   color: #0e7490 !important;
   font-weight: 700 !important;

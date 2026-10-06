@@ -77,7 +77,7 @@ public class PrestadorServiceImpl implements PrestadorService {
 
     @Override
     @Transactional
-    public Documento cargarSoporte(String nitPrestador, Long tipoId, Long extensionId, MultipartFile archivo) {
+    public Documento cargarSoporte(String nitPrestador, String codigoTipo, String codigoExtension, MultipartFile archivo) {
         if (archivo == null || archivo.isEmpty()) {
             throw new IllegalArgumentException("El archivo cargado se encuentra vacío.");
         }
@@ -89,12 +89,12 @@ public class PrestadorServiceImpl implements PrestadorService {
         try {
             // 2. Si ya existe un documento activo del mismo tipo (ej. un RUT viejo), realizar Soft-Delete
             Optional<Documento> soporteExistente = documentoRepository
-                    .findByPrestadorIdAndTipoIdAndDeletedAtIsNull(prestador.getId(), tipoId);
+                    .findByPrestadorIdAndCodigoTipoAndDeletedAtIsNull(prestador.getId(), codigoTipo);
 
             soporteExistente.ifPresent(docOld -> {
                 docOld.setDeletedAt(LocalDate.now());
                 documentoRepository.save(docOld);
-                LOGGER.info("ℹ️ Reemplazando soporte previo ID {} para el tipoId {}", docOld.getId(), tipoId);
+                LOGGER.info("ℹ️ Reemplazando soporte previo ID {} para el codigoTipo {}", docOld.getId(), codigoTipo);
             });
 
             // 3. Crear estructura física de directorios: E:\gestion-fe-validos\{NIT}\SOPORTES_PRESTADOR\
@@ -119,18 +119,29 @@ public class PrestadorServiceImpl implements PrestadorService {
             documento.setNombreOriginal(nombreOriginal);
             documento.setRuta(destinoFinal.toString());
             documento.setTamano(archivo.getSize());
-            documento.setEstadoId(1L);
+            documento.setCodigoEstado("01");
+            
             String lowerNom = nombreOriginal.toLowerCase();
-            if (lowerNom.endsWith(".pdf")) {
-                documento.setExtensionId(1L);
+            if (codigoExtension != null && !codigoExtension.isBlank()) {
+                if (codigoExtension.equalsIgnoreCase("PDF") || codigoExtension.equals("2")) {
+                    documento.setCodigoExtension("02");
+                } else if (codigoExtension.equalsIgnoreCase("XML") || codigoExtension.equals("1")) {
+                    documento.setCodigoExtension("01");
+                } else if (codigoExtension.equalsIgnoreCase("ZIP") || codigoExtension.equals("3")) {
+                    documento.setCodigoExtension("03");
+                } else {
+                    documento.setCodigoExtension(codigoExtension);
+                }
             } else if (lowerNom.endsWith(".xml")) {
-                documento.setExtensionId(2L);
+                documento.setCodigoExtension("01");
+            } else if (lowerNom.endsWith(".pdf")) {
+                documento.setCodigoExtension("02");
             } else if (lowerNom.endsWith(".zip")) {
-                documento.setExtensionId(3L);
+                documento.setCodigoExtension("03");
             } else {
-                documento.setExtensionId(extensionId != null ? extensionId : 1L);
+                documento.setCodigoExtension("02");
             }
-            documento.setTipoId(tipoId);
+            documento.setCodigoTipo(codigoTipo);
 
             // Vinculación bidireccional usando el método helper de la entidad Prestador
             prestador.addSoporte(documento);

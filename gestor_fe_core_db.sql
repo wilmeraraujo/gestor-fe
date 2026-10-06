@@ -92,8 +92,14 @@ select * from admin.observacion o order by id desc limit 10;
 select * from admin.tipo t order by id desc limit 10;
 select * from admin."extension" e order by id desc limit 10;
 select * from admin.fase f order by id desc limit 10;
+
 select * from admin.configuracion_sistema cs order by id desc limit 10;
 select * from admin.configuracion_fase_extension cfe order by id desc limit 10;
+
+select * from admin.responsabilidad_fiscal rf order by id desc limit 10;
+select * from admin.tipo_documento_dian tdd order by id desc limit 10;
+select * from admin.unidad_medida um order by id desc limit 10;
+select * from admin.medio_pago mp order by id desc limit 10;
 
 select * from logs.log_acciones order by id desc limit 10;
 --
@@ -159,18 +165,18 @@ set estado = 'RADICADO' ,observacion = null , fase_id = 1 ,
 causal_devolucion_id = null, numero_causacion=null,tipo_registro_contable=null 
 where id in (1);
 
-	truncate table gestor.cargue restart identity CASCADE;
-	truncate table gestor.error_cargue restart identity CASCADE;
-	truncate table gestor.documento restart identity CASCADE;
-	truncate table gestor.factura restart identity CASCADE;
-	truncate table gestor.factura_item restart identity CASCADE;
-	
-	truncate table public.batch_job_execution restart identity CASCADE;
-	truncate table public.batch_job_execution_context restart identity CASCADE; 
-	truncate table public.batch_job_execution_params restart identity CASCADE; 
-	truncate table public.batch_job_instance restart identity CASCADE; 
-	truncate table public.batch_step_execution restart identity CASCADE; 
-	truncate table public.batch_step_execution_context restart identity CASCADE;
+truncate table gestor.cargue restart identity CASCADE;
+truncate table gestor.error_cargue restart identity CASCADE;
+truncate table gestor.documento restart identity CASCADE;
+truncate table gestor.factura restart identity CASCADE;
+truncate table gestor.factura_item restart identity CASCADE;
+
+truncate table public.batch_job_execution restart identity CASCADE;
+truncate table public.batch_job_execution_context restart identity CASCADE; 
+truncate table public.batch_job_execution_params restart identity CASCADE; 
+truncate table public.batch_job_instance restart identity CASCADE; 
+truncate table public.batch_step_execution restart identity CASCADE; 
+truncate table public.batch_step_execution_context restart identity CASCADE;
 
 ALTER TABLE gestor.documento ADD COLUMN created_at TIMESTAMP(6) NOT NULL;
 ALTER TABLE gestor.factura ADD COLUMN created_at TIMESTAMP(6) NOT NULL;
@@ -433,19 +439,7 @@ INSERT INTO admin.configuracion_sistema (id, codigo, descripcion, valor, proceso
 select * from admin.configuracion_fase_extension cfe order by id desc limit 10;
 
 -- 3. Inserción de los registros exactos de la vista
-INSERT INTO admin.configuracion_fase_extension (
-    id, 
-    codigo, 
-    fase_id, 
-    extension_id, 
-    descripcion, 
-    tamano_maximo_mb, 
-    obligatorio, 
-    permite_multiple, 
-    created_at, 
-    updated_at, 
-    deleted_at
-) VALUES 
+INSERT INTO admin.configuracion_fase_extension (id,codigo,fase_id,extension_id,descripcion,tamano_maximo_mb,obligatorio,permite_multiple,created_at,updated_at,deleted_at) VALUES 
 (
     1, 
     '1-3', 
@@ -473,5 +467,273 @@ INSERT INTO admin.configuracion_fase_extension (
     NULL  -- deleted_at NULL => Estado: ACTIVO
 );
 
+-- =========================================================================
+-- 🏛️ ACTUALIZACIÓN DE CAMPOS NORMATIVOS DIAN (UBL 2.1)
+-- =========================================================================
+ALTER TABLE gestor.factura 
+    ADD COLUMN IF NOT EXISTS tipo_documento VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS tipo_operacion VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS ambiente_ejecucion VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS moneda VARCHAR(10) DEFAULT 'COP',
+    ADD COLUMN IF NOT EXISTS tasa_cambio NUMERIC(18, 4),
+    ADD COLUMN IF NOT EXISTS fecha_tasa_cambio DATE,
+    ADD COLUMN IF NOT EXISTS tipo_identificacion_emisor VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS tipo_persona_emisor VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS responsabilidad_fiscal_emisor VARCHAR(150),
+    ADD COLUMN IF NOT EXISTS hora_emision VARCHAR(30),
+    ADD COLUMN IF NOT EXISTS valor_bruto NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS total_descuentos NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS total_cargos NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS total_anticipos NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS valor_impoconsumo NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS otros_impuestos NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS tipo_identificacion_cliente VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS tipo_persona_cliente VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS responsabilidad_fiscal_cliente VARCHAR(150);
 
-
+ALTER TABLE gestor.factura_item
+    ADD COLUMN IF NOT EXISTS codigo_unspsc VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS precio_referencia NUMERIC(18, 4),
+    ADD COLUMN IF NOT EXISTS porcentaje_descuento NUMERIC(10, 4),
+    ADD COLUMN IF NOT EXISTS valor_descuento NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS porcentaje_iva NUMERIC(10, 4),
+    ADD COLUMN IF NOT EXISTS valor_iva NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS porcentaje_impoconsumo NUMERIC(10, 4),
+    ADD COLUMN IF NOT EXISTS valor_impoconsumo NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS valor_subtotal NUMERIC(18, 2);
+
+-- =========================================================================
+-- 🏛️ TABLAS Y MAESTROS DE CATÁLOGOS DIAN (ADMIN)
+-- =========================================================================
+
+-- 1. Medios de Pago
+CREATE TABLE IF NOT EXISTS admin.medio_pago (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.medio_pago (codigo, descripcion) VALUES
+('1', 'Instrumento no definido / Acuerdo mutuo'),
+('10', 'Efectivo'),
+('20', 'Cheque'),
+('31', 'Pago por compensación'),
+('41', 'Transferencia Crédito bancaria'),
+('42', 'Consignación bancaria'),
+('47', 'Transferencia Débito bancaria'),
+('48', 'Tarjeta Crédito'),
+('49', 'Tarjeta Débito'),
+('71', 'Bonos'),
+('72', 'Vales'),
+('ZZZ', 'Otro / Mutuo acuerdo')
+ON CONFLICT DO NOTHING;
+
+-- 2. Tipos de Documento DIAN
+CREATE TABLE IF NOT EXISTS admin.tipo_documento_dian (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.tipo_documento_dian (codigo, descripcion) VALUES
+('01', 'Factura electrónica de Venta'),
+('02', 'Factura electrónica de Exportación'),
+('03', 'Factura por Contingencia Facturador'),
+('04', 'Factura por Contingencia DIAN'),
+('05', 'Factura de Talonario o de Papel'),
+('40', 'Documento Soporte en adquisiciones a no obligados a facturar'),
+('91', 'Nota Crédito'),
+('92', 'Nota Débito'),
+('93', 'Nota de Ajuste al Documento Soporte (Crédito)'),
+('94', 'Nota de Ajuste al Documento Soporte (Débito)')
+ON CONFLICT DO NOTHING;
+
+-- 3. Unidades de Medida
+CREATE TABLE IF NOT EXISTS admin.unidad_medida (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.unidad_medida (codigo, descripcion) VALUES
+('EA', 'Unidad (Each)'),
+('94', 'Unidad de Servicio / Fracción'),
+('HUR', 'Hora'),
+('KGM', 'Kilogramo'),
+('MTR', 'Metro'),
+('LTR', 'Litro'),
+('GLI', 'Galón'),
+('DAY', 'Día'),
+('MON', 'Mes'),
+('XUN', 'Unidad internacional')
+ON CONFLICT DO NOTHING;
+
+-- 4. Responsabilidades Fiscales
+CREATE TABLE IF NOT EXISTS admin.responsabilidad_fiscal (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.responsabilidad_fiscal (codigo, descripcion) VALUES
+('O-13', 'Gran Contribuyente'),
+('O-15', 'Autorretenedor'),
+('O-23', 'Agente de Retención IVA'),
+('O-47', 'Régimen Simple de Tributación (SIMPLE)'),
+('R-99-PN', 'No responsable de IVA')
+ON CONFLICT DO NOTHING;
+
+-- 5. Tipos de Identificación DIAN
+CREATE TABLE IF NOT EXISTS admin.tipo_identificacion (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.tipo_identificacion (codigo, descripcion) VALUES
+('11', 'Registro civil'),
+('12', 'Tarjeta de identidad'),
+('13', 'Cédula de ciudadanía'),
+('21', 'Tarjeta de extranjería'),
+('22', 'Cédula de extranjería'),
+('31', 'NIT (Número de Identificación Tributaria)'),
+('41', 'Pasaporte'),
+('42', 'Documento de identificación extranjero'),
+('47', 'PEP (Permiso Especial de Permanencia)'),
+('48', 'PPT (Permiso por Protección Temporal)'),
+('50', 'NIT de otro país'),
+('91', 'NUIP (Número Único de Identificación Personal)')
+ON CONFLICT DO NOTHING;
+
+-- 6. Tipos de Operación DIAN
+CREATE TABLE IF NOT EXISTS admin.tipo_operacion (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.tipo_operacion (codigo, descripcion) VALUES
+('10', 'Estándar (Operación estándar de compra/venta)'),
+('09', 'AIU (Administración, Imprevistos y Utilidades)'),
+('11', 'Mandatos bienes'),
+('12', 'Mandatos servicios'),
+('20', 'Nota Crédito / Débito que referencia una factura electrónica'),
+('22', 'Nota Crédito / Débito sin referencia a facturas'),
+('30', 'Factura electrónica del Sector Salud (RIPS)'),
+('32', 'Sector Salud - Cuotas moderadoras y copagos')
+ON CONFLICT DO NOTHING;
+
+-- =========================================================================
+-- 🔗 INTEGRIDAD REFERENCIAL Y RELACIONES DEL ESQUEMA GESTOR
+-- =========================================================================
+
+-- 1. Relación: cargue (1) <---> (N) factura
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_factura_cargue' AND table_schema = 'gestor'
+    ) THEN
+        ALTER TABLE gestor.factura 
+        ADD CONSTRAINT fk_factura_cargue 
+        FOREIGN KEY (identificador_cargue) 
+        REFERENCES gestor.cargue (id);
+    END IF;
+END $$;
+
+-- 2. Relación: cargue (1) <---> (N) error_cargue
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_error_cargue_cargue' AND table_schema = 'gestor'
+    ) THEN
+        ALTER TABLE gestor.error_cargue 
+        ADD CONSTRAINT fk_error_cargue_cargue 
+        FOREIGN KEY (cargue_id) 
+        REFERENCES gestor.cargue (id) 
+        ON DELETE CASCADE;
+    END IF;
+END $$;
+
+-- =========================================================================
+-- 🔄 MIGRACIÓN DE CAMPOS: REEMPLAZO DE IDS POR CÓDIGOS (PREFIJO codigo_)
+-- =========================================================================
+
+-- 1. Tabla gestor.factura
+ALTER TABLE IF EXISTS gestor.factura 
+    ADD COLUMN IF NOT EXISTS codigo_tipo_documento VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_operacion VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_ambiente_ejecucion VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_identificacion_emisor VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_persona_emisor VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_responsabilidad_fiscal_emisor VARCHAR(150),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_identificacion_cliente VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_persona_cliente VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_responsabilidad_fiscal_cliente VARCHAR(150),
+    ADD COLUMN IF NOT EXISTS codigo_forma_pago VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_medio_pago VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_causal_devolucion VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_registro_contable VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_movimiento VARCHAR(50);
+
+-- 2. Tabla gestor.gestion
+ALTER TABLE IF EXISTS gestor.gestion 
+    ADD COLUMN IF NOT EXISTS codigo_causal_devolucion VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_registro_contable VARCHAR(50);
+
+-- 3. Tabla gestor.documento
+ALTER TABLE IF EXISTS gestor.documento 
+    ADD COLUMN IF NOT EXISTS codigo_estado VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_extension VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo VARCHAR(50);
+
+-- 4. Tabla gestor.cargue
+ALTER TABLE IF EXISTS gestor.cargue 
+    ADD COLUMN IF NOT EXISTS codigo_movimiento VARCHAR(50);
+
+
+
+
+/*
+ * codigo_ambiente_ejecucion
+ 
+1 = Ambiente de Producción
+2 = Ambiente de Pruebas / Habilitación
+
+codigo_forma_pago
+
+1 = Contado
+2 = Crédito
+
+ codigo_tipo_persona_cliente
+ 
+1 = Persona Jurídica y asimiladas
+2 = Persona Natural y asimiladas
+
+ * 
+ * */
