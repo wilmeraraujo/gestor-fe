@@ -31,9 +31,13 @@ export class CommonFormComponent implements OnInit {
     const group: any = {};
 
     this.campos.forEach(campo => {
+      const validators = [];
+      if (campo.required) validators.push(Validators.required);
+      if (campo.type === 'email') validators.push(Validators.email);
+
       group[campo.name] = [
         this.data[campo.name] || '',
-        campo.required ? [Validators.required] : []
+        validators
       ];
     });
 
@@ -126,10 +130,11 @@ export class CommonFormComponent implements OnInit {
       formValues.codigo = formValues.codigo.trim();
     }
 
-    // ⚡ Normalizar IDs numéricos si vienen como String desde el <select>
+    // ⚡ Normalizar IDs numéricos si vienen como String desde el <select> o <input>
     if (formValues.faseId) formValues.faseId = Number(formValues.faseId);
     if (formValues.extensionId) formValues.extensionId = Number(formValues.extensionId);
     if (formValues.tamanoMaximoMb) formValues.tamanoMaximoMb = Number(formValues.tamanoMaximoMb);
+    if (formValues.identificadorCargue) formValues.identificadorCargue = Number(formValues.identificadorCargue);
 
     const usuarioActivo = this.loginService.getUserName();
 

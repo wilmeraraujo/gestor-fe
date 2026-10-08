@@ -213,6 +213,9 @@ public class Factura {
     @Column(name = "numero_causacion", length = 50)
     private String numeroCausacion;
 
+    @Column(name = "codigo_concepto", length = 50)
+    private String codigoConcepto;
+
     @Column(name = "fecha_emision")
     private LocalDate fechaEmision;
     

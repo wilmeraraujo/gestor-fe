@@ -748,6 +748,18 @@
   box-shadow: 0 4px 10px rgba(29, 166, 186, 0.4) !important;
 }
 
+/* 🏷️ Asignar Concepto (Morado / Violeta Vibrante) */
+.btn-action-concepto {
+  background-color: #f3e8ff !important;
+  color: #9333ea !important;
+}
+.btn-action-concepto:hover {
+  background-color: #9333ea !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 4px 10px rgba(147, 51, 234, 0.35) !important;
+}
+
 /* 📜 Historial (Teal / Turquesa) */
 .btn-action-history {
   background-color: #ccfbf1 !important;

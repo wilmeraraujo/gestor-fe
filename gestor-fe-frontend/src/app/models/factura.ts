@@ -74,6 +74,7 @@ export interface Factura {
   codigoTipoRegistroContable?: string; // 👈 Mapeado como código (FC, GV, ORC, NI, TB)
   codigoMovimiento?: string | null;
   numeroCausacion?: string;
+  codigoConcepto?: string;
   
   createdAt: Date | string;
   deletedAt?: Date | string | null;

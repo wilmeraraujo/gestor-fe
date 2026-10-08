@@ -159,6 +159,9 @@ values ('2026-07-24 15:10:19.336','Calle 15 # 24-50','facturacion@clinicasolucio
 insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
 values ('2026-07-24 15:10:19.336','CALLE 11A N 33 ESQUINA','facturacion@clinicasoluciones.com',0,814000337,'ASOCIACION MUTUAL ASSOLIDARIA','3009999999');
 
+insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
+values ('2026-07-24 15:10:19.336','CALLE 11A N 33 ESQUINA','facturacion@clinicasoluciones.com',0,12749190,'MIDEROS CAICEDO RAMON','3009999999');
+
 --pasar a fase 1
 update gestor.factura 
 set estado = 'RADICADO' ,observacion = null , fase_id = 1 , 
@@ -737,3 +740,31 @@ codigo_forma_pago
 
  * 
  * */
+   
+   
+   /**
+
+📋 Estructura oficial DIAN
+Segmento	Longitud	Descripción	Ejemplos
+pp	2 caracteres	Prefijo del tipo de documento o contenedor (ver tabla abajo)	ds, de, ad, fv, nc, nd, as, ne
+ffffffffff	10 dígitos	NIT del Facturador / Emisor (rellenado con ceros a la izquierda)	0814000337 (NIT 814000337)
+aa	2 dígitos	Dos últimos dígitos del año de generación	26 (2026), 25 (2025)
+nnnnnnnnnn	10 caracteres	Consecutivo del documento (rellenado con ceros a la izquierda)	0000000055
+
+
+
+  Catálogo de Prefijos DIAN (pp):
+ds: Documento Soporte en adquisiciones a no obligados a facturar.
+as: Nota de Ajuste al Documento Soporte.
+ad: AttachedDocument (Contenedor electrónico XML: Factura + ApplicationResponse).
+de: Documento Electrónico (utilizado comúnmente para la Representación Gráfica PDF o Documento Electrónico).
+fv / fe: Factura de Venta / Factura Electrónica.
+nc: Nota Crédito.
+nd: Nota Débito.
+ne / ni: Documento soporte de Pago de Nómina Electrónica.
+aj: Nota de Ajuste de Nómina Electrónica.
+ar: ApplicationResponse (Validación DIAN / Acuse de recibo / Eventos).
+cr / ev / rd: Contenedor / Eventos / Registro RADIAN.
+rg: Representación Gráfica (utilizado por algunos proveedores tecnológicos).
+    */
+   */

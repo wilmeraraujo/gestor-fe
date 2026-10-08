@@ -219,6 +219,10 @@ public class FacturaServiceImpl implements FacturaService {
             predicates.add(cb.equal(root.get("codigoTipoRegistroContable"), filtro.getCodigoTipoRegistroContable()));
         }
 
+        if (filtro.getCodigoConcepto() != null && !filtro.getCodigoConcepto().isBlank()) {
+            predicates.add(cb.like(cb.upper(root.get("codigoConcepto")), "%" + filtro.getCodigoConcepto().trim().toUpperCase() + "%"));
+        }
+
         if (filtro.getCodigoMovimiento() != null && !filtro.getCodigoMovimiento().isBlank()) {
             predicates.add(cb.equal(root.get("codigoMovimiento"), filtro.getCodigoMovimiento()));
         }
@@ -758,5 +762,29 @@ public class FacturaServiceImpl implements FacturaService {
             LOGGER.error("❌ Error generando archivo Excel de facturas", e);
             throw new RuntimeException("Error generando archivo Excel de facturas", e);
         }
+    }
+
+    @Override
+    @Transactional
+    public Factura asignarConcepto(Long id, String codigoConcepto, String usuario) {
+        Factura factura = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró la factura con ID: " + id));
+
+        String anterior = factura.getCodigoConcepto();
+        factura.setCodigoConcepto(codigoConcepto != null && !codigoConcepto.isBlank() ? codigoConcepto.trim() : null);
+
+        Gestion gestion = new Gestion();
+        gestion.setFactura(factura);
+        gestion.setUsuario(usuario != null && !usuario.isBlank() ? usuario : "SISTEMA");
+        gestion.setAccion("ASIGNAR_CONCEPTO");
+        gestion.setObservacion("Asignación de Concepto Contable / DIAN: " 
+                + (anterior != null ? "[" + anterior + " -> " : "[") 
+                + (factura.getCodigoConcepto() != null ? factura.getCodigoConcepto() : "Sin concepto") + "]");
+        gestion.setFaseId(factura.getFaseId());
+        gestion.setEstadoResultado(factura.getEstado() != null ? factura.getEstado() : "EN GESTIÓN");
+        factura.addGestion(gestion);
+
+        LOGGER.info("🏷️ Factura ID {} asignada con Concepto: {}", id, factura.getCodigoConcepto());
+        return repository.save(factura);
     }
 }

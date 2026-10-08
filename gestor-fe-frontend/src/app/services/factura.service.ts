@@ -212,4 +212,15 @@ export class FacturaService extends CommonService<Factura> {
   public obtenerItems(facturaId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.endPointBase}/${facturaId}/items`);
   }
+
+  /**
+   * 🏷️ 12. ASIGNAR CONCEPTO A LA FACTURA
+   */
+  public asignarConcepto(facturaId: number, codigoConcepto: string, usuario?: string): Observable<Factura> {
+    return this.http.put<Factura>(
+      `${this.endPointBase}/${facturaId}/concepto`,
+      { codigoConcepto, usuario },
+      { headers: this.cabeceras }
+    );
+  }
 }

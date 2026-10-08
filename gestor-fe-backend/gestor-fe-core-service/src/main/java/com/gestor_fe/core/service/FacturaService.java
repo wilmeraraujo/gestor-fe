@@ -25,6 +25,7 @@ public interface FacturaService {
     // MÉTODOS MULTIPART CON PARÁMETRO 'USUARIO'
     Factura procesarCausacionFase2(Long id, String codigoTipoRegistroContable, String numeroCausacion, String usuario, MultipartFile archivoCausacion);
     Factura procesarPagoFase4(Long id, String codigoTipoRegistroContable, String numeroCausacion, String usuario, MultipartFile soporteTb, MultipartFile comprobantePago);
+    Factura asignarConcepto(Long id, String codigoConcepto, String usuario);
 
     // AUXILIARES Y CRITERIA
     List<String> findExistingCufes(List<String> cufes);

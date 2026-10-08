@@ -29,12 +29,14 @@
           [mostrarEditar]="false"
           [mostrarEliminar]="false"
           [mostrarFichaFactura]="true"
+          [mostrarAsignarConcepto]="esGestorF2"
           [mostrarDetalle]="true"
           [mostrarGestionarFactura]="esGestorF2"
 
           (filtrosChange)="onFiltrosChange($event)"
           (paginar)="paginar($event)"
           (verFichaFactura)="abrirFichaFactura($event)"
+          (asignarConcepto)="abrirModalAsignarConcepto($event)"
           (verDetalle)="verSoportesFactura($event)"
           (gestionarFactura)="abrirModalGestionar($event)"
           (refrescar)="onRefrescar()"
@@ -59,10 +61,20 @@
           <div>
             <span class="fw-bold me-3">Factura No: <span class="text-primary">{{ facturaSeleccionada.numeroFactura }}</span></span>
             <span class="fw-bold me-3">NIT: <span class="text-secondary">{{ facturaSeleccionada.nit }}</span></span>
-            <span class="fw-bold">Razón Social: <span class="text-dark">{{ facturaSeleccionada.razonSocialEmisor }}</span></span>
+            <span class="fw-bold me-3">Razón Social: <span class="text-dark">{{ facturaSeleccionada.razonSocialEmisor }}</span></span>
+            <span class="fw-bold" *ngIf="facturaSeleccionada.codigoConcepto">Concepto: <span class="badge bg-purple text-white px-2 py-1 rounded" style="background-color: #9333ea;">{{ facturaSeleccionada.codigoConcepto }}</span></span>
           </div>
 
           <div class="d-flex gap-2">
+            <!-- 🏷️ BOTÓN ASIGNAR CONCEPTO DESDE EL VISOR -->
+            <button
+              *ngIf="esGestorF2"
+              mat-stroked-button
+              style="border-color: #9333ea; color: #9333ea;"
+              (click)="abrirModalAsignarConcepto(facturaSeleccionada)">
+              <mat-icon>category</mat-icon> Asignar Concepto
+            </button>
+
             <!-- 📋 BOTÓN PARA VER FICHA TÉCNICA E ÍTEMS DESDE EL VISOR -->
             <button
               mat-stroked-button

@@ -15,6 +15,7 @@ public class FacturaFilterDto {
     private Long faseId;                    // Filtro específico por Fase/Etapa (1, 2, 3, 4, 5)
     private String numeroCausacion;         // Número de documento de causación
     private String codigoTipoRegistroContable; // FC, GV, ORC, NI
+    private String codigoConcepto;          // Código de Concepto
     private String codigoCausalDevolucion;  // Código de causal de devolución
     private String codigoMovimiento;        // Filtro por Código de Movimiento
     private String codigoTipoDocumento;     // Filtro por Código de Tipo de Documento DIAN

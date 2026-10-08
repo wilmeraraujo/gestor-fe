@@ -7,10 +7,12 @@ import { EstadoComponent } from './components/admin/estado/estado.component';
 import { TipoComponent } from './components/admin/tipo/tipo.component';
 import { ClasificacionComponent } from './components/admin/clasificacion/clasificacion.component';
 import { ExtensionComponent } from './components/admin/extension/extension.component';
+import { ConceptoComponent } from './components/admin/concepto/concepto.component';
 import { FaseComponent } from './components/admin/fase/fase.component';
 import { GestionInicialComponent } from './components/gestion-inicial/gestion-inicial.component';
 import { DocumentoComponent } from './components/documento/documento.component';
 import { PrestadorComponent } from './components/prestador/prestador.component';
+import { PrestadorAdminComponent } from './components/admin/prestador/prestador.component';
 import { CausalDevolucionComponent } from './components/admin/causal-devolucion/causal-devolucion.component';
 import { ObservacionComponent } from './components/admin/observacion/observacion.component';
 import { ReconocimientoContableComponent } from './components/reconocimiento-contable/reconocimiento-contable.component';
@@ -64,12 +66,20 @@ export const routes: Routes = [
             component: AdminComponent
           },
           {
+            path: 'prestador',
+            component: PrestadorAdminComponent
+          },
+          {
             path: 'tipo-identificacion',
             component: TipoIdentificacionComponent
           },
           {
             path: 'extension',
             component: ExtensionComponent
+          },
+          {
+            path: 'concepto',
+            component: ConceptoComponent
           },
           {
             path: 'tipo',

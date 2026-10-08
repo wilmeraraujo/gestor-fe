@@ -154,4 +154,24 @@ public class FacturaController {
 
         return ResponseEntity.ok(service.procesarPagoFase4(id, codigoFinal, numeroCausacion, usuario, soporteTb, comprobantePago));
     }
+
+    // 🏷️ ASIGNAR CONCEPTO CONTABLE A FACTURA
+    @PutMapping("/{id}/concepto")
+    public ResponseEntity<Factura> asignarConcepto(
+            @PathVariable("id") Long id,
+            @RequestParam(value = "codigoConcepto", required = false) String codigoConcepto,
+            @RequestParam(value = "usuario", required = false) String usuario,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+
+        String conceptoFinal = codigoConcepto;
+        if (conceptoFinal == null && body != null && body.containsKey("codigoConcepto")) {
+            conceptoFinal = body.get("codigoConcepto");
+        }
+        String usuarioFinal = usuario;
+        if (usuarioFinal == null && body != null && body.containsKey("usuario")) {
+            usuarioFinal = body.get("usuario");
+        }
+
+        return ResponseEntity.ok(service.asignarConcepto(id, conceptoFinal, usuarioFinal));
+    }
 }

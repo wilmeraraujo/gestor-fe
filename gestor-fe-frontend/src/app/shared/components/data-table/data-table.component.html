@@ -168,6 +168,13 @@
                 <mat-icon>file_download</mat-icon>
               </button>
 
+              <!-- 🏷️ ASIGNAR CONCEPTO -->
+              <button *ngIf="mostrarAsignarConcepto && row.estadoNombre !== 'PROCESANDO'" mat-icon-button
+                class="btn-action btn-action-concepto" (click)="onAsignarConcepto(row)"
+                [matTooltip]="tooltipAsignarConcepto">
+                <mat-icon>category</mat-icon>
+              </button>
+
               <!-- 📋 VER FICHA / ÍTEMS DE FACTURA -->
               <button *ngIf="mostrarFichaFactura && row.estadoNombre !== 'PROCESANDO'" mat-icon-button
                 class="btn-action btn-action-ficha" (click)="onVerFichaFactura(row)"

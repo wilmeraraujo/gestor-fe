@@ -93,6 +93,8 @@ export class SidebarComponent implements OnInit {
         { name: "Causal devolución", icon: "assignment_return", route: "/dashboard/admin/causal-devolucion", visible: true },
         { name: "Tipo", icon: "category", route: "/dashboard/admin/tipo", visible: true },
         { name: "Extensión", icon: "extension", route: "/dashboard/admin/extension", visible: true },
+        { name: "Concepto", icon: "receipt", route: "/dashboard/admin/concepto", visible: true },
+        { name: "Prestador", icon: "domain", route: "/dashboard/admin/prestador", visible: true },
         { name: "Clasificación", icon: "class", route: "/dashboard/admin/clasificacion", visible: true },
         { name: "Fase", icon: "schema", route: "/dashboard/admin/fase", visible: true },
         { name: "Proceso", icon: "account_tree", route: "/dashboard/admin/proceso", visible: true },

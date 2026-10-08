@@ -53,6 +53,8 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
   @Input() mostrarDetalle = false;
   @Input() mostrarSeleccion = false;
   @Input() mostrarGestionarFactura = false;
+  @Input() mostrarAsignarConcepto = false;
+  @Input() tooltipAsignarConcepto: string = 'Asignar Concepto';
   @Input() mostrarEditar = true;
   @Input() mostrarEliminar = true;
   @Input() mostrarActivarInactivar: boolean = false;
@@ -71,6 +73,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
   @Output() filtrosChange = new EventEmitter<{ [key: string]: string }>();
   @Output() verHistorial = new EventEmitter<any>();
   @Output() verFichaFactura = new EventEmitter<any>();
+  @Output() asignarConcepto = new EventEmitter<any>();
   @Output() agregar = new EventEmitter<void>();
   @Output() cargueInterno = new EventEmitter<void>();
   @Output() editar = new EventEmitter<any>();
@@ -424,6 +427,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
 
   onVerFichaFactura(row: any): void {
     this.verFichaFactura.emit(row);
+  }
+
+  onAsignarConcepto(row: any): void {
+    this.asignarConcepto.emit(row);
   }
 
   onGestionarFactura(row: any): void {

@@ -15,6 +15,7 @@ import { DataTableComponent } from '../../shared/components/data-table/data-tabl
 import { CommonListarComponent } from '../common-listar.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { FichaFacturaModalComponent } from '../../shared/components/ficha-factura-modal/ficha-factura-modal.component';
+import { AsignarConceptoModalComponent } from '../../shared/components/asignar-concepto-modal/asignar-concepto-modal.component';
 
 import { Factura } from '../../models/factura';
 import { Documento } from '../../models/documento';
@@ -90,6 +91,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     { field: 'nit', header: 'NIT Emisor' },
     { field: 'razonSocialEmisor', header: 'Razón Social' },
     { field: 'numeroFactura', header: 'No. Factura' },
+    { field: 'codigoConcepto', header: 'Concepto' },
     { field: 'valorTotal', header: 'Valor Total' },
     { field: 'fechaEmision', header: 'Fecha Emisión' },
     { field: 'cufe', header: 'CUFE' },
@@ -167,6 +169,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
       nit: filtrosColumnas['nit'] || filtrosColumnas['nitEmisor'] || null,
       numeroFactura: filtrosColumnas['numeroFactura'] || null,
       razonSocialEmisor: filtrosColumnas['razonSocialEmisor'] || null,
+      codigoConcepto: filtrosColumnas['codigoConcepto'] || null,
       cufe: filtrosColumnas['cufe'] || null,
       estado: filtrosColumnas['estado'] || null,
       observacion: filtrosColumnas['observacion'] || null,
@@ -613,6 +616,27 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     this.paginaActual = event.pageIndex;
     this.totalPorPagina = event.pageSize;
     this.cargarDatosPaginados();
+  }
+
+  /**
+   * 🏷️ Abre el modal para asignar o cambiar el concepto a la factura
+   */
+  abrirModalAsignarConcepto(factura: Factura): void {
+    if (!factura) return;
+    const dialogRef = this.dialog.open(AsignarConceptoModalComponent, {
+      width: '850px',
+      maxWidth: '95vw',
+      panelClass: 'custom-asignar-concepto-dialog',
+      data: {
+        factura: { ...factura }
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((resultado) => {
+      if (resultado) {
+        this.cargarDatosPaginados();
+      }
+    });
   }
 
   /**

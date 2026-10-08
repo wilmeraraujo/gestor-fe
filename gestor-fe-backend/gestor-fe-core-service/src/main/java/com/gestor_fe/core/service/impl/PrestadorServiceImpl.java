@@ -6,6 +6,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -24,6 +29,8 @@ import com.gestor_fe.core.entity.Prestador;
 import com.gestor_fe.core.repository.DocumentoRepository;
 import com.gestor_fe.core.repository.PrestadorRepository;
 import com.gestor_fe.core.service.PrestadorService;
+
+import jakarta.persistence.criteria.Predicate;
 
 @Service
 public class PrestadorServiceImpl implements PrestadorService {
@@ -44,13 +51,69 @@ public class PrestadorServiceImpl implements PrestadorService {
     }
 
     // =========================================================================
-    // 👤 MAESTRO PRESTADOR
+    // 👤 MAESTRO PRESTADOR & SUBMÓDULO DE ADMINISTRACIÓN
     // =========================================================================
 
     @Override
     @Transactional
     public Prestador crearOActualizarPrestador(Prestador prestador) {
         return prestadorRepository.save(prestador);
+    }
+
+    @Override
+    @Transactional
+    public Prestador crear(Prestador prestador) {
+        if (prestador.getNit() == null || prestador.getNit().isBlank()) {
+            throw new IllegalArgumentException("El NIT del prestador es obligatorio.");
+        }
+        if (prestador.getRazonSocial() == null || prestador.getRazonSocial().isBlank()) {
+            throw new IllegalArgumentException("La Razón Social del prestador es obligatoria.");
+        }
+
+        prestador.setNit(prestador.getNit().trim());
+        prestador.setRazonSocial(prestador.getRazonSocial().trim());
+        if (prestador.getDireccion() != null) prestador.setDireccion(prestador.getDireccion().trim());
+        if (prestador.getTelefono() != null) prestador.setTelefono(prestador.getTelefono().trim());
+        if (prestador.getEmail() != null) prestador.setEmail(prestador.getEmail().trim());
+
+        if (prestador.getIdentificadorCargue() == null) {
+            prestador.setIdentificadorCargue(0L);
+        }
+
+        prestador.setCreatedAt(LocalDateTime.now());
+        prestador.setDeletedAt(null);
+
+        return prestadorRepository.save(prestador);
+    }
+
+    @Override
+    @Transactional
+    public Prestador editar(Long id, Prestador prestador) {
+        Prestador existente = prestadorRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró el prestador con ID: " + id));
+
+        if (prestador.getNit() != null && !prestador.getNit().isBlank()) {
+            existente.setNit(prestador.getNit().trim());
+        }
+        if (prestador.getRazonSocial() != null && !prestador.getRazonSocial().isBlank()) {
+            existente.setRazonSocial(prestador.getRazonSocial().trim());
+        }
+        if (prestador.getDireccion() != null) {
+            existente.setDireccion(prestador.getDireccion().trim());
+        }
+        if (prestador.getTelefono() != null) {
+            existente.setTelefono(prestador.getTelefono().trim());
+        }
+        if (prestador.getEmail() != null) {
+            existente.setEmail(prestador.getEmail().trim());
+        }
+        if (prestador.getIdentificadorCargue() != null) {
+            existente.setIdentificadorCargue(prestador.getIdentificadorCargue());
+        }
+
+        existente.setUpdatedAt(LocalDateTime.now());
+
+        return prestadorRepository.save(existente);
     }
 
     @Override
@@ -69,6 +132,121 @@ public class PrestadorServiceImpl implements PrestadorService {
     @Transactional(readOnly = true)
     public Page<Prestador> listarPrestadores(Pageable pageable) {
         return prestadorRepository.findAll(pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Prestador> findByDeletedAtIsNull(Pageable pageable) {
+        return prestadorRepository.findByDeletedAtIsNull(pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Prestador> findByDescripcion(String desc) {
+        if (desc == null || desc.isBlank()) {
+            return prestadorRepository.findAll();
+        }
+        return prestadorRepository.buscarPorTexto(desc.trim());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Prestador> buscarPaginado(Map<String, String> filtros, Pageable pageable) {
+        Specification<Prestador> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (filtros != null) {
+                filtros.forEach((key, val) -> {
+                    if (val != null && !val.trim().isEmpty() && !key.equals("page") && !key.equals("size") && !key.equals("sort")) {
+                        String valorLimpio = val.trim().toLowerCase();
+                        switch (key) {
+                            case "id":
+                                try {
+                                    predicates.add(cb.equal(root.get("id"), Long.valueOf(valorLimpio)));
+                                } catch (NumberFormatException ignored) {}
+                                break;
+                            case "nit":
+                                predicates.add(cb.like(cb.lower(root.get("nit")), "%" + valorLimpio + "%"));
+                                break;
+                            case "razonSocial":
+                            case "descripcion":
+                                predicates.add(cb.like(cb.lower(root.get("razonSocial")), "%" + valorLimpio + "%"));
+                                break;
+                            case "direccion":
+                                predicates.add(cb.like(cb.lower(root.get("direccion")), "%" + valorLimpio + "%"));
+                                break;
+                            case "telefono":
+                                predicates.add(cb.like(cb.lower(root.get("telefono")), "%" + valorLimpio + "%"));
+                                break;
+                            case "email":
+                                predicates.add(cb.like(cb.lower(root.get("email")), "%" + valorLimpio + "%"));
+                                break;
+                            case "identificadorCargue":
+                            case "codigo":
+                                try {
+                                    predicates.add(cb.equal(root.get("identificadorCargue"), Long.valueOf(valorLimpio)));
+                                } catch (NumberFormatException ignored) {}
+                                break;
+                            case "estadoActivo":
+                            case "estado":
+                                if (valorLimpio.equalsIgnoreCase("activo") || valorLimpio.equals("true") || valorLimpio.equals("1")) {
+                                    predicates.add(cb.isNull(root.get("deletedAt")));
+                                } else if (valorLimpio.equalsIgnoreCase("inactivo") || valorLimpio.equals("false") || valorLimpio.equals("0")) {
+                                    predicates.add(cb.isNotNull(root.get("deletedAt")));
+                                }
+                                break;
+                            case "global":
+                            case "buscar":
+                                Predicate pNit = cb.like(cb.lower(root.get("nit")), "%" + valorLimpio + "%");
+                                Predicate pRazon = cb.like(cb.lower(root.get("razonSocial")), "%" + valorLimpio + "%");
+                                Predicate pEmail = cb.like(cb.lower(root.get("email")), "%" + valorLimpio + "%");
+                                Predicate pTel = cb.like(cb.lower(root.get("telefono")), "%" + valorLimpio + "%");
+                                Predicate pDir = cb.like(cb.lower(root.get("direccion")), "%" + valorLimpio + "%");
+                                predicates.add(cb.or(pNit, pRazon, pEmail, pTel, pDir));
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                });
+            }
+
+            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return prestadorRepository.findAll(spec, pageable);
+    }
+
+    @Override
+    @Transactional
+    public Prestador toggleEstado(Long id) {
+        Prestador p = prestadorRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró el prestador con ID: " + id));
+
+        if (p.getDeletedAt() == null) {
+            p.setDeletedAt(LocalDateTime.now());
+        } else {
+            p.setDeletedAt(null);
+        }
+        p.setUpdatedAt(LocalDateTime.now());
+        return prestadorRepository.save(p);
+    }
+
+    @Override
+    @Transactional
+    public Prestador softDelete(Long id) {
+        Prestador p = prestadorRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró el prestador con ID: " + id));
+
+        p.setDeletedAt(LocalDateTime.now());
+        p.setUpdatedAt(LocalDateTime.now());
+        return prestadorRepository.save(p);
+    }
+
+    @Override
+    @Transactional
+    public void eliminar(Long id) {
+        softDelete(id);
     }
 
     // =========================================================================
