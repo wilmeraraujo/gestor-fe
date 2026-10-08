@@ -651,6 +651,89 @@ INSERT INTO admin.tipo_operacion (codigo, descripcion) VALUES
 ON CONFLICT DO NOTHING;
 
 -- =========================================================================
+-- SCRIPT DE CREACIÓN Y POBLADO: CONCEPTOS NORMATIVOS DIAN (RES. 000162/2023)
+-- ESQUEMA: admin | TABLA: concepto
+-- =========================================================================
+-- 1. Crear la tabla en caso de que no exista
+CREATE TABLE IF NOT EXISTS admin.concepto (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+-- 2. Inserción de conceptos normativos DIAN (Formato 1001)
+INSERT INTO admin.concepto (codigo, descripcion, created_at) VALUES
+('5001', 'Salarios, prestaciones sociales y demás pagos laborales', CURRENT_TIMESTAMP),
+('5002', 'Honorarios: Valor acumulado pagado o abonado en cuenta', CURRENT_TIMESTAMP),
+('5003', 'Comisiones: Valor acumulado pagado o abonado en cuenta', CURRENT_TIMESTAMP),
+('5004', 'Servicios: Valor acumulado pagado o abonado en cuenta', CURRENT_TIMESTAMP),
+('5005', 'Arrendamientos: Valor acumulado pagado o abonado en cuenta', CURRENT_TIMESTAMP),
+('5006', 'Intereses y rendimientos financieros causados', CURRENT_TIMESTAMP),
+('5007', 'Compra de activos movibles', CURRENT_TIMESTAMP),
+('5008', 'Compra de activos fijos', CURRENT_TIMESTAMP),
+('5010', 'Pagos por regalías y explotación de propiedad industrial', CURRENT_TIMESTAMP),
+('5011', 'Pagos o abonos en cuenta por concepto de primas de cesión', CURRENT_TIMESTAMP),
+('5012', 'Contratos de cuentas en participación', CURRENT_TIMESTAMP),
+('5013', 'Donaciones', CURRENT_TIMESTAMP),
+('5014', 'Pérdidas por siniestros', CURRENT_TIMESTAMP),
+('5015', 'Contribuciones y afiliaciones', CURRENT_TIMESTAMP),
+('5016', 'Impuestos deducibles', CURRENT_TIMESTAMP),
+('5017', 'Pérdidas en enajenación de activos', CURRENT_TIMESTAMP),
+('5018', 'Gastos en el exterior', CURRENT_TIMESTAMP),
+('5019', 'Pagos o abonos en cuenta por fletes, acarreos y transporte', CURRENT_TIMESTAMP),
+('5020', 'Indemnizaciones', CURRENT_TIMESTAMP),
+('5023', 'Pagos no solicitados fiscalmente como costo o deducción', CURRENT_TIMESTAMP),
+('5024', 'Amortizaciones', CURRENT_TIMESTAMP),
+('5025', 'Depreciaciones', CURRENT_TIMESTAMP),
+('5026', 'Costos y deducciones por operaciones de crédito público', CURRENT_TIMESTAMP),
+('5027', 'Devolución de pagos o abonos en cuenta', CURRENT_TIMESTAMP),
+('5028', 'Reembolso de gastos', CURRENT_TIMESTAMP),
+('5029', 'Descuentos comerciales condicionados', CURRENT_TIMESTAMP),
+('5030', 'Otros pagos o abonos en cuenta deducibles', CURRENT_TIMESTAMP),
+('5031', 'Pagos por compensaciones por servicios personales', CURRENT_TIMESTAMP),
+('5034', 'Cuotas de fomento', CURRENT_TIMESTAMP),
+('5035', 'Gastos médicos y de salud', CURRENT_TIMESTAMP),
+('5038', 'Rendimientos financieros de títulos y bonos', CURRENT_TIMESTAMP),
+('5040', 'Fondos de inversión', CURRENT_TIMESTAMP),
+('5041', 'Compra de títulos valores', CURRENT_TIMESTAMP),
+('5042', 'Pagos o abonos en cuenta por servicios de salud y hospitalarios', CURRENT_TIMESTAMP),
+('5043', 'Pagos o abonos en cuenta por compra de medicamentos e insumos médicos', CURRENT_TIMESTAMP),
+('5055', 'Viáticos: Valor que no constituye ingreso para el trabajador', CURRENT_TIMESTAMP),
+('5056', 'Gastos de representación: Valor que no constituye ingreso para el trabajador', CURRENT_TIMESTAMP),
+('5058', 'Aportes a seguridad social (Salud, Pensión, ARL) a cargo del empleador', CURRENT_TIMESTAMP),
+('5059', 'Aportes parafiscales (SENA, ICBF, Cajas de Compensación)', CURRENT_TIMESTAMP),
+('5060', 'Cesantías e intereses sobre cesantías pagadas directamente o al fondo', CURRENT_TIMESTAMP),
+('5061', 'Bonificaciones, horas extras, recargos y comisiones laborales', CURRENT_TIMESTAMP),
+('5062', 'Indemnizaciones de carácter laboral', CURRENT_TIMESTAMP),
+('5063', 'Intereses y rendimientos financieros efectivamente pagados', CURRENT_TIMESTAMP),
+('5064', 'Retiros de fondos de cesantías', CURRENT_TIMESTAMP),
+('5065', 'Apoyos económicos no reembolsables', CURRENT_TIMESTAMP),
+('5066', 'Servicios técnicos', CURRENT_TIMESTAMP),
+('5067', 'Asistencia técnica', CURRENT_TIMESTAMP),
+('5068', 'Consultoría', CURRENT_TIMESTAMP),
+('5070', 'Pagos o abonos en cuenta por convenios de cooperación', CURRENT_TIMESTAMP),
+('5071', 'Pagos o abonos en cuenta por contratos fiduciarios', CURRENT_TIMESTAMP),
+('5072', 'Recompra de activos / Contratos de leasing', CURRENT_TIMESTAMP),
+('5073', 'Subsidios y ayudas gubernamentales o sectoriales', CURRENT_TIMESTAMP),
+('5074', 'Costos y gastos financieros diferentes de intereses', CURRENT_TIMESTAMP),
+('5075', 'Mantenimiento y reparaciones', CURRENT_TIMESTAMP),
+('5076', 'Seguros y reaseguros', CURRENT_TIMESTAMP),
+('5077', 'Publicidad, propaganda y promoción comercial', CURRENT_TIMESTAMP),
+('5078', 'Servicios públicos domiciliarios', CURRENT_TIMESTAMP),
+('5079', 'Adecuación e instalación de oficinas y sedes', CURRENT_TIMESTAMP),
+('5080', 'Gastos de viaje y transporte de personal', CURRENT_TIMESTAMP),
+('5081', 'Elementos de aseo, cafetería y suministros generales', CURRENT_TIMESTAMP),
+('5082', 'Papelería, útiles de escritorio y fotocopias', CURRENT_TIMESTAMP),
+('5083', 'Combustibles, lubricantes y derivados', CURRENT_TIMESTAMP),
+('5084', 'Software, licencias y tecnologías de la información', CURRENT_TIMESTAMP),
+('5085', 'Capacitación, formación y entrenamiento de personal', CURRENT_TIMESTAMP),
+('5086', 'Aportes voluntarios a fondos de pensiones y cuentas AFC', CURRENT_TIMESTAMP),
+('5087', 'Gastos legales, notariales, judiciales y de registro', CURRENT_TIMESTAMP),
+('5088', 'Multas, sanciones, penalidades y litigios', CURRENT_TIMESTAMP);
+
+-- =========================================================================
 -- 🔗 INTEGRIDAD REFERENCIAL Y RELACIONES DEL ESQUEMA GESTOR
 -- =========================================================================
 
