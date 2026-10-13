@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # 1. Netflix Eureka Discovery Server
+  # =========================================================================
+  eureka-server:
+    build:
+      context: ./gestor-fe-eureka-server
+      dockerfile: Dockerfile
+    container_name: gestor-fe-eureka-server
+    restart: always
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_APPLICATION_NAME=gestor-fe-eureka-server
+      - EUREKA_HOSTNAME=eureka-server
+    networks:
+      - gestor-fe-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8761/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # =========================================================================
+  # 2. Spring Cloud Config Server
+  # =========================================================================
+  config-server:
+    build:
+      context: ./gestor-fe-config-server
+      dockerfile: Dockerfile
+    container_name: gestor-fe-config-server
+    restart: always
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_APPLICATION_NAME=gestor-fe-config-server
+      - GIT_URI=${GIT_URI:-https://github.com/wilmeraraujo/gestor-fe.git}
+      - GIT_USERNAME=${GIT_USERNAME:-jeferD}
+      - GIT_PASSWORD=${GIT_PASSWORD}
+      - GIT_LABEL=${GIT_LABEL:-development}
+      - GIT_SEARCH_PATHS=${GIT_SEARCH_PATHS:-config-repo}
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - gestor-fe-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8888/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # =========================================================================
+  # 3. Spring Cloud Gateway
+  # =========================================================================
+  gateway:
+    build:
+      context: ./gestor-fe-gateway
+      dockerfile: Dockerfile
+    container_name: gestor-fe-gateway
+    restart: always
+    ports:
+      - "8090:8090"
+    environment:
+      - PORT=8090
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - gestor-fe-network
+
+  # =========================================================================
+  # 4. Spring Boot Admin Server (Dashboard & Monitoring)
+  # =========================================================================
+  admin-server:
+    build:
+      context: ./gestor-fe-admin-server
+      dockerfile: Dockerfile
+    container_name: gestor-fe-admin-server
+    restart: always
+    ports:
+      - "9000:9000"
+    environment:
+      - PORT=9000
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - gestor-fe-network
+
+  # =========================================================================
+  # 5. Gestor FE Admin Service
+  # =========================================================================
+  admin-service:
+    build:
+      context: ./gestor-fe-admin-service
+      dockerfile: Dockerfile
+    container_name: gestor-fe-admin-service
+    restart: always
+    ports:
+      - "9095:9095"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://10.3.26.2:5432/gestor_fe_core_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=MTL2026*-
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - CONFIG_SERVER_URL=http://config-server:8888/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    networks:
+      - gestor-fe-network
+
+  # =========================================================================
+  # 6. Gestor FE Core Service
+  # =========================================================================
+  core-service:
+    build:
+      context: ./gestor-fe-core-service
+      dockerfile: Dockerfile
+    container_name: gestor-fe-core-service
+    restart: always
+    ports:
+      - "9096:9096"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://10.3.26.2:5432/gestor_fe_core_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=MTL2026*-
+      - ADMIN_SERVICE_URL=http://admin-service:9095
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - CONFIG_SERVER_URL=http://config-server:8888/
+      - RUTA_STORAGE=/opt/storage/gestion-fe/
+      - RUTA_STORAGE_VALIDOS=/opt/storage/gestion-fe-validos/
+    volumes:
+      - /opt/storage/gestion-fe:/opt/storage/gestion-fe
+      - /opt/storage/gestion-fe-validos:/opt/storage/gestion-fe-validos
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      admin-service:
+        condition: service_started
+    networks:
+      - gestor-fe-network
+
+networks:
+  gestor-fe-network:
+    driver: bridge

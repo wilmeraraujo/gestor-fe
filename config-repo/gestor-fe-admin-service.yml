@@ -1,0 +1,27 @@
+server:
+  port: 9095
+
+spring:
+  application:
+    name: gestor-fe-admin-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://10.3.26.2:5432/gestor_fe_core_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:MTL2026*-}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+logging:
+  level:
+    root: INFO
+    com.gf: DEBUG
+    org.hibernate.SQL: debug

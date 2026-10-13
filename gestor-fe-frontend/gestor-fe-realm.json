@@ -113,11 +113,18 @@
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "http://localhost:4200/*"
+        "http://localhost:4200/*",
+        "http://10.3.26.4/*",
+        "http://10.3.26.4:80/*",
+        "http://10.3.26.4:4200/*"
       ],
       "webOrigins": [
         "http://localhost:4200",
-        "+"
+        "http://10.3.26.4",
+        "http://10.3.26.4:80",
+        "http://10.3.26.4:4200",
+        "+",
+        "*"
       ],
       "notBefore": 0,
       "bearerOnly": false,
@@ -130,7 +137,7 @@
       "frontchannelLogout": false,
       "protocol": "openid-connect",
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:4200/*",
+        "post.logout.redirect.uris": "http://localhost:4200/*##http://10.3.26.4/*##http://10.3.26.4:80/*",
         "pkce.code.challenge.method": "S256"
       },
       "authenticationFlowBindingOverrides": {},

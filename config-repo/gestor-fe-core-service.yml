@@ -1,0 +1,53 @@
+server:
+  port: 9096
+
+spring:
+  application:
+    name: gestor-fe-core-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://10.3.26.2:5432/gestor_fe_core_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:MTL2026*-}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: always
+  main:
+    allow-bean-definition-overriding: true
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+  jackson:
+    serialization:
+      FAIL_ON_EMPTY_BEANS: false
+
+setCorePoolSize: 10
+setMaxPoolSize: 20
+ruta:
+  storage: ${RUTA_STORAGE:/opt/storage/gestion-fe/}
+  storage:
+    validos: ${RUTA_STORAGE_VALIDOS:/opt/storage/gestion-fe-validos/}
+
+admin-service:
+  url: ${ADMIN_SERVICE_URL:http://10.3.26.3:9095}
+
+logging:
+  level:
+    root: INFO
+    com.gf: DEBUG
+    org.hibernate.SQL: debug
+    org.springframework.batch.core.step.AbstractStep: OFF
+    org.springframework.batch.core.step.item.FaultTolerantChunkProcessor: OFF

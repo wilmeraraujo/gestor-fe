@@ -1,8 +1,7 @@
 export const environment = {
-  production: false,
+  production: true,
   keycloak: {
-    url: 'http://localhost:8082',
-    //realm: 'gestor-fe-realm',
+    url: 'http://10.3.26.4:8080',
     realm: 'gestor-fe',
     clientId: 'gestor-fe-frontend'
   }

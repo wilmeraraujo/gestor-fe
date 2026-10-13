@@ -1,0 +1,68 @@
+server:
+  port: ${PORT:8090}
+
+spring:
+  application:
+    name: gestor-fe-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:4200"
+              - "http://10.3.26.4:4200"
+              - "http://10.3.26.4"
+              - "http://10.3.26.4:80"
+              - "http://127.0.0.1:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+      routes:
+        # Rutas específicas para Admin Service
+        - id: gestor-fe-admin-service-route
+          uri: lb://gestor-fe-admin-service
+          predicates:
+            - Path=/api/admin/**, /gestor-fe-admin-service/**
+          filters:
+            - StripPrefix=1
+
+        # Rutas específicas para Core Service
+        - id: gestor-fe-core-service-route
+          uri: lb://gestor-fe-core-service
+          predicates:
+            - Path=/api/core/**, /gestor-fe-core-service/**
+          filters:
+            - StripPrefix=1
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://10.3.26.3:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true

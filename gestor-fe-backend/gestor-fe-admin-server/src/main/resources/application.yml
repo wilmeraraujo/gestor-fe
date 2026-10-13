@@ -1,0 +1,25 @@
+server:
+  port: ${PORT:9000}
+
+spring:
+  application:
+    name: gestor-fe-admin-server
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://10.3.26.3:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
