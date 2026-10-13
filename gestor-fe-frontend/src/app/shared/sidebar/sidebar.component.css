@@ -219,3 +219,25 @@
   white-space: nowrap;
 }
 
+/* 📱 RESPONSIVIDAD SIDEBAR (OFFCANVAS EN MÓVIL Y TABLET) */
+@media (max-width: 992px) {
+  .sidebar {
+    width: 270px;
+    max-width: 82vw;
+    z-index: 1050;
+    transform: translateX(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    box-shadow: 6px 0 25px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar.sidebar-collapsed {
+    transform: translateX(-100%);
+    width: 270px;
+  }
+
+  .sidebar.sidebar-hovered {
+    transform: translateX(0);
+  }
+}
+
+

@@ -2,6 +2,25 @@
   display: flex;
   min-height: 100vh;
   background: #f3f4f6;
+  position: relative;
+}
+
+/* 📱 BACKDROP OVERLAY (MOBILE) */
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
+  z-index: 1040;
+  animation: fadeInBackdrop 0.2s ease-out;
+}
+
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* MAIN */
@@ -22,5 +41,21 @@
 /* CONTENT */
 .dashboard-content {
   flex: 1;
-  padding: 5px;
+  padding: 8px 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
+
+/* 📱 RESPONSIVIDAD DASHBOARD */
+@media (max-width: 992px) {
+  .dashboard-main,
+  .dashboard-main-collapsed {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .dashboard-content {
+    padding: 6px 4px;
+  }
+}
+
