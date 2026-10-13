@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, NavigationEnd, RouterModule } from '@angular/router';
+import { filter } from 'rxjs';
 import { LoginService } from '../../services/login.service';
 
 interface MenuItem {
@@ -25,6 +26,7 @@ export class SidebarComponent implements OnInit {
   @Output() hoverChange = new EventEmitter<boolean>();
 
   private loginService = inject(LoginService);
+  private router = inject(Router);
 
   isHovered: boolean = false;
   username: string = '';
@@ -33,6 +35,37 @@ export class SidebarComponent implements OnInit {
   ngOnInit(): void {
     this.username = this.loginService.getUserName();
     this.construirMenuSegunRoles();
+    this.expandirMenuActivo();
+
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.expandirMenuActivo();
+      });
+  }
+
+  private expandirMenuActivo(): void {
+    const currentUrl = this.router.url;
+    this.menuNav.forEach(item => {
+      if (item.children) {
+        const hasActiveChild = item.children.some(child => {
+          if (child.route && currentUrl.includes(child.route)) {
+            return true;
+          }
+          if (child.children) {
+            const hasActiveSub = child.children.some(sub => sub.route && currentUrl.includes(sub.route));
+            if (hasActiveSub) {
+              child.expanded = true;
+              return true;
+            }
+          }
+          return false;
+        });
+        if (hasActiveChild) {
+          item.expanded = true;
+        }
+      }
+    });
   }
 
   private construirMenuSegunRoles(): void {
@@ -160,7 +193,17 @@ export class SidebarComponent implements OnInit {
           icon: "alt_route",
           route: "/dashboard/seguimiento-factura",
           visible: true
-        },
+        }
+      ]
+    };
+
+    // 5. REPORTES Y ESTADÍSTICAS
+    const itemReportesEstadisticas: MenuItem = {
+      name: "Reportes y Estadísticas",
+      icon: "bar_chart",
+      expanded: false,
+      visible: true,
+      children: [
         {
           name: "Reportes",
           icon: "analytics",
@@ -176,7 +219,7 @@ export class SidebarComponent implements OnInit {
       ]
     };
 
-    this.menuNav = [itemHome, itemAdmin, itemCargue, itemGestion]
+    this.menuNav = [itemHome, itemAdmin, itemCargue, itemGestion, itemReportesEstadisticas]
       .filter(item => item.visible)
       .map(item => {
         if (item.children) {
