@@ -2,6 +2,7 @@ package com.gestor_fe.core.service.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,6 +23,9 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -646,6 +650,15 @@ public class FacturaServiceImpl implements FacturaService {
         return repository.findExistingNitFacturas(nitFacturas);
     }
 
+    private static final Map<Long, String> NOMBRES_FASES_MAP = Map.of(
+            1L, "Radicación",
+            2L, "Reconocimiento Contable",
+            3L, "Impuestos",
+            4L, "Pendiente de Pago",
+            5L, "Seguimiento",
+            6L, "Finalizadas"
+    );
+
     @Override
     @Transactional(readOnly = true)
     public byte[] exportarFacturasExcel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro) {
@@ -675,15 +688,16 @@ public class FacturaServiceImpl implements FacturaService {
         List<Factura> facturas = entityManager.createQuery(query).getResultList();
 
         try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
-            Sheet sheet = workbook.createSheet("Facturas");
+            Sheet sheet = workbook.createSheet("Trazabilidad Facturas");
 
-            // Estilo para encabezados
-            CellStyle headerStyle = workbook.createCellStyle();
+            // Estilo para encabezados (Azul corporativo #1F4E78)
+            XSSFCellStyle headerStyle = (XSSFCellStyle) workbook.createCellStyle();
             Font headerFont = workbook.createFont();
             headerFont.setBold(true);
             headerFont.setColor(IndexedColors.WHITE.getIndex());
             headerStyle.setFont(headerFont);
-            headerStyle.setFillForegroundColor(IndexedColors.TEAL.getIndex());
+            byte[] blueRgb = new byte[]{(byte) 31, (byte) 78, (byte) 120};
+            headerStyle.setFillForegroundColor(new XSSFColor(blueRgb, new DefaultIndexedColorMap()));
             headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             headerStyle.setAlignment(HorizontalAlignment.CENTER);
 
@@ -693,10 +707,21 @@ public class FacturaServiceImpl implements FacturaService {
             currencyStyle.setDataFormat(format.getFormat("#,##0.00"));
 
             String[] encabezados = {
-                "ID", "No. Factura", "Fecha Emisión", "NIT", "DV", 
-                "Primer Apellido", "Segundo Apellido", "Primer Nombre", "Segundo Nombre",
-                "Razón Social", "Dirección", "Código Departamento", "Código Municipio", 
-                "Código País", "Valor Subtotal", "Valor IVA", "Valor Factura", "Estado", "CUFE"
+                "ID",
+                "ESTADO",
+                "ETAPA / FASE ACTUAL",
+                "NIT EMISOR",
+                "RAZÓN SOCIAL",
+                "NO. FACTURA",
+                "CUFE",
+                "TIPO REGISTRO",
+                "NO. CAUSACIÓN",
+                "VALOR SUBTOTAL",
+                "VALOR IVA",
+                "VALOR TOTAL",
+                "FECHA EMISIÓN",
+                "OBSERVACIONES / CAUSAL",
+                "FECHA RADICACIÓN"
             };
 
             Row headerRow = sheet.createRow(0);
@@ -710,47 +735,62 @@ public class FacturaServiceImpl implements FacturaService {
             for (Factura f : facturas) {
                 Row row = sheet.createRow(rowIdx++);
 
+                // ID
                 row.createCell(0).setCellValue(f.getId() != null ? f.getId() : 0);
-                row.createCell(1).setCellValue(f.getNumeroFactura() != null ? f.getNumeroFactura() : "");
-                row.createCell(2).setCellValue(f.getFechaEmision() != null ? f.getFechaEmision().toString() : "");
+
+                // ESTADO
+                row.createCell(1).setCellValue(f.getEstado() != null ? f.getEstado() : "");
+
+                // ETAPA / FASE ACTUAL
+                String nombreFase = f.getFaseId() != null 
+                        ? NOMBRES_FASES_MAP.getOrDefault(f.getFaseId(), "Fase " + f.getFaseId()) 
+                        : "Sin Fase";
+                row.createCell(2).setCellValue(nombreFase);
+
+                // NIT EMISOR
                 row.createCell(3).setCellValue(f.getNit() != null ? f.getNit() : "");
-                row.createCell(4).setCellValue(f.getDv() != null ? f.getDv() : "");
-                row.createCell(5).setCellValue(f.getPrimerApellido() != null ? f.getPrimerApellido() : "");
-                row.createCell(6).setCellValue(f.getSegundoApellido() != null ? f.getSegundoApellido() : "");
-                row.createCell(7).setCellValue(f.getPrimerNombre() != null ? f.getPrimerNombre() : "");
-                row.createCell(8).setCellValue(f.getSegundoNombre() != null ? f.getSegundoNombre() : "");
-                row.createCell(9).setCellValue(f.getRazonSocialEmisor() != null ? f.getRazonSocialEmisor() : "");
-                row.createCell(10).setCellValue(f.getDireccion() != null ? f.getDireccion() : "");
-                row.createCell(11).setCellValue(f.getCodigoDepartamento() != null ? f.getCodigoDepartamento() : "");
-                row.createCell(12).setCellValue(f.getCodigoMunicipio() != null ? f.getCodigoMunicipio() : "");
-                row.createCell(13).setCellValue(f.getCodigoPais() != null ? f.getCodigoPais() : "");
 
-                Cell subtotalCell = row.createCell(14);
-                if (f.getValorSubtotal() != null) {
-                    subtotalCell.setCellValue(f.getValorSubtotal().doubleValue());
-                } else {
-                    subtotalCell.setCellValue(0.00);
-                }
-                subtotalCell.setCellStyle(currencyStyle);
+                // RAZÓN SOCIAL
+                row.createCell(4).setCellValue(f.getRazonSocialEmisor() != null ? f.getRazonSocialEmisor() : "");
 
-                Cell ivaCell = row.createCell(15);
-                if (f.getValorIva() != null) {
-                    ivaCell.setCellValue(f.getValorIva().doubleValue());
-                } else {
-                    ivaCell.setCellValue(0.00);
-                }
-                ivaCell.setCellStyle(currencyStyle);
+                // NO. FACTURA
+                row.createCell(5).setCellValue(f.getNumeroFactura() != null ? f.getNumeroFactura() : "");
 
-                Cell totalCell = row.createCell(16);
-                if (f.getValorTotal() != null) {
-                    totalCell.setCellValue(f.getValorTotal().doubleValue());
-                } else {
-                    totalCell.setCellValue(0.00);
-                }
-                totalCell.setCellStyle(currencyStyle);
+                // CUFE
+                row.createCell(6).setCellValue(f.getCufe() != null ? f.getCufe() : "");
 
-                row.createCell(17).setCellValue(f.getEstado() != null ? f.getEstado() : "");
-                row.createCell(18).setCellValue(f.getCufe() != null ? f.getCufe() : "");
+                // TIPO REGISTRO
+                row.createCell(7).setCellValue(f.getCodigoTipoRegistroContable() != null ? f.getCodigoTipoRegistroContable() : "");
+
+                // NO. CAUSACIÓN
+                row.createCell(8).setCellValue(f.getNumeroCausacion() != null ? f.getNumeroCausacion() : "");
+
+                // VALOR SUBTOTAL
+                Cell celdaSubtotal = row.createCell(9);
+                BigDecimal subtotal = f.getValorSubtotal() != null ? f.getValorSubtotal() : BigDecimal.ZERO;
+                celdaSubtotal.setCellValue(subtotal.doubleValue());
+                celdaSubtotal.setCellStyle(currencyStyle);
+
+                // VALOR IVA
+                Cell celdaIva = row.createCell(10);
+                BigDecimal iva = f.getValorIva() != null ? f.getValorIva() : BigDecimal.ZERO;
+                celdaIva.setCellValue(iva.doubleValue());
+                celdaIva.setCellStyle(currencyStyle);
+
+                // VALOR TOTAL
+                Cell celdaTotal = row.createCell(11);
+                BigDecimal total = f.getValorTotal() != null ? f.getValorTotal() : BigDecimal.ZERO;
+                celdaTotal.setCellValue(total.doubleValue());
+                celdaTotal.setCellStyle(currencyStyle);
+
+                // FECHA EMISIÓN
+                row.createCell(12).setCellValue(f.getFechaEmision() != null ? f.getFechaEmision().toString() : "");
+
+                // OBSERVACIONES / CAUSAL
+                row.createCell(13).setCellValue(f.getObservacion() != null ? f.getObservacion() : "");
+
+                // FECHA RADICACIÓN
+                row.createCell(14).setCellValue(f.getCreatedAt() != null ? f.getCreatedAt().toString() : "");
             }
 
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -759,8 +799,192 @@ public class FacturaServiceImpl implements FacturaService {
                 return baos.toByteArray();
             }
         } catch (IOException e) {
-            LOGGER.error("❌ Error generando archivo Excel de facturas", e);
-            throw new RuntimeException("Error generando archivo Excel de facturas", e);
+            LOGGER.error("❌ Error generando archivo Excel de trazabilidad", e);
+            throw new RuntimeException("Error generando archivo Excel de trazabilidad", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportarFormato1001Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro) {
+        if (filtro == null) {
+            filtro = new FacturaFilterDto();
+        }
+
+        boolean esAdminOGestor = rolesUsuario != null && rolesUsuario.stream().anyMatch(rol ->
+            rol.equalsIgnoreCase("admin") ||
+            rol.equalsIgnoreCase("gestor-fe-admin") ||
+            rol.equalsIgnoreCase("gestor-fe-f5-sf") ||
+            rol.equalsIgnoreCase("default-roles-fe")
+        );
+
+        if (!esAdminOGestor && nitPrestador != null && !nitPrestador.isBlank()) {
+            filtro.setNit(nitPrestador);
+        }
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Factura> query = cb.createQuery(Factura.class);
+        Root<Factura> root = query.from(Factura.class);
+
+        List<Predicate> predicates = construirPredicados(cb, root, filtro);
+        query.where(cb.and(predicates.toArray(new Predicate[0])));
+        query.orderBy(cb.desc(root.get("id")));
+
+        List<Factura> facturas = entityManager.createQuery(query).getResultList();
+
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+            Sheet sheet = workbook.createSheet("Formato 1001 DIAN");
+
+            // Estilo para encabezados (Azul corporativo #1F4E78 como en la imagen)
+            XSSFCellStyle headerStyle = (XSSFCellStyle) workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+            headerStyle.setFont(headerFont);
+            byte[] blueRgb = new byte[]{(byte) 31, (byte) 78, (byte) 120};
+            headerStyle.setFillForegroundColor(new XSSFColor(blueRgb, new DefaultIndexedColorMap()));
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+
+            // Estilos para datos numéricos y de moneda
+            CellStyle currencyStyle = workbook.createCellStyle();
+            DataFormat format = workbook.createDataFormat();
+            currencyStyle.setDataFormat(format.getFormat("#,##0.00"));
+
+            String[] encabezados = {
+                "concepto",
+                "tipo_docto",
+                "numero_identificacion",
+                "primer_Apellido",
+                "segundo_apellido",
+                "primer_nombre",
+                "segundo_nombre",
+                "razon_social",
+                "direccion",
+                "codigo_departamento",
+                "codigo_municipio",
+                "codigo_pais",
+                "pago_abono_en_cuenta_gto deducible",
+                "apgo_abono_en_cuenta_no_deducible",
+                "iva_mayor_vr_gasto",
+                "iva_mayor_vr_del_cosot_gasto_no_deducible",
+                "retencion_en_la_fuente",
+                "fte_asumida",
+                "retfte_iva",
+                "fte_iva_no_residentes"
+            };
+
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < encabezados.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(encabezados[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIdx = 1;
+            for (Factura f : facturas) {
+                Row row = sheet.createRow(rowIdx++);
+
+                // 1. concepto
+                row.createCell(0).setCellValue(f.getCodigoConcepto() != null ? f.getCodigoConcepto() : "");
+
+                // 2. tipo_docto
+                String tipoDocId = f.getCodigoTipoIdentificacionEmisor();
+                if ((tipoDocId == null || tipoDocId.isBlank()) && f.getNit() != null && !f.getNit().isBlank()) {
+                    tipoDocId = "31";
+                }
+                row.createCell(1).setCellValue(tipoDocId != null ? tipoDocId : "");
+
+                // 3. numero_identificacion
+                row.createCell(2).setCellValue(f.getNit() != null ? f.getNit() : "");
+
+                // 4. primer_Apellido
+                row.createCell(3).setCellValue(f.getPrimerApellido() != null ? f.getPrimerApellido() : "");
+
+                // 5. segundo_apellido
+                row.createCell(4).setCellValue(f.getSegundoApellido() != null ? f.getSegundoApellido() : "");
+
+                // 6. primer_nombre
+                row.createCell(5).setCellValue(f.getPrimerNombre() != null ? f.getPrimerNombre() : "");
+
+                // 7. segundo_nombre
+                row.createCell(6).setCellValue(f.getSegundoNombre() != null ? f.getSegundoNombre() : "");
+
+                // 8. razon_social
+                row.createCell(7).setCellValue(f.getRazonSocialEmisor() != null ? f.getRazonSocialEmisor() : "");
+
+                // 9. direccion
+                row.createCell(8).setCellValue(f.getDireccion() != null ? f.getDireccion() : "");
+
+                // 10. codigo_departamento
+                row.createCell(9).setCellValue(f.getCodigoDepartamento() != null ? f.getCodigoDepartamento() : "");
+
+                // 11. codigo_municipio
+                String codMpio = f.getCodigoMunicipio();
+                if (codMpio != null && codMpio.length() > 3) {
+                    codMpio = codMpio.substring(codMpio.length() - 3);
+                }
+                row.createCell(10).setCellValue(codMpio != null ? codMpio : "");
+
+                // 12. codigo_pais
+                String codPais = f.getCodigoPais();
+                if (codPais == null || codPais.isBlank() || "CO".equalsIgnoreCase(codPais) || "COL".equalsIgnoreCase(codPais)) {
+                    codPais = "169";
+                }
+                row.createCell(11).setCellValue(codPais);
+
+                // 13. pago_abono_en_cuenta_gto deducible
+                Cell celdaGtoDeducible = row.createCell(12);
+                BigDecimal gastoDeducible = f.getValorSubtotal() != null ? f.getValorSubtotal() : (f.getValorTotal() != null ? f.getValorTotal() : BigDecimal.ZERO);
+                celdaGtoDeducible.setCellValue(gastoDeducible.doubleValue());
+                celdaGtoDeducible.setCellStyle(currencyStyle);
+
+                // 14. apgo_abono_en_cuenta_no_deducible
+                Cell celdaGtoNoDeducible = row.createCell(13);
+                celdaGtoNoDeducible.setCellValue(0.00);
+                celdaGtoNoDeducible.setCellStyle(currencyStyle);
+
+                // 15. iva_mayor_vr_gasto
+                Cell celdaIvaGasto = row.createCell(14);
+                BigDecimal iva = f.getValorIva() != null ? f.getValorIva() : BigDecimal.ZERO;
+                celdaIvaGasto.setCellValue(iva.doubleValue());
+                celdaIvaGasto.setCellStyle(currencyStyle);
+
+                // 16. iva_mayor_vr_del_cosot_gasto_no_deducible
+                Cell celdaIvaNoDeducible = row.createCell(15);
+                celdaIvaNoDeducible.setCellValue(0.00);
+                celdaIvaNoDeducible.setCellStyle(currencyStyle);
+
+                // 17. retencion_en_la_fuente (se deja vacío según solicitud)
+                Cell celdaReteFuente = row.createCell(16);
+                celdaReteFuente.setCellValue("");
+
+                // 18. fte_asumida
+                Cell celdaFteAsumida = row.createCell(17);
+                celdaFteAsumida.setCellValue("");
+
+                // 19. retfte_iva
+                Cell celdaRetfteIva = row.createCell(18);
+                if (f.getValorReteiva() != null) {
+                    celdaRetfteIva.setCellValue(f.getValorReteiva().doubleValue());
+                    celdaRetfteIva.setCellStyle(currencyStyle);
+                } else {
+                    celdaRetfteIva.setCellValue("");
+                }
+
+                // 20. fte_iva_no_residentes
+                Cell celdaFteIvaNoRes = row.createCell(19);
+                celdaFteIvaNoRes.setCellValue("");
+            }
+
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                workbook.write(baos);
+                workbook.dispose();
+                return baos.toByteArray();
+            }
+        } catch (IOException e) {
+            LOGGER.error("❌ Error generando archivo Excel de Formato 1001 DIAN", e);
+            throw new RuntimeException("Error generando archivo Excel de Formato 1001 DIAN", e);
         }
     }
 

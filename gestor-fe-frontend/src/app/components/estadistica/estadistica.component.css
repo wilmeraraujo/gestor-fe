@@ -789,6 +789,167 @@
   }
 }
 
+/* =========================================================================
+   🏛️ 7. SECCIÓN EXÓGENA FORMATO 1001 DIAN
+   ========================================================================= */
+.card-reporte-exogena {
+  border-left: 4px solid #059669 !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%) !important;
+  border-radius: 16px !important;
+}
+
+.icon-dian-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(5, 150, 105, 0.12);
+  color: #059669;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-dian-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(5, 150, 105, 0.1);
+  border: 1px solid rgba(5, 150, 105, 0.3);
+  color: #047857;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-dian-status mat-icon {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.exogena-filtros-panel {
+  background: #ffffff;
+  border: 1px solid #d1fae5;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.05);
+}
+
+.btn-descargar-exogena {
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(5, 150, 105, 0.35);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-descargar-exogena mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.btn-descargar-exogena:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  box-shadow: 0 5px 14px rgba(5, 150, 105, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-descargar-exogena:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.exogena-filtros-panel .filtro-botones-box {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn-exogena-limpiar {
+  height: 42px !important;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  border: 1.5px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+}
+
+.btn-exogena-limpiar:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+  transform: translateY(-1px) !important;
+}
+
+.spinner-rotar {
+  animation: girar 1s linear infinite;
+}
+
+@keyframes girar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.exogena-columnas-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.banner-info-icon {
+  color: #059669 !important;
+  font-size: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.banner-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.banner-info-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.banner-info-chips {
+  font-size: 11.5px;
+  color: #475569;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
 @media (max-width: 480px) {
   .kpis-grid {
     grid-template-columns: 1fr;

@@ -101,7 +101,33 @@ public class FacturaController {
         byte[] excelBytes = service.exportarFacturasExcel(nitPrestador, roles, filtro);
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=facturas_seguimiento.xlsx")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=trazabilidad_facturas.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelBytes);
+    }
+
+    @PostMapping("/reportes/formato-1001-excel")
+    public ResponseEntity<byte[]> exportarFormato1001Excel(
+            @RequestParam(value = "nitPrestador", required = false) String nitPrestador,
+            @RequestParam(value = "roles", required = false) List<String> roles,
+            @RequestParam(value = "anioGravable", required = false) Integer anioGravable,
+            @RequestBody(required = false) FacturaFilterDto filtro) {
+
+        if (filtro == null) {
+            filtro = new FacturaFilterDto();
+        }
+
+        if (anioGravable != null && filtro.getFechaEmisionDesde() == null && filtro.getFechaEmisionHasta() == null) {
+            filtro.setFechaEmisionDesde(java.time.LocalDate.of(anioGravable, 1, 1));
+            filtro.setFechaEmisionHasta(java.time.LocalDate.of(anioGravable, 12, 31));
+        }
+
+        byte[] excelBytes = service.exportarFormato1001Excel(nitPrestador, roles, filtro);
+
+        String filename = "formato_1001_dian_" + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelBytes);
     }
