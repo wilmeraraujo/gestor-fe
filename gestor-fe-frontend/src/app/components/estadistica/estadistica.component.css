@@ -677,3 +677,125 @@
 .mb-3 {
   margin-bottom: 16px;
 }
+
+/* =========================================================================
+   📱 RESPONSIVIDAD ESTADÍSTICAS
+   ========================================================================= */
+@media (max-width: 1024px) {
+  .secciones-doble-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .fases-pipeline-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .modulo-estadisticas {
+    padding: 6px 8px 20px 8px;
+    gap: 12px;
+  }
+
+  .card-filtro-header,
+  .card-seccion {
+    padding: 14px 14px !important;
+    border-radius: 12px !important;
+  }
+
+  .header-titulo-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .titulo-modulo {
+    font-size: 1.1rem;
+  }
+
+  .subtitulo-modulo {
+    font-size: 0.78rem;
+  }
+
+  .badge-rol-actual {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .filtros-wrapper {
+    padding: 12px 10px;
+    gap: 12px;
+  }
+
+  .quick-presets-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .presets-buttons {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+  }
+
+  .btn-preset {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .filtros-inputs-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .filtro-campo-box {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  .filtro-botones-box {
+    width: 100%;
+  }
+
+  .btn-filtro-consultar,
+  .btn-filtro-limpiar {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .kpis-grid {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+  }
+
+  .kpi-card {
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  .kpi-value {
+    font-size: 1.3rem;
+  }
+
+  .fases-pipeline-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-wrapper-main {
+    height: 240px;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpis-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .titulo-seccion {
+    font-size: 0.98rem;
+  }
+}
+

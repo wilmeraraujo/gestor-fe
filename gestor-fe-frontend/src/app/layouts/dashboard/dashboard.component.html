@@ -1,4 +1,11 @@
 <div class="dashboard">
+ 
+  <!-- BACKDROP OVERLAY ON MOBILE -->
+  <div
+    class="sidebar-backdrop"
+    *ngIf="isMobile && !sidebarCollapsed"
+    (click)="closeSidebarMobile()">
+  </div>
 
   <!-- SIDEBAR -->
   <app-sidebar

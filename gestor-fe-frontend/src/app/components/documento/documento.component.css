@@ -237,3 +237,43 @@ iframe {
   height: 100%;
   border-radius: 0 0 16px 16px !important; 
 }
+
+/* 📱 RESPONSIVIDAD DOCUMENTOS */
+@media (max-width: 768px) {
+  .modulo-documentos {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+
+  .panel-botones-accion {
+    justify-content: stretch !important;
+    width: 100%;
+  }
+
+  .panel-botones-accion button {
+    flex: 1;
+    min-width: 90px;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+  }
+
+  .visor-card mat-card-content {
+    height: 420px;
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-filtro-busqueda {
+    padding: 10px 10px !important;
+  }
+
+  .panel-botones-accion {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .panel-botones-accion button {
+    width: 100%;
+  }
+}

@@ -143,3 +143,63 @@
 
   font-weight: 600;
 }
+
+/* 📱 RESPONSIVIDAD HEADER */
+@media (max-width: 768px) {
+  .header {
+    height: 60px;
+    padding: 0 12px;
+  }
+
+  .header-left {
+    gap: 10px;
+  }
+
+  .header-toggle {
+    width: 36px;
+    height: 36px;
+  }
+
+  .header-toggle-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .header-logo {
+    max-height: 28px;
+  }
+
+  .breadcrumb-item,
+  .breadcrumb-separator {
+    display: none;
+  }
+
+  .header-search {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .header-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-breadcrumb {
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  .header-logo {
+    max-height: 24px;
+  }
+
+  .breadcrumb-item-active {
+    font-size: 12px;
+  }
+}
+

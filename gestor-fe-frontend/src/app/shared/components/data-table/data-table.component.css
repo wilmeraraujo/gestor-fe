@@ -895,4 +895,104 @@
 
 .tabla-fila.fila-seleccionada .cell-sticky-acciones {
   background-color: #e0f2fe !important;
-}
+}
+
+/* =====================================
+   📱 RESPONSIVIDAD DATA-TABLE
+   ===================================== */
+@media (max-width: 768px) {
+  .card {
+    padding: 14px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .card-titulo-header {
+    padding: 10px 12px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .card-tabla-main {
+    padding: 12px 10px !important;
+  }
+
+  .titulo-tabla {
+    font-size: 1.1rem;
+  }
+
+  .header-content-stacked {
+    gap: 10px;
+  }
+
+  .acciones-header-left {
+    gap: 8px;
+    width: 100%;
+  }
+
+  .botones-container {
+    gap: 8px;
+    width: 100%;
+  }
+
+  .btn-icon-theme {
+    height: 34px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+  }
+
+  .btn-refresh-table {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+  }
+
+  .mat-mdc-header-cell {
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+  }
+
+  .mat-mdc-cell {
+    padding: 8px 10px !important;
+    font-size: 12.5px !important;
+  }
+
+  ::ng-deep .mat-mdc-paginator-container {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    padding: 8px !important;
+    gap: 6px !important;
+  }
+
+  ::ng-deep .mat-mdc-paginator-range-actions {
+    margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 10px 8px !important;
+  }
+
+  .titulo-container {
+    padding-left: 8px;
+    border-left-width: 3px;
+  }
+
+  .titulo-tabla {
+    font-size: 1rem;
+  }
+
+  .botones-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-icon-theme {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .btn-refresh-table {
+    align-self: center;
+  }
+}
+
