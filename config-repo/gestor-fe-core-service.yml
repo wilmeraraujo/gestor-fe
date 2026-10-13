@@ -36,10 +36,8 @@ spring:
 
 setCorePoolSize: 10
 setMaxPoolSize: 20
-ruta:
-  storage: ${RUTA_STORAGE:/opt/storage/gestion-fe/}
-  storage:
-    validos: ${RUTA_STORAGE_VALIDOS:/opt/storage/gestion-fe-validos/}
+"ruta.storage": ${RUTA_STORAGE:/opt/storage/gestion-fe/}
+"ruta.storage.validos": ${RUTA_STORAGE_VALIDOS:/opt/storage/gestion-fe-validos/}
 
 admin-service:
   url: ${ADMIN_SERVICE_URL:http://10.3.26.3:9095}

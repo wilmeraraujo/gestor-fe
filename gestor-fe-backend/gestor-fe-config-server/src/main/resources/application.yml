@@ -4,9 +4,13 @@ server:
 spring:
   application:
     name: gestor-fe-config-server
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:native}
   cloud:
     config:
       server:
+        native:
+          search-locations: ${CONFIG_SEARCH_LOCATIONS:file:/config-repo}
         git:
           uri: ${GIT_URI:https://github.com/wilmeraraujo/gestor-fe.git}
           username: ${GIT_USERNAME:jeferD}
