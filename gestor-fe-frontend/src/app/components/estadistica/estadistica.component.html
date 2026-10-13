@@ -188,6 +188,124 @@
   </div>
 
   <!-- ========================================================
+       🏛️ SECCIÓN: REPORTES FISCALES Y DIAN (INFORMACIÓN EXÓGENA)
+       ======================================================== -->
+  <mat-card class="card-seccion card-reporte-exogena mb-3" *ngIf="esAdminOGestor">
+    <div class="seccion-header">
+      <div class="seccion-header-title">
+        <div class="icon-dian-box">
+          <mat-icon>account_balance</mat-icon>
+        </div>
+        <div>
+          <h2 class="titulo-seccion">Reporte de Información Exógena - Formato 1001 DIAN</h2>
+          <p class="subtitulo-seccion">
+            Pagos o abonos en cuenta y retenciones en la fuente practicadas / asumidas según especificación técnica DIAN
+          </p>
+        </div>
+      </div>
+
+      <div class="badge-dian-status">
+        <mat-icon>verified</mat-icon>
+        <span>Exógena DIAN Formato 1001</span>
+      </div>
+    </div>
+
+    <div class="exogena-filtros-panel">
+      <div class="row g-3 align-items-end">
+
+        <!-- Campo 1: Selector Año Gravable -->
+        <div class="col-xl-3 col-lg-3 col-md-4 col-12">
+          <label class="campo-label">
+            <mat-icon>calendar_today</mat-icon>
+            <span>Año Gravable</span>
+          </label>
+          <div class="campo-control-wrap">
+            <select class="campo-input" [(ngModel)]="anioGravableExogena">
+              <option [ngValue]="null">Seleccione</option>
+              <option *ngFor="let anio of aniosDisponibles" [ngValue]="anio">Año Gravable {{ anio }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Campo 2: Fecha Desde (Opcional) -->
+        <div class="col-xl-2 col-lg-2 col-md-4 col-12">
+          <label class="campo-label">
+            <mat-icon>event</mat-icon>
+            <span>Fecha Desde (Opcional)</span>
+          </label>
+          <div class="campo-control-wrap">
+            <input type="date" class="campo-input input-fecha" [(ngModel)]="fechaExogenaDesde">
+            <button
+              *ngIf="fechaExogenaDesde"
+              type="button"
+              class="btn-clear-inline"
+              (click)="fechaExogenaDesde = ''"
+              matTooltip="Borrar fecha">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Campo 3: Fecha Hasta (Opcional) -->
+        <div class="col-xl-2 col-lg-2 col-md-4 col-12">
+          <label class="campo-label">
+            <mat-icon>event_available</mat-icon>
+            <span>Fecha Hasta (Opcional)</span>
+          </label>
+          <div class="campo-control-wrap">
+            <input type="date" class="campo-input input-fecha" [(ngModel)]="fechaExogenaHasta">
+            <button
+              *ngIf="fechaExogenaHasta"
+              type="button"
+              class="btn-clear-inline"
+              (click)="fechaExogenaHasta = ''"
+              matTooltip="Borrar fecha">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Campo 4: Botón Descargar Excel y Limpiar -->
+        <div class="col-xl-5 col-lg-5 col-md-12 col-12">
+          <div class="filtro-botones-box">
+            <button
+              type="button"
+              class="btn-descargar-exogena flex-grow-1"
+              [disabled]="descargandoExogena"
+              (click)="descargarFormato1001()"
+              matTooltip="Exportar las 20 columnas del Formato 1001 a archivo Excel">
+              <mat-icon *ngIf="!descargandoExogena">file_download</mat-icon>
+              <mat-icon *ngIf="descargandoExogena" class="spinner-rotar">sync</mat-icon>
+              <span>{{ descargandoExogena ? 'Generando...' : 'Descargar Formato 1001' }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn-filtro-limpiar btn-exogena-limpiar"
+              (click)="limpiarFiltrosExogena()"
+              matTooltip="Restablecer filtros del Formato 1001">
+              <mat-icon>refresh</mat-icon>
+              <span>Limpiar</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Fila informativa de columnas técnicas -->
+      <div class="exogena-columnas-banner mt-3">
+        <mat-icon class="banner-info-icon">info</mat-icon>
+        <div class="banner-info-text">
+          <span class="banner-info-title">Estructura oficial del reporte (20 columnas ordenadas):</span>
+          <span class="banner-info-chips">
+            concepto, tipo_docto, numero_identificacion, primer_Apellido, segundo_apellido, primer_nombre, segundo_nombre, razon_social, direccion, codigo_departamento, codigo_municipio, codigo_pais, pago_abono_en_cuenta_gto deducible, apgo_abono_en_cuenta_no_deducible, iva_mayor_vr_gasto, iva_mayor_vr_del_cosot_gasto_no_deducible, retencion_en_la_fuente, fte_asumida, retfte_iva, fte_iva_no_residentes
+          </span>
+        </div>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- ========================================================
        3. SECCIÓN: DISTRIBUCIÓN POR FASE DEL FLUJO (INICIAL)
        ======================================================== -->
   <mat-card class="card-seccion mb-3" *ngIf="datos?.porFase as fases">

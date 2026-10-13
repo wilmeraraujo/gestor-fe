@@ -341,7 +341,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     if (this.descargandoExcel) return;
 
     this.descargandoExcel = true;
-    this.alertService.cargando('Generando archivo Excel con los registros filtrados...', 'Descargando Reporte');
+    this.alertService.cargando('Generando sábana de trazabilidad operativa según filtros aplicados...', 'Descargando Trazabilidad');
 
     this.service.exportarTrazabilidadExcel(
       this.nitPrestadorActivo,
@@ -356,19 +356,19 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
         const a = document.createElement('a');
         a.href = url;
         const fechaStr = new Date().toISOString().substring(0, 10);
-        a.download = `reporte_facturas_${fechaStr}.xlsx`;
+        a.download = `trazabilidad_facturas_${fechaStr}.xlsx`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
 
-        this.alertService.exito('Reporte de facturas descargado exitosamente.', 'Descarga Completa');
+        this.alertService.exito('Sábana de trazabilidad operativa descargada exitosamente.', 'Descarga Completa');
       },
       error: (err) => {
         this.descargandoExcel = false;
         this.alertService.cerrar();
-        console.error('Error al exportar Excel:', err);
-        this.alertService.error('Ocurrió un error al intentar generar el archivo Excel.', 'Error en la descarga');
+        console.error('Error al exportar trazabilidad Excel:', err);
+        this.alertService.error('Ocurrió un error al intentar generar la sábana de trazabilidad operativa.', 'Error en la descarga');
       }
     });
   }

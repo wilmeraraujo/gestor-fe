@@ -214,6 +214,41 @@ export class FacturaService extends CommonService<Factura> {
   }
 
   /**
+   * 🏛️ 12. EXPORTACIÓN DEL FORMATO 1001 DIAN (INFORMACIÓN EXÓGENA)
+   */
+  public exportarFormato1001Excel(
+    nitPrestador?: string,
+    roles: string[] = [],
+    anioGravable?: number,
+    filtro?: any
+  ): Observable<Blob> {
+    let params = new HttpParams();
+
+    if (nitPrestador) {
+      params = params.set('nitPrestador', nitPrestador);
+    }
+
+    if (anioGravable) {
+      params = params.set('anioGravable', anioGravable.toString());
+    }
+
+    if (roles && roles.length > 0) {
+      roles.forEach(rol => {
+        params = params.append('roles', rol);
+      });
+    }
+
+    return this.http.post(
+      `${this.endPointBase}/reportes/formato-1001-excel`,
+      filtro || {},
+      {
+        params,
+        responseType: 'blob'
+      }
+    );
+  }
+
+  /**
    * 🏷️ 12. ASIGNAR CONCEPTO A LA FACTURA
    */
   public asignarConcepto(facturaId: number, codigoConcepto: string, usuario?: string): Observable<Factura> {
