@@ -1,5 +1,12 @@
 <div class="container-fluid p-2">
 
+  <!-- 🎴 CARD DE TÍTULO PRINCIPAL (POR ENCIMA DE LOS TABS) -->
+  <mat-card class="card card-titulo-submodulo" *ngIf="titulo">
+    <div class="titulo-container">
+      <h1 class="titulo-tabla">{{ titulo }}</h1>
+    </div>
+  </mat-card>
+
   <mat-tab-group [(selectedIndex)]="tabSeleccionada" animationDuration="200ms">
 
     <!-- =========================================================================
@@ -12,7 +19,6 @@
 
       <div class="pt-3">
         <app-data-table
-          [titulo]="titulo"
           [columnas]="columnas"
           [datos]="lista"
           [totalRegistros]="totalRegistros"
@@ -22,13 +28,18 @@
           [mostrarAgregar]="false"
           [mostrarEditar]="false"
           [mostrarEliminar]="false"
+          [mostrarFichaFactura]="true"
+          [mostrarAsignarConcepto]="esGestorF2"
           [mostrarDetalle]="true"
           [mostrarGestionarFactura]="esGestorF2"
 
           (filtrosChange)="onFiltrosChange($event)"
           (paginar)="paginar($event)"
+          (verFichaFactura)="abrirFichaFactura($event)"
+          (asignarConcepto)="abrirModalAsignarConcepto($event)"
           (verDetalle)="verSoportesFactura($event)"
           (gestionarFactura)="abrirModalGestionar($event)"
+          (refrescar)="onRefrescar()"
           (buscar)="buscar($event)">
         </app-data-table>
       </div>
@@ -50,10 +61,28 @@
           <div>
             <span class="fw-bold me-3">Factura No: <span class="text-primary">{{ facturaSeleccionada.numeroFactura }}</span></span>
             <span class="fw-bold me-3">NIT: <span class="text-secondary">{{ facturaSeleccionada.nit }}</span></span>
-            <span class="fw-bold">Razón Social: <span class="text-dark">{{ facturaSeleccionada.razonSocialEmisor }}</span></span>
+            <span class="fw-bold me-3">Razón Social: <span class="text-dark">{{ facturaSeleccionada.razonSocialEmisor }}</span></span>
+            <span class="fw-bold" *ngIf="facturaSeleccionada.codigoConcepto">Concepto: <span class="badge bg-purple text-white px-2 py-1 rounded" style="background-color: #9333ea;">{{ facturaSeleccionada.codigoConcepto }}</span></span>
           </div>
 
           <div class="d-flex gap-2">
+            <!-- 🏷️ BOTÓN ASIGNAR CONCEPTO DESDE EL VISOR -->
+            <button
+              *ngIf="esGestorF2"
+              mat-stroked-button
+              style="border-color: #9333ea; color: #9333ea;"
+              (click)="abrirModalAsignarConcepto(facturaSeleccionada)">
+              <mat-icon>category</mat-icon> Asignar Concepto
+            </button>
+
+            <!-- 📋 BOTÓN PARA VER FICHA TÉCNICA E ÍTEMS DESDE EL VISOR -->
+            <button
+              mat-stroked-button
+              style="border-color: #1DA6BA; color: #1DA6BA;"
+              (click)="abrirFichaFactura(facturaSeleccionada)">
+              <mat-icon>list_alt</mat-icon> Ficha / Ítems
+            </button>
+
             <!-- 🧾 BOTÓN DE GESTIÓN DIRECTA DESDE EL VISOR -->
             <button
               *ngIf="esGestorF2"

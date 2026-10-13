@@ -34,14 +34,21 @@ public class DocumentoController {
         return ResponseEntity.ok().body(service.findByDeletedAtIsNull(sortedPageable));
     }
 
-    // 🔍 1. BUSCADOR CON FILTRADO DINÁMICO COMBINADO (POR NIT, FACTURA Y EXTENSIÓN/TIPO)
+    // 🔍 1. BUSCADOR CON FILTRADO DINÁMICO COMBINADO (POR NIT, FACTURA, EXTENSIÓN/TIPO, NOMBRE ARCHIVO E ID)
     @GetMapping("/paginable/buscar")
     public ResponseEntity<?> buscarDocumentos(
             @RequestParam(value = "numeroFactura", required = false) String numeroFactura, 
             @RequestParam(value = "nit", required = false) String nit,                     
-            @RequestParam(value = "extensionId", required = false) Long extensionId,
-            @RequestParam(value = "tipoId", required = false) Long tipoId,                 
+            @RequestParam(value = "codigoTipo", required = false) String codigoTipo,
+            @RequestParam(value = "tipoId", required = false) String tipoIdFallback,
+            @RequestParam(value = "codigoExtension", required = false) String codigoExtension,
+            @RequestParam(value = "extensionId", required = false) String extensionIdFallback,
+            @RequestParam(value = "nombreOriginal", required = false) String nombreOriginal,
+            @RequestParam(value = "id", required = false) Long id,
             Pageable pageable) {
+
+        String tipoFinal = (codigoTipo != null && !codigoTipo.isBlank()) ? codigoTipo : tipoIdFallback;
+        String extensionFinal = (codigoExtension != null && !codigoExtension.isBlank()) ? codigoExtension : extensionIdFallback;
 
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
@@ -49,7 +56,7 @@ public class DocumentoController {
                 Sort.by(Sort.Direction.DESC, "id"));
 
         return ResponseEntity.ok()
-                .body(service.filtrarDocumentos(numeroFactura, nit, tipoId, extensionId, sortedPageable));
+                .body(service.filtrarDocumentos(numeroFactura, nit, tipoFinal, extensionFinal, nombreOriginal, id, sortedPageable));
     }
 
     // 👁️ 2. VISOR INLINE DE SOPORTES (¡Versión Segura Anti-Nulls!)

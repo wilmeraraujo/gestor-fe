@@ -33,6 +33,11 @@ export class ObservacionComponent extends CommonListarComponent<Observacion,Obse
     {
       field: 'descripcion',
       header: 'Descripción'
+    },
+
+    {
+      field: 'estadoActivo',
+      header: 'Estado'
     }
 
   ];

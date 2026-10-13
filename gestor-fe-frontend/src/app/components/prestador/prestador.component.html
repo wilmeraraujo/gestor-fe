@@ -1,146 +1,225 @@
-<div class="container-fluid mt-3">
+<div class="prestador-container animate-fade-in">
+ 
+   <!-- 🔍 TARJETA DE BÚSQUEDA DE PRESTADOR (SÓLO ADMIN / GESTORES) -->
+   <div *ngIf="!esUsuarioPrestador" class="card-busqueda-moderna mb-4">
+     <div class="busqueda-header">
+       <div class="header-icon-circle">
+         <mat-icon>search</mat-icon>
+       </div>
+       <div class="header-texts">
+         <h2 class="busqueda-titulo">Búsqueda de Prestador</h2>
+         <p class="busqueda-subtitulo">Ingrese el NIT del prestador para consultar y gestionar sus soportes obligatorios.</p>
+       </div>
+     </div>
 
-  <!--  TARJETA DE BÚSQUEDA DE PRESTADOR (VISIBILIDAD CONTROLADA POR ROL) -->
-  <div *ngIf="!esUsuarioPrestador" class="card shadow-sm mb-4">
-    <div class="card-header bg-theme text-white font-weight-bold d-flex align-items-center">
-      <mat-icon class="mr-2">search</mat-icon> Búsqueda de Soportes por Prestador
-    </div>
-    <div class="card-body">
-      <div class="d-flex align-items-center">
-        <label class="mr-3 font-weight-bold mb-0">NIT del Prestador:</label>
+     <div class="busqueda-body">
+       <div class="input-search-group">
+         <mat-icon class="input-icon-prefix">badge</mat-icon>
+         <input
+           type="text"
+           class="form-control input-moderno"
+           [(ngModel)]="nitBusqueda"
+           placeholder="Ej: 901323081 o 900077584"
+           (keyup.enter)="buscarPrestador()">
 
-        <input
-          type="text"
-          class="form-control input-busqueda"
-          [(ngModel)]="nitBusqueda"
-          placeholder="Ej: 123 o 900123456"
-          (keyup.enter)="buscarPrestador()">
+         <button
+           type="button"
+           class="btn-action-search"
+           (click)="buscarPrestador()"
+           matTooltip="Buscar Prestador"
+           [disabled]="cargando">
+           <mat-icon class="icon-spinning" *ngIf="cargando">sync</mat-icon>
+           <mat-icon *ngIf="!cargando">search</mat-icon>
+           <span>Buscar</span>
+         </button>
 
-        <button
-          type="button"
-          class="btn btn-search-theme ml-3"
-          (click)="buscarPrestador()"
-          matTooltip="Buscar Prestador"
-          [disabled]="cargando">
-          <mat-icon>search</mat-icon>
-        </button>
+         <button
+           *ngIf="nitBusqueda || prestadorActual"
+           type="button"
+           class="btn-action-clear"
+           (click)="limpiarFiltro()"
+           matTooltip="Limpiar búsqueda">
+           <mat-icon>close</mat-icon>
+         </button>
+       </div>
+     </div>
+   </div>
 
-        <button
-          *ngIf="nitBusqueda || prestadorActual"
-          type="button"
-          class="btn btn-clear-theme ml-2"
-          (click)="limpiarFiltro()"
-          matTooltip="Limpiar filtro">
-          <mat-icon>clear</mat-icon>
-        </button>
-      </div>
-    </div>
-  </div>
+   <!-- 🏢 HERO PROFILE CARD: INFORMACIÓN DEL PRESTADOR Y STATUS DE HABILITACIÓN -->
+   <div *ngIf="prestadorActual" class="hero-prestador-card mb-4">
+     <div class="hero-content">
+       
+       <div class="hero-main-info">
+         <div class="company-avatar">
+           <mat-icon>domain</mat-icon>
+         </div>
+         <div class="company-details">
+           <div class="company-title-row">
+             <h1 class="company-name">{{ prestadorActual.razonSocial }}</h1>
+             <span class="status-pill" [ngClass]="estaHabilitadoParaRadicar ? 'status-pill-success' : 'status-pill-warning'">
+               <span class="pulse-dot"></span>
+               {{ estaHabilitadoParaRadicar ? 'Habilitado para Radicar' : 'Documentación Pendiente' }}
+             </span>
+           </div>
 
-  <!--  CABECERA CON DATOS DEL PRESTADOR ENCONTRADO O AUTOCARGADO -->
-  <div *ngIf="prestadorActual" class="card shadow-sm mb-4">
-    <div class="card-body bg-light border-left-theme">
-      <div class="row align-items-center">
-        <div class="col-md-5">
-          <h5 class="font-weight-bold mb-1 text-theme">{{ prestadorActual.razonSocial }}</h5>
-          <span class="text-muted small"><strong>NIT:</strong> {{ prestadorActual.nit }}</span>
-        </div>
-        <div class="col-md-4">
-          <span class="d-block small"><strong>Email:</strong> {{ prestadorActual.email }}</span>
-          <span class="d-block small"><strong>Teléfono:</strong> {{ prestadorActual.telefono }}</span>
-        </div>
-        <div class="col-md-3 text-right">
-          <span class="badge badge-success p-2 d-inline-flex align-items-center">
-            <mat-icon class="icon-small mr-1">check_circle</mat-icon> PRESTADOR ACTIVO
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
+           <div class="company-meta-tags">
+             <div class="meta-tag">
+               <mat-icon class="meta-icon">fingerprint</mat-icon>
+               <span class="meta-label">NIT:</span>
+               <span class="meta-value">{{ prestadorActual.nit }}</span>
+             </div>
+             <div class="meta-tag" *ngIf="prestadorActual.email">
+               <mat-icon class="meta-icon">alternate_email</mat-icon>
+               <span class="meta-label">Email:</span>
+               <span class="meta-value">{{ prestadorActual.email }}</span>
+             </div>
+             <div class="meta-tag" *ngIf="prestadorActual.telefono">
+               <mat-icon class="meta-icon">call</mat-icon>
+               <span class="meta-label">Teléfono:</span>
+               <span class="meta-value">{{ prestadorActual.telefono }}</span>
+             </div>
+           </div>
+         </div>
+       </div>
 
-  <!--  TARJETAS DINÁMICAS DE SOPORTES GENERALES -->
-  <div *ngIf="prestadorActual">
-    <h5 class="mb-3 font-weight-bold text-secondary d-flex align-items-center">
-      <mat-icon class="mr-2">folder_shared</mat-icon> Soportes Documentales Empresariales
-    </h5>
+       <!-- 📊 WIDGET DE PROGRESO DE SOPORTES OBLIGATORIOS -->
+       <div class="progress-widget">
+         <div class="progress-header">
+           <span class="progress-title">Progreso Documental</span>
+           <span class="progress-ratio">
+             <strong>{{ cargadosObligatorios }}/{{ totalObligatorios }}</strong> ({{ porcentajeProgreso }}%)
+           </span>
+         </div>
+         
+         <div class="progress-track">
+           <div class="progress-fill" [style.width.%]="porcentajeProgreso" [ngClass]="{'progress-fill-complete': estaHabilitadoParaRadicar}"></div>
+         </div>
 
-    <div class="row">
-      <div class="col-md-4 mb-3" *ngFor="let tipo of tiposSoporte">
-        <div
-          class="card h-100 shadow-sm"
-          [ngClass]="tieneSoporte(tipo.id) ? 'border-left-success' : 'border-left-theme'">
+         <p class="progress-hint" *ngIf="!estaHabilitadoParaRadicar">
+           <mat-icon class="hint-icon">info</mat-icon>
+           Faltan <strong>{{ totalObligatorios - cargadosObligatorios }}</strong> soportes obligatorios para poder radicar facturas.
+         </p>
+         <p class="progress-hint hint-success" *ngIf="estaHabilitadoParaRadicar">
+           <mat-icon class="hint-icon">verified</mat-icon>
+           ¡Expediente empresarial completo! Puede radicar facturas normalmente.
+         </p>
+       </div>
 
-          <div class="card-body d-flex flex-column justify-content-between">
-            <div>
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="card-title font-weight-bold text-dark mb-0">
-                  {{ tipo.descripcion || tipo.codigo }}
-                </h6>
-                <span
-                  class="badge p-1"
-                  [ngClass]="tieneSoporte(tipo.id) ? 'badge-success' : 'badge-warning'">
-                  {{ tieneSoporte(tipo.id) ? 'CARGADO' : 'PENDIENTE' }}
-                </span>
-              </div>
-              <p class="card-text text-muted small mb-0">
-                Soporte {{ tipo.descripcion || tipo.codigo }}.
-              </p>
-            </div>
+     </div>
+   </div>
 
-            <!-- 🟢 ESTADO A: DOCUMENTO CARGADO -->
-            <div *ngIf="tieneSoporte(tipo.id)" class="mt-3">
-              <p class="small text-truncate text-muted mb-2 d-flex align-items-center" [title]="obtenerSoporte(tipo.id)?.nombreOriginal">
-                <mat-icon class="icon-small text-success mr-1">attach_file</mat-icon>
-                {{ obtenerSoporte(tipo.id)?.nombreOriginal }}
-              </p>
-              <div class="btn-group w-100">
-                <button
-                  class="btn btn-sm btn-outline-info d-flex align-items-center justify-content-center"
-                  matTooltip="Ver soporte"
-                  (click)="verDocumento(obtenerSoporte(tipo.id)!)">
-                  <mat-icon class="icon-btn mr-1">visibility</mat-icon>
-                </button>
-                <button
-                  class="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center"
-                  matTooltip="Eliminar soporte"
-                  (click)="eliminarSoporte(tipo.id, obtenerSoporte(tipo.id)!.id!)">
-                  <mat-icon class="icon-btn mr-1">delete</mat-icon>
-                </button>
-              </div>
-            </div>
+   <!-- 📂 GRID DE TARJETAS DE SOPORTES DOCUMENTALES -->
+   <div *ngIf="prestadorActual" class="soportes-section">
+     <div class="section-title-row mb-3">
+       <div class="section-title-left">
+         <mat-icon class="section-icon">folder_shared</mat-icon>
+         <h2 class="section-title">Expediente de Soportes Empresariales</h2>
+       </div>
+       <span class="section-badge">{{ tiposSoporte.length }} Categorías</span>
+     </div>
 
-            <!-- 🟡 ESTADO B: DOCUMENTO PENDIENTE -->
-            <div *ngIf="!tieneSoporte(tipo.id)" class="mt-3">
-              <input
-                type="file"
-                #fileInput
-                [hidden]="true"
-                (change)="onFileSelected($event, tipo)"
-                accept=".pdf">
+     <div class="soportes-grid">
+       <div class="soporte-card" *ngFor="let tipo of tiposSoporte" [ngClass]="{'card-uploaded': tieneSoporte(tipo.id), 'card-pending': !tieneSoporte(tipo.id)}">
+         
+         <!-- HEADER DE LA TARJETA -->
+         <div class="soporte-card-header">
+           <div class="soporte-type-icon-wrapper" [ngClass]="{'icon-wrapper-success': tieneSoporte(tipo.id)}">
+             <mat-icon>{{ obtenerIconoTipo(tipo) }}</mat-icon>
+           </div>
+           
+           <div class="soporte-type-info">
+             <div class="d-flex align-items-center justify-content-between">
+               <h3 class="soporte-card-title">{{ tipo.descripcion || tipo.codigo }}</h3>
+               <span class="badge-tag-obligatorio" *ngIf="esTipoObligatorio(tipo)">Obligatorio</span>
+             </div>
+             <span class="soporte-status-badge" [ngClass]="tieneSoporte(tipo.id) ? 'badge-pill-success' : 'badge-pill-pending'">
+               <mat-icon class="badge-mini-icon">{{ tieneSoporte(tipo.id) ? 'check_circle' : 'schedule' }}</mat-icon>
+               {{ tieneSoporte(tipo.id) ? 'Cargado' : 'Pendiente' }}
+             </span>
+           </div>
+         </div>
 
-              <button
-                class="btn btn-sm btn-block btn-outline-theme d-flex align-items-center justify-content-center"
-                (click)="fileInput.click()">
-                <mat-icon class="icon-btn mr-1">cloud_upload</mat-icon> Subir Archivo
-              </button>
-            </div>
+         <!-- CUERPO DE LA TARJETA -->
+         <div class="soporte-card-body">
+           
+           <!-- 🟢 ESTADO: DOCUMENTO CARGADO -->
+           <div *ngIf="tieneSoporte(tipo.id)" class="uploaded-doc-container">
+             <div class="doc-file-box" [title]="obtenerSoporte(tipo.id)?.nombreOriginal">
+               <div class="pdf-icon-badge">
+                 <mat-icon>picture_as_pdf</mat-icon>
+               </div>
+               <div class="doc-file-details">
+                 <span class="doc-file-name">{{ obtenerSoporte(tipo.id)?.nombreOriginal }}</span>
+                 <span class="doc-file-status">Documento activo y vigente</span>
+               </div>
+             </div>
 
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+             <div class="doc-card-actions">
+               <button
+                 type="button"
+                 class="btn-action-view-modern"
+                 matTooltip="Visualizar soporte en nueva pestaña"
+                 (click)="verDocumento(obtenerSoporte(tipo.id)!)">
+                 <mat-icon>visibility</mat-icon>
+                 <span>Ver</span>
+               </button>
 
-  <!-- MENSAJE INICIAL ANTES DE BUSCAR (Sólo para Admin / Gestores) -->
-  <div *ngIf="!prestadorActual && !esUsuarioPrestador" class="text-center text-muted my-5">
-    <mat-icon class="icon-large mb-2 text-secondary">badge</mat-icon>
-    <p>Digite el NIT del prestador en el campo superior y haga clic en el botón de búsqueda para gestionar sus soportes.</p>
-  </div>
+               <button
+                 type="button"
+                 class="btn-action-delete-modern"
+                 matTooltip="Eliminar soporte"
+                 (click)="eliminarSoporte(tipo.id, obtenerSoporte(tipo.id)!.id!)">
+                 <mat-icon>delete_outline</mat-icon>
+                 <span>Eliminar</span>
+               </button>
+             </div>
+           </div>
 
-  <!-- MENSAJE DE CARGA / ERROR PARA EL PRESTADOR -->
-  <div *ngIf="!prestadorActual && esUsuarioPrestador && cargando" class="text-center text-muted my-5">
-    <mat-icon class="icon-large mb-2 text-primary">sync</mat-icon>
-    <p>Cargando sus soportes documentales...</p>
-  </div>
+           <!-- 🟡 ESTADO: DOCUMENTO PENDIENTE -->
+           <div *ngIf="!tieneSoporte(tipo.id)" class="pending-upload-container">
+             <input
+               type="file"
+               #fileInput
+               [hidden]="true"
+               (change)="onFileSelected($event, tipo)"
+               accept=".pdf">
 
-</div>
+             <div class="dropzone-area" (click)="fileInput.click()">
+               <div class="upload-icon-circle">
+                 <mat-icon>cloud_upload</mat-icon>
+               </div>
+               <p class="dropzone-main-text">Subir archivo <strong>PDF</strong></p>
+               <p class="dropzone-sub-text">Haga clic para seleccionar el documento</p>
+               
+               <button type="button" class="btn-upload-modern">
+                 <mat-icon>add</mat-icon>
+                 <span>Seleccionar Soporte</span>
+               </button>
+             </div>
+           </div>
+
+         </div>
+
+       </div>
+     </div>
+   </div>
+
+   <!-- 💡 MENSAJE INICIAL PARA ADMIN ANTES DE BUSCAR -->
+   <div *ngIf="!prestadorActual && !esUsuarioPrestador" class="empty-state-card">
+     <div class="empty-icon-circle">
+       <mat-icon>manage_search</mat-icon>
+     </div>
+     <h3 class="empty-title">Panel de Consulta de Prestadores</h3>
+     <p class="empty-subtitle">Digite el NIT del prestador en el campo superior para consultar o actualizar su expediente documental.</p>
+   </div>
+
+   <!-- ⏳ MENSAJE DE CARGA INICIAL -->
+   <div *ngIf="!prestadorActual && esUsuarioPrestador && cargando" class="empty-state-card">
+     <div class="empty-icon-circle spinning-circle">
+       <mat-icon>sync</mat-icon>
+     </div>
+     <h3 class="empty-title">Consultando sus soportes...</h3>
+     <p class="empty-subtitle">Un momento por favor mientras cargamos la información de su perfil.</p>
+   </div>
+
+ </div>

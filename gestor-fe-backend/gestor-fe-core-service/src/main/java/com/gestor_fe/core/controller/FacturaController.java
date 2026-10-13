@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.gestor_fe.core.dto.FacturaFilterDto;
 import com.gestor_fe.core.dto.GestionDto;
 import com.gestor_fe.core.entity.Factura;
+import com.gestor_fe.core.entity.FacturaItem;
+import com.gestor_fe.core.repository.FacturaItemRepository;
 import com.gestor_fe.core.service.FacturaService;
 
 @CrossOrigin(origins = "*")
@@ -21,14 +24,28 @@ import com.gestor_fe.core.service.FacturaService;
 public class FacturaController {
 
     private final FacturaService service;
+    private final FacturaItemRepository facturaItemRepository;
 
-    public FacturaController(FacturaService service) {
+    public FacturaController(FacturaService service, FacturaItemRepository facturaItemRepository) {
         this.service = service;
+        this.facturaItemRepository = facturaItemRepository;
     }
 
     // =========================================================================
     // 📋 CONSULTAS Y BANDEJAS DE LECTURA
     // =========================================================================
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtenerPorId(@PathVariable("id") Long id) {
+        return service.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/items")
+    public ResponseEntity<List<FacturaItem>> listarItems(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(facturaItemRepository.findByFacturaIdAndDeletedAtIsNullOrderByNumeroLineaAsc(id));
+    }
 
     @GetMapping("/prestador/{nit}")
     public ResponseEntity<?> findByNit(@PathVariable("nit") String nit, Pageable pageable) {
@@ -75,6 +92,20 @@ public class FacturaController {
         return ResponseEntity.ok(service.buscarTrazabilidadSegunRol(nitPrestador, roles, filtro, sorted));
     }
 
+    @PostMapping("/trazabilidad/exportar-excel")
+    public ResponseEntity<byte[]> exportarTrazabilidadExcel(
+            @RequestParam(value = "nitPrestador", required = false) String nitPrestador,
+            @RequestParam(value = "roles", required = false) List<String> roles,
+            @RequestBody(required = false) FacturaFilterDto filtro) {
+
+        byte[] excelBytes = service.exportarFacturasExcel(nitPrestador, roles, filtro);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=facturas_seguimiento.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelBytes);
+    }
+
     // =========================================================================
     // ⚙️ ENDPOINTS DE TRANSICIÓN Y GESTIÓN DE ETAPAS (CON USUARIO)
     // =========================================================================
@@ -93,24 +124,54 @@ public class FacturaController {
     @PostMapping(value = "/{id}/causacion", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Factura> procesarCausacionFase2(
             @PathVariable("id") Long id,
-            @RequestParam("tipoRegistroContableId") Long tipoRegistroContableId,
+            @RequestParam(value = "codigoTipoRegistroContable", required = false) String codigoTipoRegistroContable,
+            @RequestParam(value = "tipoRegistroContableId", required = false) String tipoRegistroContableIdFallback,
             @RequestParam("numeroCausacion") String numeroCausacion,
             @RequestParam(value = "usuario", required = false) String usuario, // 👈 Captura el usuario
             @RequestParam(value = "archivo", required = false) MultipartFile archivo) {
 
-        return ResponseEntity.ok(service.procesarCausacionFase2(id, tipoRegistroContableId, numeroCausacion, usuario, archivo));
+        String codigoFinal = (codigoTipoRegistroContable != null && !codigoTipoRegistroContable.isBlank()) 
+                ? codigoTipoRegistroContable 
+                : tipoRegistroContableIdFallback;
+
+        return ResponseEntity.ok(service.procesarCausacionFase2(id, codigoFinal, numeroCausacion, usuario, archivo));
     }
 
     // 💸 FASE 4: Registrar pago y soportes + Usuario
     @PostMapping(value = "/{id}/pago", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Factura> procesarPagoFase4(
             @PathVariable("id") Long id,
-            @RequestParam(value = "tipoRegistroContableId", required = false) Long tipoRegistroContableId,
+            @RequestParam(value = "codigoTipoRegistroContable", required = false) String codigoTipoRegistroContable,
+            @RequestParam(value = "tipoRegistroContableId", required = false) String tipoRegistroContableIdFallback,
             @RequestParam(value = "numeroCausacion", required = false) String numeroCausacion,
             @RequestParam(value = "usuario", required = false) String usuario, // 👈 Captura el usuario
             @RequestParam(value = "soporteTb", required = false) MultipartFile soporteTb,
             @RequestParam(value = "comprobantePago", required = false) MultipartFile comprobantePago) {
 
-        return ResponseEntity.ok(service.procesarPagoFase4(id, tipoRegistroContableId, numeroCausacion, usuario, soporteTb, comprobantePago));
+        String codigoFinal = (codigoTipoRegistroContable != null && !codigoTipoRegistroContable.isBlank()) 
+                ? codigoTipoRegistroContable 
+                : tipoRegistroContableIdFallback;
+
+        return ResponseEntity.ok(service.procesarPagoFase4(id, codigoFinal, numeroCausacion, usuario, soporteTb, comprobantePago));
+    }
+
+    // 🏷️ ASIGNAR CONCEPTO CONTABLE A FACTURA
+    @PutMapping("/{id}/concepto")
+    public ResponseEntity<Factura> asignarConcepto(
+            @PathVariable("id") Long id,
+            @RequestParam(value = "codigoConcepto", required = false) String codigoConcepto,
+            @RequestParam(value = "usuario", required = false) String usuario,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+
+        String conceptoFinal = codigoConcepto;
+        if (conceptoFinal == null && body != null && body.containsKey("codigoConcepto")) {
+            conceptoFinal = body.get("codigoConcepto");
+        }
+        String usuarioFinal = usuario;
+        if (usuarioFinal == null && body != null && body.containsKey("usuario")) {
+            usuarioFinal = body.get("usuario");
+        }
+
+        return ResponseEntity.ok(service.asignarConcepto(id, conceptoFinal, usuarioFinal));
     }
 }

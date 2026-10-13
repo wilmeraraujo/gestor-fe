@@ -73,7 +73,8 @@ public class ConfiguracionSistemaController extends GlobalController<Configuraci
     @PutMapping("/{id}")
     public ResponseEntity<?> edit(@Validated @RequestBody ConfiguracionSistema x,
             BindingResult result,
-            @PathVariable(name = "id") Long id) {
+            @PathVariable(name = "id") Long id,
+            jakarta.servlet.http.HttpServletRequest request) {
 
         if (result.hasErrors()) {
             return this.validar(result);
@@ -85,13 +86,21 @@ public class ConfiguracionSistemaController extends GlobalController<Configuraci
         }
 
         ConfiguracionSistema xDb = objeto.get();
+        String oldCodigo = xDb.getCodigo();
+        String oldDescripcion = xDb.getDescripcion();
+        String oldValor = xDb.getValor();
+
         xDb.setCodigo(x.getCodigo());
         xDb.setDescripcion(x.getDescripcion());
         xDb.setValor(x.getValor());
-        xDb.setCategoria(x.getCategoria());
+        xDb.setProcesoId(x.getProcesoId());
         xDb.setUpdatedAt(LocalDateTime.now());
-        xDb.setDeletedAt(x.getDeletedAt());
+        if (x.getDeletedAt() != null) {
+            xDb.setDeletedAt(x.getDeletedAt());
+        }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.save(xDb));
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + (oldValor != null ? " | Valor: " + oldValor : "") + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + (x.getValor() != null ? " | Valor: " + x.getValor() : "") + "]";
+        String username = this.extraerUsername(request, null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(xDb, "EDITAR", observacion, username));
     }
 }

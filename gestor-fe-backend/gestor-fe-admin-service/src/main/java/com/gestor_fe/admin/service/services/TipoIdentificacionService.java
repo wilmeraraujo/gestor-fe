@@ -8,9 +8,7 @@ import org.springframework.data.domain.Pageable;
 import com.gestor_fe.admin.service.model.entity.TipoIdentificacion;
 import com.service.common.service.GlobalService;
 
-public interface TipoIdentificacionService extends GlobalService<TipoIdentificacion>{
-
-	Page<TipoIdentificacion> findByDeletedAtIsNull(Pageable pageable);
-	List<TipoIdentificacion> findByDescripcion(String desc);
-	
+public interface TipoIdentificacionService extends GlobalService<TipoIdentificacion> {
+    Page<TipoIdentificacion> findByDeletedAtIsNull(Pageable pageable);
+    List<TipoIdentificacion> findByDescripcion(String desc);
 }

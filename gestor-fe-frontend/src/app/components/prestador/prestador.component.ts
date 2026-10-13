@@ -56,6 +56,41 @@ export class PrestadorComponent implements OnInit {
     this.evaluarRolYAutocargar();
   }
 
+  // 📊 Cálculos dinámicos de completitud de soportes empresariales obligatorios (1 a 4)
+  get tiposObligatorios(): Tipo[] {
+    return this.tiposSoporte.filter(t => t.id && Number(t.id) >= 1 && Number(t.id) <= 4);
+  }
+
+  get totalObligatorios(): number {
+    return this.tiposObligatorios.length || 4;
+  }
+
+  get cargadosObligatorios(): number {
+    return this.tiposObligatorios.filter(t => this.tieneSoporte(t.id)).length;
+  }
+
+  get porcentajeProgreso(): number {
+    if (this.totalObligatorios === 0) return 0;
+    return Math.round((this.cargadosObligatorios / this.totalObligatorios) * 100);
+  }
+
+  get estaHabilitadoParaRadicar(): boolean {
+    return this.totalObligatorios > 0 && this.cargadosObligatorios >= this.totalObligatorios;
+  }
+
+  obtenerIconoTipo(tipo: Tipo): string {
+    const desc = (tipo.descripcion || tipo.codigo || '').toUpperCase();
+    if (desc.includes('RUT')) return 'assignment_ind';
+    if (desc.includes('CAMARA') || desc.includes('COMERCIO')) return 'corporate_fare';
+    if (desc.includes('BANCARI')) return 'account_balance';
+    if (desc.includes('CONTRATO')) return 'history_edu';
+    return 'description';
+  }
+
+  esTipoObligatorio(tipo: Tipo): boolean {
+    return tipo.id !== undefined && Number(tipo.id) >= 1 && Number(tipo.id) <= 4;
+  }
+
   /**
    * 🔑 Evalúa el rol del usuario autenticado desde LoginService
    */
@@ -133,8 +168,9 @@ export class PrestadorComponent implements OnInit {
         const listaDocs: Documento[] = response.content || response;
 
         listaDocs.forEach(doc => {
-          if (doc.tipoId) {
-            this.soportesCargados.set(Number(doc.tipoId), doc);
+          const key = doc.codigoTipo ? Number(doc.codigoTipo) : (doc.tipoId ? Number(doc.tipoId) : null);
+          if (key !== null) {
+            this.soportesCargados.set(key, doc);
           }
         });
       },
@@ -164,25 +200,29 @@ export class PrestadorComponent implements OnInit {
     const archivo: File = event.target.files[0];
     if (!archivo || !this.prestadorActual) return;
 
-    let extensionId = 1;
+    let codigoExtension = '02';
     const nameLower = archivo.name.toLowerCase();
     if (nameLower.endsWith('.pdf')) {
-      extensionId = 1;
+      codigoExtension = '02';
     } else if (nameLower.endsWith('.xml')) {
-      extensionId = 2;
+      codigoExtension = '01';
     } else if (nameLower.endsWith('.zip')) {
-      extensionId = 3;
+      codigoExtension = '03';
     }
 
     this.alertService.cargando(`Cargando soporte ${tipo.descripcion || tipo.codigo}`, 'Subiendo archivo...');
 
-    this.prestadorService.cargarSoporte(this.prestadorActual.nit, Number(tipo.id), extensionId, archivo).subscribe({
+    const codTipo = tipo.codigo || (tipo.id ? String(tipo.id) : '');
+
+    this.prestadorService.cargarSoporte(this.prestadorActual.nit, codTipo, codigoExtension, archivo).subscribe({
       next: (docGuardado) => {
         this.soportesCargados.set(Number(tipo.id), docGuardado);
-        this.alertService.exito(`Soporte ${tipo.descripcion || tipo.codigo} guardado correctamente.`);
+        this.alertService.cerrar();
+        this.alertService.toastExito(`Soporte ${tipo.descripcion || tipo.codigo} guardado correctamente.`);
       },
       error: (err) => {
-        this.alertService.error('No se pudo cargar el archivo. Inténtelo de nuevo.');
+        this.alertService.cerrar();
+        this.alertService.toastError('No se pudo cargar el archivo. Inténtelo de nuevo.');
         console.error(err);
       }
     });
@@ -196,7 +236,7 @@ export class PrestadorComponent implements OnInit {
         const fileURL = URL.createObjectURL(blob);
         window.open(fileURL, '_blank');
       },
-      error: () => this.alertService.error('No se pudo generar la vista previa del documento.')
+      error: () => this.alertService.toastError('No se pudo generar la vista previa del documento.')
     });
   }
 
@@ -208,10 +248,10 @@ export class PrestadorComponent implements OnInit {
           this.prestadorService.eliminarSoporte(Number(docId)).subscribe({
             next: () => {
               this.soportesCargados.delete(Number(tipoId));
-              this.alertService.exito('El soporte ha sido removido.', 'Eliminado');
+              this.alertService.toastExito('El soporte ha sido removido correctamente.');
             },
             error: (err) => {
-              this.alertService.error('No se pudo eliminar el soporte.');
+              this.alertService.toastError('No se pudo eliminar el soporte.');
               console.error(err);
             }
           });

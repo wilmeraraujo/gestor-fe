@@ -18,8 +18,8 @@ export abstract class CommonFormComponent<
     protected service: S
   ) {}
 
-  public crear(): Observable<E> {
-    return this.service.crear(this.model).pipe(
+  public crear(userName?: string): Observable<E> {
+    return this.service.crear(this.model, userName).pipe(
       catchError(err => {
         if (err.status === 400) {
           this.error = err.error;
@@ -39,8 +39,8 @@ export abstract class CommonFormComponent<
     );
   }
 
-  public editar(): Observable<E> {
-    return this.service.editar(this.model).pipe(
+  public editar(userName?: string): Observable<E> {
+    return this.service.editar(this.model, userName).pipe(
       catchError(err => {
         if (err.status === 400) {
           this.error = err.error;

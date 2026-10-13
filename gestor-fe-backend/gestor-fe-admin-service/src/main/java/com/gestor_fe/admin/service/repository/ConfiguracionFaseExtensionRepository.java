@@ -23,4 +23,6 @@ public interface ConfiguracionFaseExtensionRepository extends JpaRepository<Conf
     boolean existsByFaseIdAndExtensionIdAndDeletedAtIsNull(Long faseId, Long extensionId);
 
     boolean existsByFaseIdAndExtensionIdAndIdNotAndDeletedAtIsNull(Long faseId, Long extensionId, Long id);
+
+    java.util.Optional<ConfiguracionFaseExtension> findFirstByFaseIdAndExtensionId(Long faseId, Long extensionId);
 }

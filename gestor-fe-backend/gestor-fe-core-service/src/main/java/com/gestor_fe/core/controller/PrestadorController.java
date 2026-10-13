@@ -1,5 +1,7 @@
 package com.gestor_fe.core.controller;
 
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,15 +28,50 @@ public class PrestadorController {
     }
 
     // =========================================================================
-    // 👤 ENDPOINTS MAESTRO DE PRESTADORES
+    // 👤 ENDPOINTS MAESTRO DE PRESTADORES (SUBMÓDULO ADMINISTRACIÓN & MAESTRO)
     // =========================================================================
 
-    @PostMapping
-    public ResponseEntity<Prestador> crearOActualizar(@RequestBody Prestador prestador) {
-        Prestador guardado = prestadorService.crearOActualizarPrestador(prestador);
-        return new ResponseEntity<>(guardado, HttpStatus.CREATED);
+    @GetMapping("/paginable/buscar")
+    public ResponseEntity<Page<Prestador>> buscarPaginado(
+            @RequestParam Map<String, String> params,
+            Pageable pageable) {
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort().isSorted() ? pageable.getSort() : Sort.by(Sort.Direction.DESC, "id"));
+        return ResponseEntity.ok(prestadorService.buscarPaginado(params, sortedPageable));
     }
-    
+
+    @GetMapping("/paginable/activos")
+    public ResponseEntity<Page<Prestador>> listarActivos(Pageable pageable) {
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort().isSorted() ? pageable.getSort() : Sort.by(Sort.Direction.DESC, "id"));
+        return ResponseEntity.ok(prestadorService.findByDeletedAtIsNull(sortedPageable));
+    }
+
+    @GetMapping("/paginable")
+    public ResponseEntity<Page<Prestador>> listarPaginable(Pageable pageable) {
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                pageable.getSort().isSorted() ? pageable.getSort() : Sort.by(Sort.Direction.DESC, "id"));
+        return ResponseEntity.ok(prestadorService.listarPrestadores(sortedPageable));
+    }
+
+    @GetMapping("/buscar/{desc}")
+    public ResponseEntity<?> buscarPorDescripcion(@PathVariable("desc") String desc) {
+        return ResponseEntity.ok(prestadorService.findByDescripcion(desc));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Prestador> obtenerPorId(@PathVariable("id") Long id) {
+        return prestadorService.obtenerPorId(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/nit/{nit}")
     public ResponseEntity<Prestador> obtenerPorNit(@PathVariable("nit") String nit) {
         return prestadorService.obtenerPorNit(nit)
@@ -52,6 +89,36 @@ public class PrestadorController {
         return ResponseEntity.ok(prestadorService.listarPrestadores(pageable));
     }
 
+    @PostMapping
+    public ResponseEntity<Prestador> crear(@RequestBody Prestador prestador) {
+        Prestador guardado = prestadorService.crear(prestador);
+        return new ResponseEntity<>(guardado, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Prestador> editar(@PathVariable("id") Long id, @RequestBody Prestador prestador) {
+        Prestador actualizado = prestadorService.editar(id, prestador);
+        return ResponseEntity.ok(actualizado);
+    }
+
+    @PutMapping({"/deleted-at/{id}", "/{id}/deleted-at"})
+    public ResponseEntity<Prestador> softDelete(@PathVariable("id") Long id) {
+        Prestador p = prestadorService.softDelete(id);
+        return ResponseEntity.ok(p);
+    }
+
+    @RequestMapping(value = {"/toggle-estado/{id}", "/{id}/toggle-estado"}, method = {RequestMethod.PUT, RequestMethod.PATCH})
+    public ResponseEntity<Prestador> toggleEstado(@PathVariable("id") Long id) {
+        Prestador p = prestadorService.toggleEstado(id);
+        return ResponseEntity.ok(p);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable("id") Long id) {
+        prestadorService.eliminar(id);
+        return ResponseEntity.noContent().build();
+    }
+
     // =========================================================================
     // 📎 ENDPOINTS PARA GESTIÓN DE SOPORTES (RUT, CAMARA DE COMERCIO, ETC.)
     // =========================================================================
@@ -63,11 +130,16 @@ public class PrestadorController {
     @PostMapping(value = "/soportes/cargar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Documento> cargarSoporte(
             @RequestParam("nitPrestador") String nitPrestador,
-            @RequestParam("tipoId") Long tipoId,
-            @RequestParam("extensionId") Long extensionId,
+            @RequestParam(value = "codigoTipo", required = false) String codigoTipo,
+            @RequestParam(value = "tipoId", required = false) String tipoIdFallback,
+            @RequestParam(value = "codigoExtension", required = false) String codigoExtension,
+            @RequestParam(value = "extensionId", required = false) String extensionIdFallback,
             @RequestPart("archivo") MultipartFile archivo) {
 
-        Documento soporteGuardado = prestadorService.cargarSoporte(nitPrestador, tipoId, extensionId, archivo);
+        String tipoFinal = (codigoTipo != null && !codigoTipo.isBlank()) ? codigoTipo : tipoIdFallback;
+        String extensionFinal = (codigoExtension != null && !codigoExtension.isBlank()) ? codigoExtension : extensionIdFallback;
+
+        Documento soporteGuardado = prestadorService.cargarSoporte(nitPrestador, tipoFinal, extensionFinal, archivo);
         return new ResponseEntity<>(soporteGuardado, HttpStatus.CREATED);
     }
 

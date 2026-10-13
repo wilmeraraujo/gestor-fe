@@ -71,7 +71,7 @@ public class JobLoteCargueConfig {
         ItemWriter<Factura> writer
     ) throws Exception {
       return new StepBuilder("stepOne", jobRepository) 
-          .<FacturaZipWrapperDto, Factura>chunk(20, transactionManager)
+          .<FacturaZipWrapperDto, Factura>chunk(1000, transactionManager)
           .reader(reader)
           .processor(processor)
           .writer(writer)
@@ -95,11 +95,18 @@ public class JobLoteCargueConfig {
     @StepScope
     public ItemProcessor<FacturaZipWrapperDto, Factura> itemProcessor(
             @Value("#{jobParameters['identificadorCargue']}") Long identificadorCargue,
+            @Value("#{jobParameters['usuario']}") String usuario,
+            @Value("#{jobParameters['esAdmin']}") String esAdminStr,
+            @Value("#{jobParameters['codigoMovimiento']}") String codigoMovimiento,
             FacturaService facturaService,
             ErrorCargueService errorCargueService,
             DocumentoRepository documentoRepository,
             AdminFeignClient adminFeignClient) { // 👈 Inyección declarativa de Spring
-        return new FacturaZipProcessor(identificadorCargue, facturaService, errorCargueService, documentoRepository, adminFeignClient);
+        boolean esAdmin = "true".equalsIgnoreCase(esAdminStr) 
+                || "admin".equalsIgnoreCase(usuario) 
+                || "gestor-fe-admin".equalsIgnoreCase(usuario)
+                || "gestor-fe-cargue".equalsIgnoreCase(usuario);
+        return new FacturaZipProcessor(identificadorCargue, usuario, esAdmin, codigoMovimiento, facturaService, errorCargueService, documentoRepository, adminFeignClient);
     }
 
     @Bean

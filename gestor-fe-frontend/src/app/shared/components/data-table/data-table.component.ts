@@ -7,6 +7,7 @@ import {
   AfterViewInit,
   OnInit,
   OnChanges,
+  OnDestroy,
   SimpleChanges
 } from '@angular/core';
 
@@ -17,6 +18,8 @@ import { FormsModule } from '@angular/forms';
 import { MATERIAL_MODULES } from '../../material';
 import { CommonModule } from '@angular/common';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-data-table',
@@ -30,7 +33,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
   templateUrl: './data-table.component.html',
   styleUrl: './data-table.component.css'
 })
-export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
+export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy {
 
   @Input() titulo = '';
   @Input() columnas: any[] = [];
@@ -41,23 +44,42 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
 
   @Input() textoBotonAgregar: string = 'Adicionar';
   @Input() tooltipAgregar: string = 'Adicionar nuevo registro';
+  @Input() iconoAgregar: string = 'add';
 
   @Input() mostrarAgregar = true;
   @Input() mostrarAcciones = true;
   @Input() mostrarDescargaErrores = false;
+  @Input() mostrarDescargar = false;
   @Input() mostrarDetalle = false;
   @Input() mostrarSeleccion = false;
   @Input() mostrarGestionarFactura = false;
+  @Input() mostrarAsignarConcepto = false;
+  @Input() tooltipAsignarConcepto: string = 'Asignar Concepto';
   @Input() mostrarEditar = true;
   @Input() mostrarEliminar = true;
+  @Input() mostrarActivarInactivar: boolean = false;
   @Input() mostrarHistorial: boolean = false;
   @Input() mostrarEliminarMasivo: boolean = false;
+  @Input() mostrarRefrescar: boolean = true;
+  @Input() mostrarDescargarExcel: boolean = false;
+  @Input() descargandoExcel: boolean = false;
+  @Input() mostrarCargueInterno: boolean = false;
+  @Input() textoBotonCargueInterno: string = 'Cargue Interno';
+  @Input() tooltipCargueInterno: string = 'Cargue interno con selección de movimiento';
+  @Input() iconoCargueInterno: string = 'cloud_upload';
+  @Input() mostrarFichaFactura: boolean = false;
+  @Input() tooltipFichaFactura: string = 'Ver Ficha y Detalle de Ítems';
 
   @Output() filtrosChange = new EventEmitter<{ [key: string]: string }>();
   @Output() verHistorial = new EventEmitter<any>();
+  @Output() verFichaFactura = new EventEmitter<any>();
+  @Output() asignarConcepto = new EventEmitter<any>();
   @Output() agregar = new EventEmitter<void>();
+  @Output() cargueInterno = new EventEmitter<void>();
   @Output() editar = new EventEmitter<any>();
   @Output() eliminar = new EventEmitter<any>();
+  @Output() toggleEstado = new EventEmitter<any>();
+  @Output() descargar = new EventEmitter<any>();
   @Output() descargarErrores = new EventEmitter<any>();
   @Output() verDetalle = new EventEmitter<any>();
   @Output() buscar = new EventEmitter<string>();
@@ -65,6 +87,10 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   @Output() selecciononChange = new EventEmitter<any[]>();
   @Output() gestionarFactura = new EventEmitter<any>();
   @Output() eliminarMasivo = new EventEmitter<any[]>();
+  @Output() refrescar = new EventEmitter<void>();
+  @Output() descargarExcel = new EventEmitter<void>();
+
+  refrescando = false;
 
   @ViewChild('paginatorInferior') paginatorInferior!: MatPaginator;
 
@@ -75,23 +101,64 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
   mostrarFiltrosColumnas: boolean = true;
   filtrosPorColumna: { [key: string]: string } = {};
 
-  selection = new SelectionModel<any>(true, []);
+  cargandoFiltro: boolean = false;
+  campoFiltrando: string | null = null;
+  private fallbackTimer: any = null;
+  private filtrosSubject = new Subject<{ [key: string]: string }>();
+  private filtrosSubscription!: Subscription;
+
+  selection = new SelectionModel<any>(true, [], true, (o1, o2) => {
+    if (o1 && o2 && o1.id !== undefined && o2.id !== undefined && o1.id !== null && o2.id !== null) {
+      return String(o1.id) === String(o2.id);
+    }
+    return o1 === o2;
+  });
 
   ngOnInit(): void {
     this.configurarFilterPredicate();
     this.configurarColumnas();
     this.actualizarDataSource();
 
+    this.filtrosSubscription = this.filtrosSubject.pipe(
+      debounceTime(350),
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+    ).subscribe(filtrosValidos => {
+      this.filtrosChange.emit(filtrosValidos);
+      if (!this.filtrosChange.observed) {
+        this.dataSource.filter = JSON.stringify(filtrosValidos);
+        this.cargandoFiltro = false;
+        this.campoFiltrando = null;
+      }
+    });
+
     this.selection.changed.subscribe(() => {
       this.selecciononChange.emit(this.selection.selected);
     });
   }
 
+  ngOnDestroy(): void {
+    if (this.filtrosSubscription) {
+      this.filtrosSubscription.unsubscribe();
+    }
+    if (this.fallbackTimer) {
+      clearTimeout(this.fallbackTimer);
+    }
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['columnas'] || changes['datos']) {
+    if (changes['columnas']) {
       this.configurarColumnas();
+    }
+    if (changes['datos']) {
       this.actualizarDataSource();
-      this.selection.clear();
+      this.cargandoFiltro = false;
+      this.campoFiltrando = null;
+      if (this.fallbackTimer) {
+        clearTimeout(this.fallbackTimer);
+      }
+      if (!this.datos || this.datos.length === 0) {
+        this.selection.clear();
+      }
     }
   }
 
@@ -110,7 +177,15 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
         return Object.keys(filtros).every(key => {
           const valorFiltro = String(filtros[key]).toLowerCase().trim();
           if (!valorFiltro) return true;
-          const valorCelda = String(data[key] || '').toLowerCase().trim();
+          let valorCelda = '';
+          if (key === 'estadoActivo' || key === 'deletedAt' || (key === 'estado' && (!data['estado'] || data['estado'] === 'ACTIVO' || data['estado'] === 'INACTIVO'))) {
+            const esActivoRegistro = this.isActivo(data);
+            if (valorFiltro === 'activo') return esActivoRegistro;
+            if (valorFiltro === 'inactivo') return !esActivoRegistro;
+            valorCelda = esActivoRegistro ? 'activo' : 'inactivo';
+          } else {
+            valorCelda = String(data[key] || '').toLowerCase().trim();
+          }
           return valorCelda.includes(valorFiltro);
         });
       } catch (e) {
@@ -153,7 +228,11 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     }
   }
 
-  aplicarFiltrosColumnas(): void {
+  aplicarFiltrosColumnas(field?: string): void {
+    if (field) {
+      this.campoFiltrando = field;
+    }
+
     const camposFiltrables = this.columnas
       .filter(c => c && c.filtrable !== false)
       .map(c => c.field);
@@ -170,28 +249,75 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
       }
     }
 
-    this.filtrosChange.emit(filtrosValidos);
-    this.dataSource.filter = JSON.stringify(filtrosValidos);
+    if (Object.keys(filtrosValidos).length > 0) {
+      this.cargandoFiltro = true;
+      if (this.fallbackTimer) clearTimeout(this.fallbackTimer);
+      this.fallbackTimer = setTimeout(() => {
+        this.cargandoFiltro = false;
+        this.campoFiltrando = null;
+      }, 4000);
+    } else {
+      this.cargandoFiltro = false;
+      this.campoFiltrando = null;
+    }
+
+    this.filtrosSubject.next(filtrosValidos);
+  }
+
+  enfocarFiltro(event: MouseEvent, field: string): void {
+    const container = event.currentTarget as HTMLElement;
+    if (!container) return;
+
+    const inputEl = container.querySelector('input') as HTMLInputElement;
+    if (inputEl) {
+      if (document.activeElement !== inputEl) {
+        inputEl.focus();
+      }
+      return;
+    }
+
+    const selectEl = container.querySelector('mat-select') as HTMLElement;
+    if (selectEl) {
+      selectEl.click();
+    }
   }
 
   limpiarFiltrosColumnas(): void {
     this.filtrosPorColumna = {};
     this.dataSource.filter = '';
+    this.cargandoFiltro = false;
+    this.campoFiltrando = null;
+    if (this.fallbackTimer) clearTimeout(this.fallbackTimer);
+    this.selection.clear();
     this.filtrosChange.emit({});
   }
 
+  onRefrescar(): void {
+    this.refrescando = true;
+    this.selection.clear();
+    this.refrescar.emit();
+    setTimeout(() => {
+      this.refrescando = false;
+    }, 600);
+  }
+
   isAllSelected(): boolean {
-    const numSelected = this.selection.selected.length;
-    const numRows = this.dataSource.data.length;
-    return numSelected === numRows;
+    if (!this.dataSource.data || this.dataSource.data.length === 0) {
+      return false;
+    }
+    return this.dataSource.data.every(row => this.selection.isSelected(row));
   }
 
   toggleAllRows(): void {
     if (this.isAllSelected()) {
-      this.selection.clear();
-      return;
+      this.dataSource.data.forEach(row => this.selection.deselect(row));
+    } else {
+      this.dataSource.data.forEach(row => this.selection.select(row));
     }
-    this.selection.select(...this.dataSource.data);
+  }
+
+  limpiarSeleccion(): void {
+    this.selection.clear();
   }
 
   /**
@@ -275,8 +401,20 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
     this.eliminar.emit(row);
   }
 
+  onToggleEstado(row: any): void {
+    this.toggleEstado.emit(row);
+  }
+
+  isActivo(row: any): boolean {
+    return row && (row.deletedAt === null || row.deletedAt === undefined || row.deletedAt === '');
+  }
+
   onPaginar(event: PageEvent): void {
     this.paginar.emit(event);
+  }
+
+  onDescargar(row: any): void {
+    this.descargar.emit(row);
   }
 
   onDescargarErrores(row: any): void {
@@ -285,6 +423,14 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges {
 
   onVerDetalle(row: any): void {
     this.verDetalle.emit(row);
+  }
+
+  onVerFichaFactura(row: any): void {
+    this.verFichaFactura.emit(row);
+  }
+
+  onAsignarConcepto(row: any): void {
+    this.asignarConcepto.emit(row);
   }
 
   onGestionarFactura(row: any): void {

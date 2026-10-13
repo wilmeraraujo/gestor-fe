@@ -1,5 +1,12 @@
 <div class="container-fluid p-2">
 
+  <!-- 🎴 CARD DE TÍTULO PRINCIPAL (POR ENCIMA DE LOS TABS) -->
+  <mat-card class="card card-titulo-submodulo" *ngIf="titulo">
+    <div class="titulo-container">
+      <h1 class="titulo-tabla">{{ titulo }}</h1>
+    </div>
+  </mat-card>
+
   <mat-tab-group [(selectedIndex)]="tabSeleccionada" animationDuration="200ms">
 
     <!-- =========================================================================
@@ -12,7 +19,6 @@
 
       <div class="pt-3">
         <app-data-table
-          [titulo]="titulo"
           [columnas]="columnas"
           [datos]="lista"
           [totalRegistros]="totalRegistros"
@@ -22,13 +28,16 @@
           [mostrarAgregar]="false"
           [mostrarEditar]="false"
           [mostrarEliminar]="false"
+          [mostrarFichaFactura]="true"
           [mostrarDetalle]="true"
           [mostrarGestionarFactura]="esGestorF4"
 
           (filtrosChange)="onFiltrosChange($event)"
           (paginar)="paginar($event)"
+          (verFichaFactura)="abrirFichaFactura($event)"
           (verDetalle)="verSoportesFactura($event)"
           (gestionarFactura)="abrirModalGestionar($event)"
+          (refrescar)="onRefrescar()"
           (buscar)="buscar($event)">
         </app-data-table>
       </div>
@@ -54,6 +63,14 @@
           </div>
 
           <div class="d-flex gap-2">
+            <!-- 📋 BOTÓN PARA VER FICHA TÉCNICA E ÍTEMS DESDE EL VISOR -->
+            <button
+              mat-stroked-button
+              style="border-color: #1DA6BA; color: #1DA6BA;"
+              (click)="abrirFichaFactura(facturaSeleccionada)">
+              <mat-icon>list_alt</mat-icon> Ficha / Ítems
+            </button>
+
             <button
               *ngIf="esGestorF4"
               mat-raised-button

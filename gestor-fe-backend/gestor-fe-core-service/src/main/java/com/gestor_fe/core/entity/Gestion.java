@@ -28,14 +28,14 @@ public class Gestion {
     @Column(name = "estado_resultado", nullable = false, length = 50)
     private String estadoResultado; // EN GESTIÓN, CAUSADO, IMPUESTOS VERIFICADOS, PAGADO, ANULADO
 
-    @Column(name = "tipo_registro_contable_id", length = 10)
-    private Long tipoRegistroContableId;
+    @Column(name = "codigo_tipo_registro_contable", length = 50)
+    private String codigoTipoRegistroContable;
 
     @Column(name = "numero_causacion", length = 50)
     private String numeroCausacion;
 
-    @Column(name = "causal_devolucion_id")
-    private Long causalDevolucionId;
+    @Column(name = "codigo_causal_devolucion", length = 50)
+    private String codigoCausalDevolucion;
 
     @Column(name = "observacion", columnDefinition = "TEXT")
     private String observacion;

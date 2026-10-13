@@ -21,11 +21,15 @@ export class PrestadorService extends CommonService<Prestador> {
     return this.http.get<Prestador>(`${this.endPointBase}/nit/${nit}`);
   }
 
-  public cargarSoporte(nitPrestador: string, tipoId: number, extensionId: number, archivo: File): Observable<Documento> {
+  public cargarSoporte(nitPrestador: string, codigoTipo: string | number, codigoExtension: string | number, archivo: File): Observable<Documento> {
     const formData = new FormData();
+    const tipoStr = codigoTipo ? codigoTipo.toString() : '';
+    const extStr = codigoExtension ? codigoExtension.toString() : '';
     formData.append('nitPrestador', nitPrestador);
-    formData.append('tipoId', tipoId.toString());
-    formData.append('extensionId', extensionId.toString());
+    formData.append('codigoTipo', tipoStr);
+    formData.append('tipoId', tipoStr);
+    formData.append('codigoExtension', extStr);
+    formData.append('extensionId', extStr);
     formData.append('archivo', archivo);
 
     return this.http.post<Documento>(`${this.endPointBase}/soportes/cargar`, formData);

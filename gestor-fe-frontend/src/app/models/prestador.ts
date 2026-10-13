@@ -9,5 +9,8 @@ export interface Prestador extends Generic {
   email: string;
   identificadorCargue: number;
   soportes?: Documento[];
-  createdAt?: Date;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  deletedAt?: Date | string | null;
 }
+

@@ -31,14 +31,14 @@ public class Documento {
     @Column(nullable = false)
     private Long tamano;
 
-    @Column(name = "estado_id", nullable = false)
-    private Long estadoId;
+    @Column(name = "codigo_estado", length = 50)
+    private String codigoEstado;
 
-    @Column(name = "extension_id", nullable = false)
-    private Long extensionId;
+    @Column(name = "codigo_extension", length = 50)
+    private String codigoExtension;
 
-    @Column(name = "tipo_id", nullable = false)
-    private Long tipoId;
+    @Column(name = "codigo_tipo", length = 50)
+    private String codigoTipo;
     
  // Relación Opcional: Se llena si es un XML/PDF de Factura
     @ManyToOne(fetch = FetchType.LAZY)

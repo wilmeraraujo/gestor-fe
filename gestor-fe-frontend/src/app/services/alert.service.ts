@@ -22,6 +22,55 @@ export class AlertService {
     });
   }
 
+  // 🍞 Toast compacto en la esquina superior derecha (top-end)
+  toastExito(mensaje: string): void {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: mensaje,
+      showConfirmButton: false,
+      timer: 2500,
+      timerProgressBar: true
+    });
+  }
+
+  toastError(mensaje: string): void {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'error',
+      title: mensaje,
+      showConfirmButton: false,
+      timer: 3500,
+      timerProgressBar: true
+    });
+  }
+
+  toastInfo(mensaje: string): void {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'info',
+      title: mensaje,
+      showConfirmButton: false,
+      timer: 2500,
+      timerProgressBar: true
+    });
+  }
+
+  toastAdvertencia(mensaje: string): void {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'warning',
+      title: mensaje,
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true
+    });
+  }
+
   // 🔴 Alerta de error
   error(mensaje: string, titulo: string = 'Error'): void {
     Swal.fire({
@@ -84,6 +133,42 @@ export class AlertService {
       cancelButtonColor: '#d33',
       confirmButtonText: textoBotonConfirmar,
       cancelButtonText: 'Cancelar'
+    });
+  }
+
+  // 📝 Modal de Confirmación con Observación Obligatoria
+  confirmarConObservacion(
+    titulo: string = '¿Está seguro?',
+    mensaje: string = 'Por favor ingrese el motivo de esta acción:',
+    placeholder: string = 'Motivo u observación...',
+    textoBotonConfirmar: string = 'Confirmar'
+  ): Promise<{ isConfirmed: boolean; observacion?: string }> {
+    return Swal.fire({
+      title: titulo,
+      text: mensaje,
+      input: 'text',
+      inputPlaceholder: placeholder,
+      inputAttributes: {
+        'aria-label': placeholder,
+        maxlength: '500'
+      },
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: this.colorTema,
+      cancelButtonColor: '#64748b',
+      confirmButtonText: textoBotonConfirmar,
+      cancelButtonText: 'Cancelar',
+      inputValidator: (value) => {
+        if (!value || !value.trim()) {
+          return 'Debe ingresar una observación obligatoria';
+        }
+        return null;
+      }
+    }).then((result) => {
+      return {
+        isConfirmed: result.isConfirmed,
+        observacion: result.value ? result.value.trim() : undefined
+      };
     });
   }
 }

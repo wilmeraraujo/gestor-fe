@@ -118,13 +118,15 @@ export class FacturaService extends CommonService<Factura> {
    */
   public procesarCausacionFase2(
     id: number,
-    tipoRegistroContableId: number,
+    codigoTipoRegistroContable: string | number,
     numeroCausacion: string,
     usuario?: string,
     archivo?: any
   ): Observable<Factura> {
     const formData = new FormData();
-    formData.append('tipoRegistroContableId', tipoRegistroContableId ? tipoRegistroContableId.toString() : '');
+    const codigoStr = codigoTipoRegistroContable ? codigoTipoRegistroContable.toString() : '';
+    formData.append('codigoTipoRegistroContable', codigoStr);
+    formData.append('tipoRegistroContableId', codigoStr);
     formData.append('numeroCausacion', numeroCausacion || '');
 
     // 👈 Adjunta el usuario al FormData
@@ -146,14 +148,16 @@ export class FacturaService extends CommonService<Factura> {
    */
   public procesarPagoFase4(
     id: number,
-    tipoRegistroContableId?: number,
+    codigoTipoRegistroContable?: string | number,
     numeroCausacion?: string,
     usuario?: string,
     soporteTb?: any,
     comprobantePago?: any
   ): Observable<Factura> {
     const formData = new FormData();
-    formData.append('tipoRegistroContableId', tipoRegistroContableId ? tipoRegistroContableId.toString() : '');
+    const codigoStr = codigoTipoRegistroContable ? codigoTipoRegistroContable.toString() : '';
+    formData.append('codigoTipoRegistroContable', codigoStr);
+    formData.append('tipoRegistroContableId', codigoStr);
     formData.append('numeroCausacion', numeroCausacion || '');
 
     // 👈 Adjunta el usuario al FormData
@@ -170,5 +174,53 @@ export class FacturaService extends CommonService<Factura> {
     }
 
     return this.http.post<Factura>(`${this.endPointBase}/${id}/pago`, formData);
+  }
+
+  /**
+   * 📊 10. EXPORTACIÓN A EXCEL DE TRAZABILIDAD / FACTURAS
+   */
+  public exportarTrazabilidadExcel(
+    nitPrestador?: string,
+    roles: string[] = [],
+    filtro?: any
+  ): Observable<Blob> {
+    let params = new HttpParams();
+
+    if (nitPrestador) {
+      params = params.set('nitPrestador', nitPrestador);
+    }
+
+    if (roles && roles.length > 0) {
+      roles.forEach(rol => {
+        params = params.append('roles', rol);
+      });
+    }
+
+    return this.http.post(
+      `${this.endPointBase}/trazabilidad/exportar-excel`,
+      filtro || {},
+      {
+        params,
+        responseType: 'blob'
+      }
+    );
+  }
+
+  /**
+   * 🛒 11. OBTENER ÍTEMS / LÍNEAS DE DETALLE DE LA FACTURA
+   */
+  public obtenerItems(facturaId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.endPointBase}/${facturaId}/items`);
+  }
+
+  /**
+   * 🏷️ 12. ASIGNAR CONCEPTO A LA FACTURA
+   */
+  public asignarConcepto(facturaId: number, codigoConcepto: string, usuario?: string): Observable<Factura> {
+    return this.http.put<Factura>(
+      `${this.endPointBase}/${facturaId}/concepto`,
+      { codigoConcepto, usuario },
+      { headers: this.cabeceras }
+    );
   }
 }

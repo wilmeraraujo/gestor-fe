@@ -4,6 +4,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { KeycloakService } from 'keycloak-angular';
 import { PageEvent } from '@angular/material/paginator';
@@ -12,6 +13,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
+import { FichaFacturaModalComponent } from '../../shared/components/ficha-factura-modal/ficha-factura-modal.component';
 
 import { Factura } from '../../models/factura';
 import { Documento } from '../../models/documento';
@@ -19,6 +21,7 @@ import { FacturaService } from '../../services/factura.service';
 import { DocumentoService } from '../../services/documento.service';
 import { FaseService } from '../../services/fase.service';
 import { LoginService } from '../../services/login.service'; // 👈 Inyección de LoginService
+import { AlertService } from '../../services/alert.service';
 
 @Component({
   selector: 'app-seguimiento-facturas',
@@ -52,8 +55,13 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   rolesUsuario: string[] = [];
   esPrestador: boolean = false; // 👈 Flag para ocultar el botón de historial al Prestador
 
-  // 🚀 Inyección de LoginService
+  // 🚀 Inyección de Servicios
   private loginService = inject(LoginService);
+  private alertService = inject(AlertService);
+  private dialog = inject(MatDialog);
+
+  // 📊 Estado de descarga de Excel
+  descargandoExcel: boolean = false;
 
   // 🎯 SUBJECT Y SUBSCRIPCIÓN PARA RETARDO DE FILTROS (DEBOUNCE 400ms)
   private filtroSubject = new Subject<{ [key: string]: string }>();
@@ -69,7 +77,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     { field: 'nit', header: 'NIT Emisor' },
     { field: 'razonSocialEmisor', header: 'Razón Social' },
     { field: 'numeroFactura', header: 'No. Factura' },
-    { field: 'tipoRegistroContableId', header: 'Tipo Reg. ID' },
+    { field: 'codigoTipoRegistroContable', header: 'Tipo Registro' },
     { field: 'numeroCausacion', header: 'No. Causación' },
     { field: 'valorTotal', header: 'Valor Total' },
     { field: 'fechaEmision', header: 'Fecha Emisión' },
@@ -109,7 +117,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     this.configurarDebounceFiltros();
   }
 
-  ngOnDestroy(): void {
+  override ngOnDestroy(): void {
     if (this.filtroSubscription) {
       this.filtroSubscription.unsubscribe();
     }
@@ -153,7 +161,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
   /**
    * 📥 Captura las emisiones de filtros provenientes de DataTableComponent
    */
-  onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
+  override onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
     this.filtroSubject.next(filtrosColumnas);
   }
 
@@ -170,7 +178,7 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
       cufe: filtrosColumnas['cufe'] || null,
       estado: filtrosColumnas['estado'] || null,
       numeroCausacion: filtrosColumnas['numeroCausacion'] || null,
-      tipoRegistroContableId: filtrosColumnas['tipoRegistroContableId'] ? Number(filtrosColumnas['tipoRegistroContableId']) : null,
+      codigoTipoRegistroContable: filtrosColumnas['codigoTipoRegistroContable'] || filtrosColumnas['tipoRegistroContableId'] || null,
       observacion: filtrosColumnas['observacion'] || null,
       textoBusquedaGlobal: this.filtrosActivos.textoBusquedaGlobal || null
     };
@@ -319,5 +327,65 @@ export class SeguimientoFacturasComponent extends CommonListarComponent<Factura,
     this.paginaActual = event.pageIndex;
     this.totalPorPagina = event.pageSize;
     this.cargarDatosPaginados();
+  }
+
+  /**
+   * 📊 Descarga el reporte en Excel con los campos requeridos y filtros aplicados
+   */
+  descargarReporteExcel(): void {
+    if (this.esPrestador) {
+      this.alertService.advertencia('No cuenta con permisos para descargar el reporte en Excel.', 'Acción no permitida');
+      return;
+    }
+
+    if (this.descargandoExcel) return;
+
+    this.descargandoExcel = true;
+    this.alertService.cargando('Generando archivo Excel con los registros filtrados...', 'Descargando Reporte');
+
+    this.service.exportarTrazabilidadExcel(
+      this.nitPrestadorActivo,
+      this.rolesUsuario,
+      this.filtrosActivos
+    ).subscribe({
+      next: (blob: Blob) => {
+        this.descargandoExcel = false;
+        this.alertService.cerrar();
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const fechaStr = new Date().toISOString().substring(0, 10);
+        a.download = `reporte_facturas_${fechaStr}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        this.alertService.exito('Reporte de facturas descargado exitosamente.', 'Descarga Completa');
+      },
+      error: (err) => {
+        this.descargandoExcel = false;
+        this.alertService.cerrar();
+        console.error('Error al exportar Excel:', err);
+        this.alertService.error('Ocurrió un error al intentar generar el archivo Excel.', 'Error en la descarga');
+      }
+    });
+  }
+
+  /**
+   * 📋 Abre el modal con la ficha técnica detallada y los ítems de la factura
+   */
+  abrirFichaFactura(factura: Factura): void {
+    if (!factura) return;
+    this.dialog.open(FichaFacturaModalComponent, {
+      width: '950px',
+      maxWidth: '95vw',
+      panelClass: 'custom-ficha-dialog',
+      data: {
+        facturaId: factura.id,
+        factura: factura
+      }
+    });
   }
 }

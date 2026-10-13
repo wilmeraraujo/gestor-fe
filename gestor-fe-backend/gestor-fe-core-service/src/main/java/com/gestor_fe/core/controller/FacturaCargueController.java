@@ -59,8 +59,13 @@ public class FacturaCargueController {
     @PostMapping("/procesar-zip")
     public ResponseEntity<?> procesarZipFacturas(
             @RequestParam("file") MultipartFile multipartFile,
-            @RequestParam("usuario") String usuario
+            @RequestParam("usuario") String usuario,
+            @RequestParam(value = "roles", required = false) List<String> roles,
+            @RequestParam(value = "codigoMovimiento", required = false) String codigoMovimiento,
+            @RequestParam(value = "movimientoId", required = false) String movimientoIdFallback
     ) {
+        String movFinal = (codigoMovimiento != null && !codigoMovimiento.isBlank()) ? codigoMovimiento : movimientoIdFallback;
+
         // 🛑 VALIDACIÓN 1: Archivo presente
         if (multipartFile == null || multipartFile.isEmpty()) {
             return ResponseEntity.badRequest().body("Debe adjuntar un archivo válido.");
@@ -108,14 +113,22 @@ public class FacturaCargueController {
             Cargue cargue = new Cargue();
             cargue.setNombreArchivo(originalFileName);
             cargue.setUsuario(usuario);
+            cargue.setCodigoMovimiento(movFinal);
             cargue.setCreatedAt(LocalDateTime.now());
             cargue.setExiteError(false);
             cargue.setNumeroRegistro(0);
 
             Cargue savedCargue = cargueService.save(cargue);
 
+            // Determinar si el usuario tiene rol administrativo (admin, gestor-fe-admin, gestor-fe-cargue)
+            boolean esAdmin = (roles != null && roles.stream().anyMatch(rol ->
+                    rol.equalsIgnoreCase("admin") ||
+                    rol.equalsIgnoreCase("gestor-fe-admin") ||
+                    rol.equalsIgnoreCase("gestor-fe-cargue")
+            )) || "admin".equalsIgnoreCase(usuario) || "gestor-fe-admin".equalsIgnoreCase(usuario) || "gestor-fe-cargue".equalsIgnoreCase(usuario);
+
             // Iniciar Batch de procesamiento del contenido interno del ZIP
-            cargueService.runBatchJobAsynchronously(zipToImport, savedCargue);
+            cargueService.runBatchJobAsynchronously(zipToImport, savedCargue, esAdmin);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(savedCargue);
 

@@ -8,12 +8,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PageEvent } from '@angular/material/paginator';
-import { Subject, Subscription, throwError } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { forkJoin, of, Subject, Subscription, throwError } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { FichaFacturaModalComponent } from '../../shared/components/ficha-factura-modal/ficha-factura-modal.component';
+import { AsignarConceptoModalComponent } from '../../shared/components/asignar-concepto-modal/asignar-concepto-modal.component';
 
 import { Factura } from '../../models/factura';
 import { Documento } from '../../models/documento';
@@ -22,6 +24,9 @@ import { DocumentoService } from '../../services/documento.service';
 import { CausalDevolucionService } from '../../services/causal-devolucion.service';
 import { ObservacionService } from '../../services/observacion.service';
 import { FaseService } from '../../services/fase.service';
+import { ConfiguracionFaseExtensionService } from '../../services/configuracion-fase-extension.service';
+import { ExtensionService } from '../../services/extension.service';
+import { ClasificacionService } from '../../services/clasificacion.service';
 import { LoginService } from '../../services/login.service';
 import { AlertService } from '../../services/alert.service';
 
@@ -46,6 +51,9 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   // 💉 Inyecciones mediante Inject
   private loginService = inject(LoginService);
   private alertService = inject(AlertService);
+  private configuracionFaseService = inject(ConfiguracionFaseExtensionService);
+  private extensionService = inject(ExtensionService);
+  private clasificacionService = inject(ClasificacionService);
 
   // Control de pestañas y visores
   tabSeleccionada: number = 0;
@@ -61,6 +69,12 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   opcionesObservacion: { value: any, label: string }[] = [];
   mapaFases: { [key: number]: string } = {};
 
+  // 🛡️ Reglas dinámicas obtenidas de Configuración Fase/Extensión para Fase 2
+  acceptFase2: string = '.pdf';
+  maxMbFase2: number = 10;
+  extensionesPermitidasFase2: string[] = ['pdf'];
+  nombresExtensionesFase2: string = '.PDF';
+
   // 🎯 SUBJECT Y SUBSCRIPCIÓN PARA RETARDO DE FILTROS (DEBOUNCE 400ms)
   private filtroSubject = new Subject<{ [key: string]: string }>();
   private filtroSubscription?: Subscription;
@@ -68,13 +82,8 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   // DTO activo para la API con contexto de Fase 2
   filtrosActivos: any = { faseId: 2 };
 
-  // Opciones de Tipo de Registro Contable mapeadas con sus IDs numéricos
-  opcionesTipoRegistro = [
-    { value: 1, label: 'FC - Factura de Compra' },
-    { value: 2, label: 'GV - Gastos de Viáticos' },
-    { value: 3, label: 'ORC - Otros Registros Contables' },
-    { value: 4, label: 'NI - Nota Interna' }
-  ];
+  // Opciones de Tipo de Registro Contable (cargadas dinámicamente desde Clasificación)
+  opcionesTipoRegistro: { value: any, label: string }[] = [];
 
   columnas = [
     { field: 'id', header: 'ID' },
@@ -82,6 +91,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     { field: 'nit', header: 'NIT Emisor' },
     { field: 'razonSocialEmisor', header: 'Razón Social' },
     { field: 'numeroFactura', header: 'No. Factura' },
+    { field: 'codigoConcepto', header: 'Concepto' },
     { field: 'valorTotal', header: 'Valor Total' },
     { field: 'fechaEmision', header: 'Fecha Emisión' },
     { field: 'cufe', header: 'CUFE' },
@@ -109,10 +119,11 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
     this.cargarDatosSesion();
     this.cargarFases();
     this.cargarListasMaestras();
+    this.cargarConfiguracionFase2();
     this.configurarDebounceFiltros();
   }
 
-  ngOnDestroy(): void {
+  override ngOnDestroy(): void {
     if (this.filtroSubscription) {
       this.filtroSubscription.unsubscribe();
     }
@@ -144,7 +155,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   /**
    * 📥 Captura las emisiones de filtros provenientes de DataTableComponent
    */
-  onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
+  override onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
     this.filtroSubject.next(filtrosColumnas);
   }
 
@@ -158,6 +169,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
       nit: filtrosColumnas['nit'] || filtrosColumnas['nitEmisor'] || null,
       numeroFactura: filtrosColumnas['numeroFactura'] || null,
       razonSocialEmisor: filtrosColumnas['razonSocialEmisor'] || null,
+      codigoConcepto: filtrosColumnas['codigoConcepto'] || null,
       cufe: filtrosColumnas['cufe'] || null,
       estado: filtrosColumnas['estado'] || null,
       observacion: filtrosColumnas['observacion'] || null,
@@ -210,11 +222,25 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   }
 
   private cargarListasMaestras(): void {
+    this.clasificacionService.listar().subscribe({
+      next: (data) => {
+        this.opcionesTipoRegistro = (data || [])
+          .filter(c => !c.deletedAt)
+          .map(c => ({
+            value: c.codigo || c.id,
+            label: c.codigo ? `${c.codigo} - ${c.descripcion}` : c.descripcion
+          }));
+      },
+      error: (err) => {
+        console.error('Error al cargar tipos de registro contable (clasificación):', err);
+      }
+    });
+
     this.causalService.listar().subscribe(data => {
       this.opcionesCausal = (data || [])
         .filter(c => !c.deletedAt)
         .map(c => ({
-          value: c.id,
+          value: c.codigo || c.id,
           label: `${c.codigo || ''} - ${c.descripcion}`
         }));
     });
@@ -227,6 +253,42 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
           label: o.descripcion
         }));
       this.opcionesObservacion.push({ value: 'OTRO', label: 'OTRO (Especificar texto libre...)' });
+    });
+  }
+
+  /**
+   * 🛡️ Carga la parametrización dinámica de extensiones y tamaños para Fase 2
+   */
+  private cargarConfiguracionFase2(): void {
+    forkJoin({
+      configs: this.configuracionFaseService.obtenerPorFase(2),
+      exts: this.extensionService.listar()
+    }).subscribe({
+      next: ({ configs, exts }) => {
+        const activas = (configs || []).filter((c: any) => !c.deletedAt);
+        if (activas.length > 0) {
+          const mapaExt: { [id: number]: string } = {};
+          (exts || []).forEach((e: any) => {
+            if (e.id) {
+              const cod = (e.codigo || e.descripcion || '').toLowerCase().replace('.', '').trim();
+              mapaExt[e.id] = cod;
+            }
+          });
+
+          this.extensionesPermitidasFase2 = activas
+            .map((c: any) => mapaExt[c.extensionId])
+            .filter(Boolean);
+
+          if (this.extensionesPermitidasFase2.length > 0) {
+            this.acceptFase2 = this.extensionesPermitidasFase2.map(e => `.${e}`).join(', ');
+            this.nombresExtensionesFase2 = this.extensionesPermitidasFase2.map(e => `.${e.toUpperCase()}`).join(', ');
+          }
+
+          const maximos = activas.map((c: any) => c.tamanoMaximoMb || 10);
+          this.maxMbFase2 = Math.max(...maximos);
+        }
+      },
+      error: (err) => console.warn('⚠️ No se pudo cargar configuración dinámica de Fase 2:', err)
     });
   }
 
@@ -252,7 +314,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         const rawDocs = res.content || [];
         this.soportesFactura = rawDocs.map((doc: any) => ({
           ...doc,
-          permitirEliminar: this.esGestorF2 && row.faseId === 2 && doc.tipoId === 8
+          permitirEliminar: this.esGestorF2 && row.faseId === 2 && (doc.codigoTipo === '08' || doc.codigoTipo === '8' || doc.tipoId === 8)
         }));
         this.tabSeleccionada = 1;
       },
@@ -331,18 +393,18 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
           const isRechazado = val === 'RECHAZADO';
 
           // CAMPOS DE APROBACIÓN
-          this.toggleCampoVisibilidad(campos, form, 'tipoRegistroContableId', isAprobado, true);
+          this.toggleCampoVisibilidad(campos, form, 'codigoTipoRegistroContable', isAprobado, true);
           this.toggleCampoVisibilidad(campos, form, 'numeroCausacion', isAprobado, true);
           // Si ya existe soporte activo, adjuntar uno nuevo es OPCIONAL; si no existe, es REQUERIDO
           this.toggleCampoVisibilidad(campos, form, 'archivoCausacion', isAprobado, !tieneSoporteCausacionActivo);
 
           // CAMPOS DE RECHAZO
-          this.toggleCampoVisibilidad(campos, form, 'causalDevolucionId', isRechazado, true);
+          this.toggleCampoVisibilidad(campos, form, 'codigoCausalDevolucion', isRechazado, true);
           this.toggleCampoVisibilidad(campos, form, 'observacionId', isRechazado, true);
         }
       },
       {
-        name: 'tipoRegistroContableId',
+        name: 'codigoTipoRegistroContable',
         label: 'Tipo de Registro Contable',
         type: 'select',
         options: this.opcionesTipoRegistro,
@@ -358,14 +420,17 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
       {
         name: 'archivoCausacion',
         label: tieneSoporteCausacionActivo
-          ? 'Soporte de Causación (PDF) - Opcional (Ya existe uno activo)'
-          : 'Soporte de Causación (PDF) * [Requerido]',
+          ? 'Soporte de Causación - Opcional (Ya existe uno activo)'
+          : 'Soporte de Causación * [Requerido]',
         type: 'file',
-        accept: '.pdf',
+        accept: this.acceptFase2,
+        hint: `Formatos permitidos: ${this.nombresExtensionesFase2 || '.PDF'} | Tamaño máximo: ${this.maxMbFase2} MB`,
+        maxSizeMb: this.maxMbFase2,
+        allowedExtensions: this.extensionesPermitidasFase2,
         visible: false
       },
       {
-        name: 'causalDevolucionId',
+        name: 'codigoCausalDevolucion',
         label: 'Causal de Devolución',
         type: 'select',
         options: this.opcionesCausal,
@@ -408,13 +473,24 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   }
 
   /**
-   * ⚙️ Abrir modal de causación / rechazo consultando previamente si existen soportes activos
+   * ⚙️ Abrir modal de causación / rechazo consultando previamente si existen soportes activos y cargando clasificaciones actualizadas
    */
   abrirModalGestionar(row: Factura): void {
-    this.documentoService.getSoportesActivosFactura(row.id).subscribe({
-      next: (docsActivos: Documento[]) => {
+    forkJoin({
+      docsActivos: this.documentoService.getSoportesActivosFactura(row.id).pipe(catchError(() => of([]))),
+      clasificaciones: this.clasificacionService.listar().pipe(catchError(() => of([])))
+    }).subscribe({
+      next: ({ docsActivos, clasificaciones }) => {
+        if (clasificaciones && clasificaciones.length > 0) {
+          this.opcionesTipoRegistro = clasificaciones
+            .filter(c => !c.deletedAt)
+            .map(c => ({
+              value: c.codigo || c.id,
+              label: c.codigo ? `${c.codigo} - ${c.descripcion}` : c.descripcion
+            }));
+        }
         const tieneSoporteCausacionActivo = (docsActivos || []).some(
-          d => d.tipoId === 8 && (!d.ruta || (!d.ruta.includes('_TB_') && !d.ruta.includes('_PAGO_')))
+          d => (d.codigoTipo === '08' || d.codigoTipo === '8' || d.codigoTipo === 'SOPORTE_CAUSACION' || d.tipoId === 8) && (!d.ruta || (!d.ruta.includes('_TB_') && !d.ruta.includes('_PAGO_')))
         );
         this.ejecutarModalGestionar(row, tieneSoporteCausacionActivo);
       },
@@ -432,7 +508,7 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
         campos: this.getCamposGestion(tieneSoporteActivo),
         formData: {
           id: row.id,
-          tipoRegistroContableId: row.tipoRegistroContableId ? String(row.tipoRegistroContableId) : '',
+          codigoTipoRegistroContable: row.codigoTipoRegistroContable || '',
           numeroCausacion: row.numeroCausacion || ''
         },
         service: {
@@ -455,15 +531,37 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
               }
 
               if (!archivoFile && !tieneSoporteActivo) {
-                this.alertService.advertencia('Debe adjuntar obligatoriamente el archivo PDF con el Soporte de Causación.', 'Archivo Requerido');
+                this.alertService.advertencia('Debe adjuntar obligatoriamente el Soporte de Causación.', 'Archivo Requerido');
                 return throwError(() => new Error('El archivo soporte de causación es obligatorio.'));
+              }
+
+              // 🛡️ Validación en frontend previa al envío
+              if (archivoFile) {
+                const nomLower = archivoFile.name.toLowerCase();
+                const ext = nomLower.includes('.') ? nomLower.substring(nomLower.lastIndexOf('.') + 1) : '';
+                if (this.extensionesPermitidasFase2.length > 0 && !this.extensionesPermitidasFase2.includes(ext)) {
+                  this.alertService.advertencia(
+                    `El formato .${ext.toUpperCase()} no está permitido. Formatos admitidos: ${this.nombresExtensionesFase2}`,
+                    'Extensión No Permitida'
+                  );
+                  return throwError(() => new Error('Extensión no permitida'));
+                }
+
+                if (archivoFile.size > this.maxMbFase2 * 1024 * 1024) {
+                  const pesoMb = (archivoFile.size / (1024 * 1024)).toFixed(2);
+                  this.alertService.advertencia(
+                    `El archivo pesa ${pesoMb} MB y supera el límite de ${this.maxMbFase2} MB configurado para la Fase 2.`,
+                    'Tamaño Máximo Excedido'
+                  );
+                  return throwError(() => new Error('Tamaño máximo excedido'));
+                }
               }
 
               this.alertService.cargando('Guardando causación y procesando...', 'Procesando Fase 2');
 
               return this.service.procesarCausacionFase2(
                 row.id,
-                Number(model.tipoRegistroContableId),
+                model.codigoTipoRegistroContable,
                 model.numeroCausacion,
                 usuarioAccion,
                 archivoFile
@@ -472,9 +570,6 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
             } else {
               model.usuario = usuarioAccion;
 
-              if (model.causalDevolucionId) {
-                model.causalDevolucionId = Number(model.causalDevolucionId);
-              }
               if (model.observacionId && model.observacionId !== 'OTRO') {
                 model.observacion = model.observacionId;
               }
@@ -507,11 +602,56 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   }
 
   /**
+   * 🔄 Evento de refresco de tabla y catálogos
+   */
+  onRefrescar(): void {
+    this.cargarDatosPaginados();
+    this.cargarListasMaestras();
+  }
+
+  /**
    * 📟 Evento de paginación
    */
   override paginar(event: PageEvent): void {
     this.paginaActual = event.pageIndex;
     this.totalPorPagina = event.pageSize;
     this.cargarDatosPaginados();
+  }
+
+  /**
+   * 🏷️ Abre el modal para asignar o cambiar el concepto a la factura
+   */
+  abrirModalAsignarConcepto(factura: Factura): void {
+    if (!factura) return;
+    const dialogRef = this.dialog.open(AsignarConceptoModalComponent, {
+      width: '850px',
+      maxWidth: '95vw',
+      panelClass: 'custom-asignar-concepto-dialog',
+      data: {
+        factura: { ...factura }
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((resultado) => {
+      if (resultado) {
+        this.cargarDatosPaginados();
+      }
+    });
+  }
+
+  /**
+   * 📋 Abre el modal con la ficha técnica detallada y los ítems de la factura
+   */
+  abrirFichaFactura(factura: Factura): void {
+    if (!factura) return;
+    this.dialog.open(FichaFacturaModalComponent, {
+      width: '950px',
+      maxWidth: '95vw',
+      panelClass: 'custom-ficha-dialog',
+      data: {
+        facturaId: factura.id,
+        factura: factura
+      }
+    });
   }
 }

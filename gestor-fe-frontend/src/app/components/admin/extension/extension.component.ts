@@ -32,6 +32,11 @@ export class ExtensionComponent extends CommonListarComponent<Extension,Extensio
     {
       field: 'descripcion',
       header: 'Descripción'
+    },
+
+    {
+      field: 'estadoActivo',
+      header: 'Estado'
     }
 
   ];

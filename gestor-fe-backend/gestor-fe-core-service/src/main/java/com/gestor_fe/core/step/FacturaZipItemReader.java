@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -29,6 +30,25 @@ import com.gestor_fe.core.repository.ErrorCargueRepository;
 public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FacturaZipItemReader.class);
+
+    /**
+     * Prefijos oficiales DIAN según Resoluciones 000042/2020, 000165/2023, 000167/2021 y 000013/2021:
+     * - ad: AttachedDocument (Contenedor electrónico)
+     * - de: Documento Electrónico (Representación Gráfica PDF)
+     * - ds: Documento Soporte en adquisiciones a no obligados
+     * - as: Nota de Ajuste al Documento Soporte
+     * - fv / fe: Factura de Venta / Factura Electrónica
+     * - nc: Nota Crédito
+     * - nd: Nota Débito
+     * - ne / ni: Nómina Electrónica
+     * - aj: Nota de Ajuste a Nómina Electrónica
+     * - ar: ApplicationResponse
+     * - cr / ev / rd: Documentos y Eventos RADIAN
+     * - rg: Representación Gráfica
+     */
+    private static final Set<String> PREFIJOS_DIAN = Set.of(
+        "ad", "de", "ds", "as", "fv", "fe", "nc", "nd", "ne", "ni", "aj", "ar", "cr", "ev", "rd", "rg"
+    );
 
     private final String rutaZip;
     private final ErrorCargueRepository errorCargueRepository;
@@ -128,10 +148,7 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
                     }
                 }
 
-                String raizUnica = nombreBase;
-                if (nombreBase.startsWith("ad") || nombreBase.startsWith("de")) {
-                    raizUnica = nombreBase.substring(2);
-                }
+                String raizUnica = extraerRaizUnica(nombreBase);
 
                 if (extension.equalsIgnoreCase("xml")) {
                     mapasXml.put(raizUnica, archivoExtraido);
@@ -221,5 +238,20 @@ public class FacturaZipItemReader implements ItemReader<FacturaZipWrapperDto> {
             errorCargueRepository.saveAllAndFlush(errores);
             LOGGER.info("💾 Transacción aislada completada: Persistidos {} errores en gestor.error_cargue", errores.size());
         });
+    }
+
+    /**
+     * Extrae el identificador único del documento eliminando el prefijo DIAN si existe,
+     * permitiendo el emparejamiento estricto entre XML y PDF (ej. ds... / de... -> ...).
+     */
+    private String extraerRaizUnica(String nombreBase) {
+        if (nombreBase == null || nombreBase.length() < 3) {
+            return nombreBase != null ? nombreBase.toLowerCase() : "";
+        }
+        String prefijo = nombreBase.substring(0, 2).toLowerCase();
+        if (PREFIJOS_DIAN.contains(prefijo)) {
+            return nombreBase.substring(2).toLowerCase();
+        }
+        return nombreBase.toLowerCase();
     }
 }

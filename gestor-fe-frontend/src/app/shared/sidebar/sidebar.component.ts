@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, inject } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Router, NavigationEnd, RouterModule } from '@angular/router';
+import { filter } from 'rxjs';
 import { LoginService } from '../../services/login.service';
 
 interface MenuItem {
@@ -22,8 +23,10 @@ interface MenuItem {
 export class SidebarComponent implements OnInit {
 
   @Input() collapsed: boolean = false;
+  @Output() hoverChange = new EventEmitter<boolean>();
 
   private loginService = inject(LoginService);
+  private router = inject(Router);
 
   isHovered: boolean = false;
   username: string = '';
@@ -32,6 +35,37 @@ export class SidebarComponent implements OnInit {
   ngOnInit(): void {
     this.username = this.loginService.getUserName();
     this.construirMenuSegunRoles();
+    this.expandirMenuActivo();
+
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.expandirMenuActivo();
+      });
+  }
+
+  private expandirMenuActivo(): void {
+    const currentUrl = this.router.url;
+    this.menuNav.forEach(item => {
+      if (item.children) {
+        const hasActiveChild = item.children.some(child => {
+          if (child.route && currentUrl.includes(child.route)) {
+            return true;
+          }
+          if (child.children) {
+            const hasActiveSub = child.children.some(sub => sub.route && currentUrl.includes(sub.route));
+            if (hasActiveSub) {
+              child.expanded = true;
+              return true;
+            }
+          }
+          return false;
+        });
+        if (hasActiveChild) {
+          item.expanded = true;
+        }
+      }
+    });
   }
 
   private construirMenuSegunRoles(): void {
@@ -54,15 +88,50 @@ export class SidebarComponent implements OnInit {
       expanded: false,
       visible: isAdminOGAdmin,
       children: [
-        { name: "Estado", icon: "check_circle", route: "/dashboard/admin/estado", visible: true },
+        {
+          name: "DIAN",
+          icon: "receipt_long",
+          expanded: false,
+          visible: true,
+          children: [
+            { name: "Tipos de identificación", icon: "badge", route: "/dashboard/admin/dian/tipo-identificacion", visible: true },
+            { name: "Tipos de operación", icon: "swap_horiz", route: "/dashboard/admin/dian/tipo-operacion", visible: true },
+            { name: "Tipos de documento", icon: "description", route: "/dashboard/admin/dian/tipo-documento-dian", visible: true },
+            { name: "Medios de pago", icon: "payments", route: "/dashboard/admin/dian/medio-pago", visible: true },
+            { name: "Unidades de medida", icon: "straighten", route: "/dashboard/admin/dian/unidad-medida", visible: true },
+            { name: "Responsabilidad fiscal", icon: "gavel", route: "/dashboard/admin/dian/responsabilidad-fiscal", visible: true }
+          ]
+        },
+        {
+          name: "Ubicación",
+          icon: "place",
+          expanded: false,
+          visible: true,
+          children: [
+            { name: "Departamentos", icon: "map", route: "/dashboard/admin/ubicacion/departamento", visible: true },
+            { name: "Municipios", icon: "location_city", route: "/dashboard/admin/ubicacion/municipio", visible: true }
+          ]
+        },
+        {
+          name: "Configuración",
+          icon: "tune",
+          expanded: false,
+          visible: true,
+          children: [
+            { name: "Sistema", icon: "settings_suggest", route: "/dashboard/admin/configuracion-sistema", visible: true },
+            { name: "Fase / Extensión", icon: "rule", route: "/dashboard/admin/configuracion-fase-extension", visible: true }
+          ]
+        },
         { name: "Observación", icon: "comment", route: "/dashboard/admin/observacion", visible: true },
         { name: "Causal devolución", icon: "assignment_return", route: "/dashboard/admin/causal-devolucion", visible: true },
         { name: "Tipo", icon: "category", route: "/dashboard/admin/tipo", visible: true },
         { name: "Extensión", icon: "extension", route: "/dashboard/admin/extension", visible: true },
+        { name: "Concepto", icon: "receipt", route: "/dashboard/admin/concepto", visible: true },
+        { name: "Prestador", icon: "domain", route: "/dashboard/admin/prestador", visible: true },
         { name: "Clasificación", icon: "class", route: "/dashboard/admin/clasificacion", visible: true },
         { name: "Fase", icon: "schema", route: "/dashboard/admin/fase", visible: true },
-        { name: "Configuración Sistema", icon: "tune", route: "/dashboard/admin/configuracion-sistema", visible: true },
-        { name: "Configuración Fase/Extensión", icon: "rule", route: "/dashboard/admin/configuracion-fase-extension", visible: true }
+        { name: "Proceso", icon: "account_tree", route: "/dashboard/admin/proceso", visible: true },
+        { name: "Movimiento", icon: "sync_alt", route: "/dashboard/admin/movimiento", visible: true }
       ]
     };
 
@@ -124,21 +193,45 @@ export class SidebarComponent implements OnInit {
           icon: "alt_route",
           route: "/dashboard/seguimiento-factura",
           visible: true
-        },
+        }
+      ]
+    };
+
+    // 5. REPORTES Y ESTADÍSTICAS
+    const itemReportesEstadisticas: MenuItem = {
+      name: "Reportes y Estadísticas",
+      icon: "bar_chart",
+      expanded: false,
+      visible: true,
+      children: [
         {
           name: "Reportes",
           icon: "analytics",
           route: "/dashboard/documento",
           visible: isAdminOGAdmin || this.loginService.isGFaseCinco
+        },
+        {
+          name: "Estadísticas",
+          icon: "insights",
+          route: "/dashboard/estadistica",
+          visible: true
         }
       ]
     };
 
-    this.menuNav = [itemHome, itemAdmin, itemCargue, itemGestion]
+    this.menuNav = [itemHome, itemAdmin, itemCargue, itemGestion, itemReportesEstadisticas]
       .filter(item => item.visible)
       .map(item => {
         if (item.children) {
-          item.children = item.children.filter(child => child.visible);
+          item.children = item.children
+            .filter(child => child.visible)
+            .map(child => {
+              if (child.children) {
+                child.children = child.children.filter(subChild => subChild.visible);
+              }
+              return child;
+            })
+            .filter(child => !child.children || child.children.length > 0);
         }
         return item;
       })
@@ -151,20 +244,47 @@ export class SidebarComponent implements OnInit {
 
   /**
    * 🔄 EFECTO ACORDEÓN:
-   * Al alternar un menú con submenús, primero contrae todos los demás.
+   * Al alternar un menú con submenús, primero contrae todos los demás módulos y submódulos.
    */
   toggleMenu(targetItem: MenuItem): void {
     const estaExpandido = targetItem.expanded;
 
-    // 1. Contraer todos los grupos de menú
+    // 1. Contraer todos los grupos de menú y sus subgrupos
     this.menuNav.forEach(item => {
       if (item.children) {
         item.expanded = false;
+        item.children.forEach(child => {
+          if (child.children) {
+            child.expanded = false;
+          }
+        });
       }
     });
 
     // 2. Si el que presionamos estaba cerrado, lo abrimos
     targetItem.expanded = !estaExpandido;
+  }
+
+  /**
+   * 📂 EFECTO ACORDEÓN PARA SUBGRUPOS (ej: DIAN, Ubicación, Configuración):
+   * Contrae los demás subgrupos hermanos y abre/cierra el seleccionado.
+   */
+  toggleSubMenu(parentItem: MenuItem, targetChild: MenuItem, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    const estaExpandido = targetChild.expanded;
+
+    // Contraer todos los subgrupos hermanos dentro del mismo módulo
+    if (parentItem && parentItem.children) {
+      parentItem.children.forEach(child => {
+        if (child.children) {
+          child.expanded = false;
+        }
+      });
+    }
+
+    targetChild.expanded = !estaExpandido;
   }
 
   /**
@@ -175,6 +295,11 @@ export class SidebarComponent implements OnInit {
     this.menuNav.forEach(item => {
       if (item.children) {
         item.expanded = false;
+        item.children.forEach(child => {
+          if (child.children) {
+            child.expanded = false;
+          }
+        });
       }
     });
   }
@@ -182,12 +307,14 @@ export class SidebarComponent implements OnInit {
   onMouseEnter(): void {
     if (this.collapsed) {
       this.isHovered = true;
+      this.hoverChange.emit(true);
     }
   }
 
   onMouseLeave(): void {
     if (this.collapsed) {
       this.isHovered = false;
+      this.hoverChange.emit(false);
     }
   }
 

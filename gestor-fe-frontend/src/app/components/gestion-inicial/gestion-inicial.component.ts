@@ -14,6 +14,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { CommonListarComponent } from '../common-listar.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { FichaFacturaModalComponent } from '../../shared/components/ficha-factura-modal/ficha-factura-modal.component';
 
 import { Factura } from '../../models/factura';
 import { Documento } from '../../models/documento';
@@ -107,7 +108,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
     this.configurarDebounceFiltros();
   }
 
-  ngOnDestroy(): void {
+  override ngOnDestroy(): void {
     if (this.filtroSubscription) {
       this.filtroSubscription.unsubscribe();
     }
@@ -141,7 +142,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
   /**
    * 📥 Captura las emisiones de filtros provenientes de DataTableComponent
    */
-  onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
+  override onFiltrosChange(filtrosColumnas: { [key: string]: string }): void {
     this.filtroSubject.next(filtrosColumnas);
   }
 
@@ -211,7 +212,7 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
       this.opcionesCausal = (data || [])
         .filter(c => !c.deletedAt)
         .map(c => ({
-          value: c.id,
+          value: c.codigo || c.id,
           label: `${c.codigo || ''} - ${c.descripcion}`
         }));
     });
@@ -291,12 +292,12 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
         ],
         onChange: (val: string, campos: any[], form: FormGroup) => {
           const isRechazado = val === 'RECHAZADO';
-          this.toggleCampoVisibilidad(campos, form, 'causalDevolucionId', isRechazado);
+          this.toggleCampoVisibilidad(campos, form, 'codigoCausalDevolucion', isRechazado);
           this.toggleCampoVisibilidad(campos, form, 'observacionId', isRechazado);
         }
       },
       {
-        name: 'causalDevolucionId',
+        name: 'codigoCausalDevolucion',
         label: 'Causal de Devolución / Anulación',
         type: 'select',
         options: this.opcionesCausal,
@@ -350,8 +351,8 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
         formData: { id: row.id },
         service: {
           editar: (model: any) => {
-            if (model.causalDevolucionId) {
-              model.causalDevolucionId = Number(model.causalDevolucionId);
+            if (model.codigoCausalDevolucion) {
+              model.codigoCausalDevolucion = String(model.codigoCausalDevolucion);
             }
 
             if (model.observacionId && model.observacionId !== 'OTRO') {
@@ -377,12 +378,36 @@ export class GestionInicialComponent extends CommonListarComponent<Factura, Fact
   }
 
   /**
+   * 📋 Abre el modal con la ficha técnica detallada y los ítems de la factura
+   */
+  abrirFichaFactura(factura: Factura): void {
+    if (!factura) return;
+    this.dialog.open(FichaFacturaModalComponent, {
+      width: '950px',
+      maxWidth: '95vw',
+      panelClass: 'custom-ficha-dialog',
+      data: {
+        facturaId: factura.id,
+        factura: factura
+      }
+    });
+  }
+
+  /**
    * 🔎 Búsqueda global superior
    */
   buscar(texto: string): void {
     this.filtrosActivos.textoBusquedaGlobal = texto && texto.trim() !== '' ? texto.trim() : null;
     this.paginaActual = 0;
     this.cargarDatosPaginados();
+  }
+
+  /**
+   * 🔄 Evento de refresco de tabla y catálogos
+   */
+  onRefrescar(): void {
+    this.cargarDatosPaginados();
+    this.cargarListasMaestras();
   }
 
   /**

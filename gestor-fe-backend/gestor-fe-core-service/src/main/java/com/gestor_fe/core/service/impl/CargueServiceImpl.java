@@ -56,18 +56,28 @@ public class CargueServiceImpl implements CargueService {
     @Override
     @Async("taskExecutor")
     public void runBatchJobAsynchronously(File fileToImport, Cargue cargue) {
-        try {
-            LOGGER.info("=== 🚀 Hilo secundario arrancando Job de Spring Batch de forma asíncrona ===");
+        runBatchJobAsynchronously(fileToImport, cargue, false);
+    }
 
-            JobParameters jobParameters = new JobParametersBuilder()
+    @Override
+    @Async("taskExecutor")
+    public void runBatchJobAsynchronously(File fileToImport, Cargue cargue, boolean esAdmin) {
+        try {
+            LOGGER.info("=== 🚀 Hilo secundario arrancando Job de Spring Batch de forma asíncrona (esAdmin={}) ===", esAdmin);
+
+            JobParametersBuilder jobParametersBuilder = new JobParametersBuilder()
                     .addString("fullPathFileName", fileToImport.getAbsolutePath())
                     .addLong("identificadorCargue", cargue.getId())
                     .addString("nombreArchivo", cargue.getNombreArchivo())
                     .addString("usuario", cargue.getUsuario())
-                    .addLong("timestamp", System.currentTimeMillis())
-                    .toJobParameters();
+                    .addString("esAdmin", esAdmin ? "true" : "false")
+                    .addLong("timestamp", System.currentTimeMillis());
 
-            jobLauncher.run(procesarLoteFacturasJob, jobParameters);
+            if (cargue.getCodigoMovimiento() != null && !cargue.getCodigoMovimiento().isBlank()) {
+                jobParametersBuilder.addString("codigoMovimiento", cargue.getCodigoMovimiento());
+            }
+
+            jobLauncher.run(procesarLoteFacturasJob, jobParametersBuilder.toJobParameters());
 
         } catch (Exception e) {
             LOGGER.error("❌ Error crítico ejecutando el Job Asíncrono de Facturas: ", e);

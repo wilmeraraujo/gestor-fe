@@ -1,6 +1,7 @@
 package com.gestor_fe.core.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import com.gestor_fe.core.entity.Factura;
 
 public interface FacturaService {
 
+    Optional<Factura> findById(Long id);
     Page<Factura> findByNitAndDeletedAtIsNull(String nit, Pageable pageable);
     Page<Factura> findByFaseIdAndDeletedAtIsNull(Long faseId, Pageable pageable);
     Page<Factura> findByFaseActiva(Long faseId, Pageable pageable);
@@ -21,12 +23,14 @@ public interface FacturaService {
     Factura procesarTransicionFase(Long id, Long faseActualId, GestionDto dto);
 
     // MÉTODOS MULTIPART CON PARÁMETRO 'USUARIO'
-    Factura procesarCausacionFase2(Long id, Long tipoRegistroContableId, String numeroCausacion, String usuario, MultipartFile archivoCausacion);
-    Factura procesarPagoFase4(Long id, Long tipoRegistroContableId, String numeroCausacion, String usuario, MultipartFile soporteTb, MultipartFile comprobantePago);
+    Factura procesarCausacionFase2(Long id, String codigoTipoRegistroContable, String numeroCausacion, String usuario, MultipartFile archivoCausacion);
+    Factura procesarPagoFase4(Long id, String codigoTipoRegistroContable, String numeroCausacion, String usuario, MultipartFile soporteTb, MultipartFile comprobantePago);
+    Factura asignarConcepto(Long id, String codigoConcepto, String usuario);
 
     // AUXILIARES Y CRITERIA
     List<String> findExistingCufes(List<String> cufes);
     List<String> findExistingNitFacturas(List<String> nitFacturas);
     Page<Factura> buscarConCriteria(FacturaFilterDto filtro, Pageable pageable);
     Page<Factura> buscarTrazabilidadSegunRol(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro, Pageable pageable);
+    byte[] exportarFacturasExcel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro);
 }

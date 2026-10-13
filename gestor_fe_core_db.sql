@@ -92,10 +92,18 @@ select * from admin.observacion o order by id desc limit 10;
 select * from admin.tipo t order by id desc limit 10;
 select * from admin."extension" e order by id desc limit 10;
 select * from admin.fase f order by id desc limit 10;
+
 select * from admin.configuracion_sistema cs order by id desc limit 10;
 select * from admin.configuracion_fase_extension cfe order by id desc limit 10;
 
+select * from admin.responsabilidad_fiscal rf order by id desc limit 10;
+select * from admin.tipo_documento_dian tdd order by id desc limit 10;
+select * from admin.unidad_medida um order by id desc limit 10;
+select * from admin.medio_pago mp order by id desc limit 10;
+
+select * from logs.log_acciones order by id desc limit 10;
 --
+TRUNCATE TABLE logs.log_acciones RESTART IDENTITY CASCADE;
 -- Reinicio masivo de tablas del esquema 'admin'
 TRUNCATE TABLE admin.departamento RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin.municipio RESTART IDENTITY CASCADE;
@@ -106,6 +114,8 @@ TRUNCATE TABLE admin.observacion RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin.tipo RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin."extension" RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin.fase RESTART IDENTITY CASCADE;
+TRUNCATE TABLE admin.proceso RESTART IDENTITY CASCADE;
+TRUNCATE TABLE admin.configuracion_sistema RESTART IDENTITY CASCADE;
 TRUNCATE TABLE admin.configuracion_fase_extension RESTART IDENTITY CASCADE;
 
 TRUNCATE TABLE 
@@ -126,6 +136,7 @@ select * from gestor.cargue c order by id desc limit 10;
 select * from gestor.documento d order by id desc limit 20;
 select * from gestor.prestador p order by id desc limit 10;
 select * from gestor.factura f order by id desc limit 10;
+select * from gestor.factura_item fi order by id desc limit 10;
 select * from gestor.error_cargue ec order by id desc limit 10;
 
 select * from public.batch_job_execution bje order by bje.job_execution_id desc limit 10; 
@@ -142,6 +153,15 @@ values ('2026-07-24 15:10:19.336','Calle 15 # 24-50','facturacion@clinicasolucio
 insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
 values ('2026-07-24 15:10:19.336','Calle 15 # 24-50','facturacion@clinicasoluciones.com',0,901323081,'CLINICA SOLUCIONES SALUD S.A.S','3001234567');
 
+insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
+values ('2026-07-24 15:10:19.336','Calle 15 # 24-50','facturacion@clinicasoluciones.com',0,900077584,'CLINICA SOLUCIONES SALUD S.A.S','3001234567');
+
+insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
+values ('2026-07-24 15:10:19.336','CALLE 11A N 33 ESQUINA','facturacion@clinicasoluciones.com',0,814000337,'ASOCIACION MUTUAL ASSOLIDARIA','3009999999');
+
+insert into gestor.prestador (created_at,direccion,email,identificador_cargue,nit,razon_social,telefono)
+values ('2026-07-24 15:10:19.336','CALLE 11A N 33 ESQUINA','facturacion@clinicasoluciones.com',0,12749190,'MIDEROS CAICEDO RAMON','3009999999');
+
 --pasar a fase 1
 update gestor.factura 
 set estado = 'RADICADO' ,observacion = null , fase_id = 1 , 
@@ -152,6 +172,7 @@ truncate table gestor.cargue restart identity CASCADE;
 truncate table gestor.error_cargue restart identity CASCADE;
 truncate table gestor.documento restart identity CASCADE;
 truncate table gestor.factura restart identity CASCADE;
+truncate table gestor.factura_item restart identity CASCADE;
 
 truncate table public.batch_job_execution restart identity CASCADE;
 truncate table public.batch_job_execution_context restart identity CASCADE; 
@@ -341,6 +362,10 @@ INSERT INTO admin.municipio (codigo, descripcion, departamento_id, created_at) V
 ('99001', 'PUERTO CARREÑO', (SELECT id FROM admin.departamento WHERE codigo = '99'), NOW());
 
 
+select * from "admin".estado d;
+insert into admin.estado (id,codigo,created_at,deleted_at,descripcion,updated_at) values
+(1,'01','2026-07-30 20:57:10.592',null,'Activo',null),
+(2,'02','2026-07-30 20:57:10.592',null,'Inactivo',null);
 
 
 INSERT INTO admin.causal_devolucion (id, codigo, created_at, deleted_at, descripcion, updated_at) VALUES
@@ -386,20 +411,443 @@ INSERT INTO admin."extension" (id, codigo, created_at, deleted_at, descripcion, 
 (3, '02', '2026-07-30 21:09:18.399', NULL, 'zip', NULL);
 
 
-INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, categoria) VALUES
-('TAMANO_MAX_ZIP_CARGUE_MB', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 'CARGUE'),
-('MAX_FACTURAS_POR_ZIP', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 'CARGUE'),
-('ROLES_PERMITIDOS_BORRADO_LOGICO', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 'SEGURIDAD');
-
-INSERT INTO admin.configuracion_sistema (codigo, valor, descripcion, categoria) VALUES
-('01', '100', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', 'CARGUE'),
-('02', '500', 'Cantidad máxima de facturas procesables en un solo ZIP', 'CARGUE'),
-('03', 'admin,gestor-fe-admin', 'Roles autorizados para el borrado en cascada', 'SEGURIDAD');
-
+-- 🛠️ Tabla Proceso para catálogo maestro de la administración
+CREATE TABLE IF NOT EXISTS admin.proceso (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
 
 select * from admin.configuracion_sistema;
+TRUNCATE table admin.configuracion_sistema restart identity;
 
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_fase_extension_active 
-ON admin.configuracion_fase_extension (fase_id, extension_id) 
-WHERE deleted_at IS NULL;
+
+INSERT INTO admin.proceso (id, codigo, descripcion) VALUES
+(1, '01', 'Proceso de Cargue Soportes'),
+(2, '02', 'Proceso de Gestión de Facturas'),
+(3, '03', 'Parámetros de Seguridad y Permisos');
+
+select * from admin.configuracion_sistema;
+INSERT INTO admin.configuracion_sistema (id, codigo, descripcion, valor, proceso_id) VALUES
+(1, '01', 'Tamaño máximo permitido para el archivo .ZIP masivo en MB', '100', 1),
+(2, '02', 'Cantidad máxima de facturas procesables en un solo ZIP', '500', 1),
+(3, '03', 'Roles autorizados para el borrado en cascada', 'admin,gestor-fe-admin', 3);
+
+--
+select * from admin.configuracion_fase_extension cfe order by id desc limit 10;
+
+-- 3. Inserción de los registros exactos de la vista
+INSERT INTO admin.configuracion_fase_extension (id,codigo,fase_id,extension_id,descripcion,tamano_maximo_mb,obligatorio,permite_multiple,created_at,updated_at,deleted_at) VALUES 
+(
+    1, 
+    '1-3', 
+    1, -- Fase 1: RADICACION
+    3, -- Extensión 3: zip
+    'Cargar un archivo zip por cargue', 
+    50, 
+    TRUE, 
+    FALSE, 
+    NOW(), 
+    NOW(), 
+    NOW() -- deleted_at con valor => Estado: INACTIVO
+),
+(
+    2, 
+    '1-2', 
+    1, -- Fase 1: RADICACION
+    2, -- Extensión 2: pdf
+    'Extensión pdf para fase 1', 
+    10, 
+    TRUE, 
+    FALSE, 
+    NOW(), 
+    NOW(), 
+    NULL  -- deleted_at NULL => Estado: ACTIVO
+);
+
+-- =========================================================================
+-- 🏛️ ACTUALIZACIÓN DE CAMPOS NORMATIVOS DIAN (UBL 2.1)
+-- =========================================================================
+ALTER TABLE gestor.factura 
+    ADD COLUMN IF NOT EXISTS tipo_documento VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS tipo_operacion VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS ambiente_ejecucion VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS moneda VARCHAR(10) DEFAULT 'COP',
+    ADD COLUMN IF NOT EXISTS tasa_cambio NUMERIC(18, 4),
+    ADD COLUMN IF NOT EXISTS fecha_tasa_cambio DATE,
+    ADD COLUMN IF NOT EXISTS tipo_identificacion_emisor VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS tipo_persona_emisor VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS responsabilidad_fiscal_emisor VARCHAR(150),
+    ADD COLUMN IF NOT EXISTS hora_emision VARCHAR(30),
+    ADD COLUMN IF NOT EXISTS valor_bruto NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS total_descuentos NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS total_cargos NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS total_anticipos NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS valor_impoconsumo NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS otros_impuestos NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS tipo_identificacion_cliente VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS tipo_persona_cliente VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS responsabilidad_fiscal_cliente VARCHAR(150);
+
+ALTER TABLE gestor.factura_item
+    ADD COLUMN IF NOT EXISTS codigo_unspsc VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS precio_referencia NUMERIC(18, 4),
+    ADD COLUMN IF NOT EXISTS porcentaje_descuento NUMERIC(10, 4),
+    ADD COLUMN IF NOT EXISTS valor_descuento NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS porcentaje_iva NUMERIC(10, 4),
+    ADD COLUMN IF NOT EXISTS valor_iva NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS porcentaje_impoconsumo NUMERIC(10, 4),
+    ADD COLUMN IF NOT EXISTS valor_impoconsumo NUMERIC(18, 2),
+    ADD COLUMN IF NOT EXISTS valor_subtotal NUMERIC(18, 2);
+
+-- =========================================================================
+-- 🏛️ TABLAS Y MAESTROS DE CATÁLOGOS DIAN (ADMIN)
+-- =========================================================================
+
+-- 1. Medios de Pago
+CREATE TABLE IF NOT EXISTS admin.medio_pago (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.medio_pago (codigo, descripcion) VALUES
+('1', 'Instrumento no definido / Acuerdo mutuo'),
+('10', 'Efectivo'),
+('20', 'Cheque'),
+('31', 'Pago por compensación'),
+('41', 'Transferencia Crédito bancaria'),
+('42', 'Consignación bancaria'),
+('47', 'Transferencia Débito bancaria'),
+('48', 'Tarjeta Crédito'),
+('49', 'Tarjeta Débito'),
+('71', 'Bonos'),
+('72', 'Vales'),
+('ZZZ', 'Otro / Mutuo acuerdo')
+ON CONFLICT DO NOTHING;
+
+-- 2. Tipos de Documento DIAN
+CREATE TABLE IF NOT EXISTS admin.tipo_documento_dian (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.tipo_documento_dian (codigo, descripcion) VALUES
+('01', 'Factura electrónica de Venta'),
+('02', 'Factura electrónica de Exportación'),
+('03', 'Factura por Contingencia Facturador'),
+('04', 'Factura por Contingencia DIAN'),
+('05', 'Factura de Talonario o de Papel'),
+('40', 'Documento Soporte en adquisiciones a no obligados a facturar'),
+('91', 'Nota Crédito'),
+('92', 'Nota Débito'),
+('93', 'Nota de Ajuste al Documento Soporte (Crédito)'),
+('94', 'Nota de Ajuste al Documento Soporte (Débito)')
+ON CONFLICT DO NOTHING;
+
+-- 3. Unidades de Medida
+CREATE TABLE IF NOT EXISTS admin.unidad_medida (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.unidad_medida (codigo, descripcion) VALUES
+('EA', 'Unidad (Each)'),
+('94', 'Unidad de Servicio / Fracción'),
+('HUR', 'Hora'),
+('KGM', 'Kilogramo'),
+('MTR', 'Metro'),
+('LTR', 'Litro'),
+('GLI', 'Galón'),
+('DAY', 'Día'),
+('MON', 'Mes'),
+('XUN', 'Unidad internacional')
+ON CONFLICT DO NOTHING;
+
+-- 4. Responsabilidades Fiscales
+CREATE TABLE IF NOT EXISTS admin.responsabilidad_fiscal (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.responsabilidad_fiscal (codigo, descripcion) VALUES
+('O-13', 'Gran Contribuyente'),
+('O-15', 'Autorretenedor'),
+('O-23', 'Agente de Retención IVA'),
+('O-47', 'Régimen Simple de Tributación (SIMPLE)'),
+('R-99-PN', 'No responsable de IVA')
+ON CONFLICT DO NOTHING;
+
+-- 5. Tipos de Identificación DIAN
+CREATE TABLE IF NOT EXISTS admin.tipo_identificacion (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.tipo_identificacion (codigo, descripcion) VALUES
+('11', 'Registro civil'),
+('12', 'Tarjeta de identidad'),
+('13', 'Cédula de ciudadanía'),
+('21', 'Tarjeta de extranjería'),
+('22', 'Cédula de extranjería'),
+('31', 'NIT (Número de Identificación Tributaria)'),
+('41', 'Pasaporte'),
+('42', 'Documento de identificación extranjero'),
+('47', 'PEP (Permiso Especial de Permanencia)'),
+('48', 'PPT (Permiso por Protección Temporal)'),
+('50', 'NIT de otro país'),
+('91', 'NUIP (Número Único de Identificación Personal)')
+ON CONFLICT DO NOTHING;
+
+-- 6. Tipos de Operación DIAN
+CREATE TABLE IF NOT EXISTS admin.tipo_operacion (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    usuario_creacion VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+INSERT INTO admin.tipo_operacion (codigo, descripcion) VALUES
+('10', 'Estándar (Operación estándar de compra/venta)'),
+('09', 'AIU (Administración, Imprevistos y Utilidades)'),
+('11', 'Mandatos bienes'),
+('12', 'Mandatos servicios'),
+('20', 'Nota Crédito / Débito que referencia una factura electrónica'),
+('22', 'Nota Crédito / Débito sin referencia a facturas'),
+('30', 'Factura electrónica del Sector Salud (RIPS)'),
+('32', 'Sector Salud - Cuotas moderadoras y copagos')
+ON CONFLICT DO NOTHING;
+
+-- =========================================================================
+-- SCRIPT DE CREACIÓN Y POBLADO: CONCEPTOS NORMATIVOS DIAN (RES. 000162/2023)
+-- ESQUEMA: admin | TABLA: concepto
+-- =========================================================================
+-- 1. Crear la tabla en caso de que no exista
+CREATE TABLE IF NOT EXISTS admin.concepto (
+    id BIGSERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+);
+-- 2. Inserción de conceptos normativos DIAN (Formato 1001)
+INSERT INTO admin.concepto (codigo, descripcion, created_at) VALUES
+('5001', 'Salarios, prestaciones sociales y demás pagos laborales', CURRENT_TIMESTAMP),
+('5002', 'Honorarios: Valor acumulado pagado o abonado en cuenta', CURRENT_TIMESTAMP),
+('5003', 'Comisiones: Valor acumulado pagado o abonado en cuenta', CURRENT_TIMESTAMP),
+('5004', 'Servicios: Valor acumulado pagado o abonado en cuenta', CURRENT_TIMESTAMP),
+('5005', 'Arrendamientos: Valor acumulado pagado o abonado en cuenta', CURRENT_TIMESTAMP),
+('5006', 'Intereses y rendimientos financieros causados', CURRENT_TIMESTAMP),
+('5007', 'Compra de activos movibles', CURRENT_TIMESTAMP),
+('5008', 'Compra de activos fijos', CURRENT_TIMESTAMP),
+('5010', 'Pagos por regalías y explotación de propiedad industrial', CURRENT_TIMESTAMP),
+('5011', 'Pagos o abonos en cuenta por concepto de primas de cesión', CURRENT_TIMESTAMP),
+('5012', 'Contratos de cuentas en participación', CURRENT_TIMESTAMP),
+('5013', 'Donaciones', CURRENT_TIMESTAMP),
+('5014', 'Pérdidas por siniestros', CURRENT_TIMESTAMP),
+('5015', 'Contribuciones y afiliaciones', CURRENT_TIMESTAMP),
+('5016', 'Impuestos deducibles', CURRENT_TIMESTAMP),
+('5017', 'Pérdidas en enajenación de activos', CURRENT_TIMESTAMP),
+('5018', 'Gastos en el exterior', CURRENT_TIMESTAMP),
+('5019', 'Pagos o abonos en cuenta por fletes, acarreos y transporte', CURRENT_TIMESTAMP),
+('5020', 'Indemnizaciones', CURRENT_TIMESTAMP),
+('5023', 'Pagos no solicitados fiscalmente como costo o deducción', CURRENT_TIMESTAMP),
+('5024', 'Amortizaciones', CURRENT_TIMESTAMP),
+('5025', 'Depreciaciones', CURRENT_TIMESTAMP),
+('5026', 'Costos y deducciones por operaciones de crédito público', CURRENT_TIMESTAMP),
+('5027', 'Devolución de pagos o abonos en cuenta', CURRENT_TIMESTAMP),
+('5028', 'Reembolso de gastos', CURRENT_TIMESTAMP),
+('5029', 'Descuentos comerciales condicionados', CURRENT_TIMESTAMP),
+('5030', 'Otros pagos o abonos en cuenta deducibles', CURRENT_TIMESTAMP),
+('5031', 'Pagos por compensaciones por servicios personales', CURRENT_TIMESTAMP),
+('5034', 'Cuotas de fomento', CURRENT_TIMESTAMP),
+('5035', 'Gastos médicos y de salud', CURRENT_TIMESTAMP),
+('5038', 'Rendimientos financieros de títulos y bonos', CURRENT_TIMESTAMP),
+('5040', 'Fondos de inversión', CURRENT_TIMESTAMP),
+('5041', 'Compra de títulos valores', CURRENT_TIMESTAMP),
+('5042', 'Pagos o abonos en cuenta por servicios de salud y hospitalarios', CURRENT_TIMESTAMP),
+('5043', 'Pagos o abonos en cuenta por compra de medicamentos e insumos médicos', CURRENT_TIMESTAMP),
+('5055', 'Viáticos: Valor que no constituye ingreso para el trabajador', CURRENT_TIMESTAMP),
+('5056', 'Gastos de representación: Valor que no constituye ingreso para el trabajador', CURRENT_TIMESTAMP),
+('5058', 'Aportes a seguridad social (Salud, Pensión, ARL) a cargo del empleador', CURRENT_TIMESTAMP),
+('5059', 'Aportes parafiscales (SENA, ICBF, Cajas de Compensación)', CURRENT_TIMESTAMP),
+('5060', 'Cesantías e intereses sobre cesantías pagadas directamente o al fondo', CURRENT_TIMESTAMP),
+('5061', 'Bonificaciones, horas extras, recargos y comisiones laborales', CURRENT_TIMESTAMP),
+('5062', 'Indemnizaciones de carácter laboral', CURRENT_TIMESTAMP),
+('5063', 'Intereses y rendimientos financieros efectivamente pagados', CURRENT_TIMESTAMP),
+('5064', 'Retiros de fondos de cesantías', CURRENT_TIMESTAMP),
+('5065', 'Apoyos económicos no reembolsables', CURRENT_TIMESTAMP),
+('5066', 'Servicios técnicos', CURRENT_TIMESTAMP),
+('5067', 'Asistencia técnica', CURRENT_TIMESTAMP),
+('5068', 'Consultoría', CURRENT_TIMESTAMP),
+('5070', 'Pagos o abonos en cuenta por convenios de cooperación', CURRENT_TIMESTAMP),
+('5071', 'Pagos o abonos en cuenta por contratos fiduciarios', CURRENT_TIMESTAMP),
+('5072', 'Recompra de activos / Contratos de leasing', CURRENT_TIMESTAMP),
+('5073', 'Subsidios y ayudas gubernamentales o sectoriales', CURRENT_TIMESTAMP),
+('5074', 'Costos y gastos financieros diferentes de intereses', CURRENT_TIMESTAMP),
+('5075', 'Mantenimiento y reparaciones', CURRENT_TIMESTAMP),
+('5076', 'Seguros y reaseguros', CURRENT_TIMESTAMP),
+('5077', 'Publicidad, propaganda y promoción comercial', CURRENT_TIMESTAMP),
+('5078', 'Servicios públicos domiciliarios', CURRENT_TIMESTAMP),
+('5079', 'Adecuación e instalación de oficinas y sedes', CURRENT_TIMESTAMP),
+('5080', 'Gastos de viaje y transporte de personal', CURRENT_TIMESTAMP),
+('5081', 'Elementos de aseo, cafetería y suministros generales', CURRENT_TIMESTAMP),
+('5082', 'Papelería, útiles de escritorio y fotocopias', CURRENT_TIMESTAMP),
+('5083', 'Combustibles, lubricantes y derivados', CURRENT_TIMESTAMP),
+('5084', 'Software, licencias y tecnologías de la información', CURRENT_TIMESTAMP),
+('5085', 'Capacitación, formación y entrenamiento de personal', CURRENT_TIMESTAMP),
+('5086', 'Aportes voluntarios a fondos de pensiones y cuentas AFC', CURRENT_TIMESTAMP),
+('5087', 'Gastos legales, notariales, judiciales y de registro', CURRENT_TIMESTAMP),
+('5088', 'Multas, sanciones, penalidades y litigios', CURRENT_TIMESTAMP);
+
+-- =========================================================================
+-- 🔗 INTEGRIDAD REFERENCIAL Y RELACIONES DEL ESQUEMA GESTOR
+-- =========================================================================
+
+-- 1. Relación: cargue (1) <---> (N) factura
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_factura_cargue' AND table_schema = 'gestor'
+    ) THEN
+        ALTER TABLE gestor.factura 
+        ADD CONSTRAINT fk_factura_cargue 
+        FOREIGN KEY (identificador_cargue) 
+        REFERENCES gestor.cargue (id);
+    END IF;
+END $$;
+
+-- 2. Relación: cargue (1) <---> (N) error_cargue
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_error_cargue_cargue' AND table_schema = 'gestor'
+    ) THEN
+        ALTER TABLE gestor.error_cargue 
+        ADD CONSTRAINT fk_error_cargue_cargue 
+        FOREIGN KEY (cargue_id) 
+        REFERENCES gestor.cargue (id) 
+        ON DELETE CASCADE;
+    END IF;
+END $$;
+
+-- =========================================================================
+-- 🔄 MIGRACIÓN DE CAMPOS: REEMPLAZO DE IDS POR CÓDIGOS (PREFIJO codigo_)
+-- =========================================================================
+
+-- 1. Tabla gestor.factura
+ALTER TABLE IF EXISTS gestor.factura 
+    ADD COLUMN IF NOT EXISTS codigo_tipo_documento VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_operacion VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_ambiente_ejecucion VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_identificacion_emisor VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_persona_emisor VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_responsabilidad_fiscal_emisor VARCHAR(150),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_identificacion_cliente VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_persona_cliente VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_responsabilidad_fiscal_cliente VARCHAR(150),
+    ADD COLUMN IF NOT EXISTS codigo_forma_pago VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_medio_pago VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_causal_devolucion VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_registro_contable VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_movimiento VARCHAR(50);
+
+-- 2. Tabla gestor.gestion
+ALTER TABLE IF EXISTS gestor.gestion 
+    ADD COLUMN IF NOT EXISTS codigo_causal_devolucion VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo_registro_contable VARCHAR(50);
+
+-- 3. Tabla gestor.documento
+ALTER TABLE IF EXISTS gestor.documento 
+    ADD COLUMN IF NOT EXISTS codigo_estado VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_extension VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS codigo_tipo VARCHAR(50);
+
+-- 4. Tabla gestor.cargue
+ALTER TABLE IF EXISTS gestor.cargue 
+    ADD COLUMN IF NOT EXISTS codigo_movimiento VARCHAR(50);
+
+
+
+
+/*
+ * codigo_ambiente_ejecucion
+ 
+1 = Ambiente de Producción
+2 = Ambiente de Pruebas / Habilitación
+
+codigo_forma_pago
+
+1 = Contado
+2 = Crédito
+
+ codigo_tipo_persona_cliente
+ 
+1 = Persona Jurídica y asimiladas
+2 = Persona Natural y asimiladas
+
+ * 
+ * */
+   
+   
+   /**
+
+📋 Estructura oficial DIAN
+Segmento	Longitud	Descripción	Ejemplos
+pp	2 caracteres	Prefijo del tipo de documento o contenedor (ver tabla abajo)	ds, de, ad, fv, nc, nd, as, ne
+ffffffffff	10 dígitos	NIT del Facturador / Emisor (rellenado con ceros a la izquierda)	0814000337 (NIT 814000337)
+aa	2 dígitos	Dos últimos dígitos del año de generación	26 (2026), 25 (2025)
+nnnnnnnnnn	10 caracteres	Consecutivo del documento (rellenado con ceros a la izquierda)	0000000055
+
+
+
+  Catálogo de Prefijos DIAN (pp):
+ds: Documento Soporte en adquisiciones a no obligados a facturar.
+as: Nota de Ajuste al Documento Soporte.
+ad: AttachedDocument (Contenedor electrónico XML: Factura + ApplicationResponse).
+de: Documento Electrónico (utilizado comúnmente para la Representación Gráfica PDF o Documento Electrónico).
+fv / fe: Factura de Venta / Factura Electrónica.
+nc: Nota Crédito.
+nd: Nota Débito.
+ne / ni: Documento soporte de Pago de Nómina Electrónica.
+aj: Nota de Ajuste de Nómina Electrónica.
+ar: ApplicationResponse (Validación DIAN / Acuse de recibo / Eventos).
+cr / ev / rd: Contenedor / Eventos / Registro RADIAN.
+rg: Representación Gráfica (utilizado por algunos proveedores tecnológicos).
+    */
+   */

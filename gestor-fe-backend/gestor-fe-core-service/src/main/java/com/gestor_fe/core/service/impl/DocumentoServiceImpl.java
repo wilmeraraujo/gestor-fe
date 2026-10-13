@@ -62,43 +62,50 @@ public class DocumentoServiceImpl implements DocumentoService {
 
     // 🚀 BÚSQUEDA AVANZADA COMBINADA Y PAGINADA CON CRITERIA API
     @Override
-    public Page<Documento> filtrarDocumentos(String numeroFactura, String nit, Long tipoId, Long extensionId, Pageable pageable) {
+    public Page<Documento> filtrarDocumentos(String numeroFactura, String nit, String codigoTipo, String codigoExtension, Pageable pageable) {
+        return filtrarDocumentos(numeroFactura, nit, codigoTipo, codigoExtension, null, null, pageable);
+    }
+
+    @Override
+    public Page<Documento> filtrarDocumentos(String numeroFactura, String nit, String codigoTipo, String codigoExtension, String nombreOriginal, Long id, Pageable pageable) {
         Specification<Documento> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             
             // 1. Filtro base: Que el documento no esté eliminado lógicamente
             predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
             
-            // 2. Filtro por Tipo de Documento (RUT=1, CAMARA=2, CERTIFICACION=3, CONTRATO=4, PDF FACTURA=5, XML FACTURA=6, etc.)
-            if (tipoId != null && tipoId > 0) {
-                predicates.add(criteriaBuilder.equal(root.get("tipoId"), tipoId));
+            // 2. Filtro por ID de documento
+            if (id != null) {
+                predicates.add(criteriaBuilder.equal(root.get("id"), id));
             }
 
-            // 3. Filtro por Extensión de Documento (1 = PDF, 2 = XML, 3 = ZIP)
-            if (extensionId != null && extensionId > 0) {
-                if (extensionId == 1L) {
-                    // PDF: extension_id = 1 o nombreOriginal finalizado en .pdf
-                    Predicate byExt = criteriaBuilder.equal(root.get("extensionId"), 1L);
-                    Predicate byName = criteriaBuilder.like(criteriaBuilder.lower(root.get("nombreOriginal")), "%.pdf");
-                    predicates.add(criteriaBuilder.or(byExt, byName));
-                } else if (extensionId == 2L) {
-                    // XML: extension_id = 2 o nombreOriginal finalizado en .xml
-                    Predicate byExt = criteriaBuilder.equal(root.get("extensionId"), 2L);
-                    Predicate byName = criteriaBuilder.like(criteriaBuilder.lower(root.get("nombreOriginal")), "%.xml");
-                    predicates.add(criteriaBuilder.or(byExt, byName));
-                } else {
-                    predicates.add(criteriaBuilder.equal(root.get("extensionId"), extensionId));
-                }
+            // 3. Filtro por Nombre Original de archivo (LIKE case-insensitive)
+            if (nombreOriginal != null && !nombreOriginal.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                    criteriaBuilder.lower(root.get("nombreOriginal")),
+                    "%" + nombreOriginal.toLowerCase().trim() + "%"
+                ));
+            }
+
+            // 4. Filtro por Tipo de Documento
+            if (codigoTipo != null && !codigoTipo.isBlank()) {
+                predicates.add(criteriaBuilder.equal(root.get("codigoTipo"), codigoTipo.trim()));
+            }
+
+            // 5. Filtro por Extensión de Documento
+            if (codigoExtension != null && !codigoExtension.isBlank()) {
+                String extTrim = codigoExtension.trim();
+                Predicate byExt = criteriaBuilder.equal(root.get("codigoExtension"), extTrim);
+                Predicate byName = criteriaBuilder.like(criteriaBuilder.lower(root.get("nombreOriginal")), "%." + extTrim.toLowerCase().replace(".", ""));
+                predicates.add(criteriaBuilder.or(byExt, byName));
             }
             
-            // 3. Filtros avanzados cruzados por Factura (Número o NIT)
+            // 6. Filtros avanzados cruzados por Factura (Número o NIT)
             if ((numeroFactura != null && !numeroFactura.trim().isEmpty()) || (nit != null && !nit.trim().isEmpty())) {
                 
-                // Creamos una subconsulta para obtener los Documentos que pertenecen a Facturas que coincidan con los filtros
-                Subquery<Documento> subquery = query.subquery(Documento.class);
+                // Subconsulta para obtener las IDs de Documentos asociados a Facturas filtradas
+                Subquery<Long> subquery = query.subquery(Long.class);
                 Root<Factura> facturaRoot = subquery.from(Factura.class);
-                
-                // Hacemos el join dentro de la subconsulta usando la lista de 'documentos' que sí existe en Factura
                 Join<Factura, Documento> documentosJoin = facturaRoot.join("documentos");
                 
                 List<Predicate> subqueryPredicates = new ArrayList<>();
@@ -116,12 +123,12 @@ public class DocumentoServiceImpl implements DocumentoService {
                     subqueryPredicates.add(criteriaBuilder.equal(facturaRoot.get("nit"), nit.trim()));
                 }
                 
-                // Seleccionamos los documentos de esas facturas en la subconsulta
-                subquery.select(documentosJoin);
+                // Seleccionamos la ID del documento en la subconsulta
+                subquery.select(documentosJoin.get("id"));
                 subquery.where(criteriaBuilder.and(subqueryPredicates.toArray(new Predicate[0])));
                 
-                // Finalmente, obligamos a que el Documento principal esté dentro de los resultados de esa subconsulta
-                predicates.add(root.in(subquery));
+                // Filtramos que el ID del documento esté presente en la subconsulta de facturas
+                predicates.add(root.get("id").in(subquery));
             }
             
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

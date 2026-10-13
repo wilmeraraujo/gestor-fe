@@ -14,6 +14,8 @@ public interface CargueService {
 
     void runBatchJobAsynchronously(File fileToImport, Cargue cargue);
 
+    void runBatchJobAsynchronously(File fileToImport, Cargue cargue, boolean esAdmin);
+
     Page<Cargue> findByDeletedAtIsNull(Pageable pageable);
 
     Page<Cargue> findCarguesSegunRol(String usuario, List<String> roles, Pageable pageable);

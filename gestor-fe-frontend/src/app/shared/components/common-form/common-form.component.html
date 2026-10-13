@@ -15,6 +15,14 @@
         class="form-control rounded-4"
         [formControlName]="campo.name" />
 
+      <!-- EMAIL -->
+      <input
+        *ngIf="campo.type === 'email'"
+        type="email"
+        class="form-control rounded-4"
+        [placeholder]="campo.placeholder || ''"
+        [formControlName]="campo.name" />
+
       <!-- NUMBER (NUEVO: Para el tamaño máximo MB) -->
       <input
         *ngIf="campo.type === 'number'"

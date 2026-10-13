@@ -27,6 +27,9 @@ public class FacturaZipWriter implements ItemWriter<Factura> {
     private final String rutaStorageValidos;
     private final Long identificadorCargue;
 
+    // ⚡ CACHÉ EN MEMORIA (Ámbito del Job/Step): Evita reconsultar los soportes del prestador en la BD por cada factura
+    private final java.util.Map<String, List<Documento>> soportesPorNitCache = new java.util.HashMap<>();
+
     public FacturaZipWriter(FacturaRepository facturaRepository, 
                             DocumentoRepository documentoRepository,
                             String rutaStorageValidos, 
@@ -74,8 +77,10 @@ public class FacturaZipWriter implements ItemWriter<Factura> {
             // =========================================================================================
             // 📸 2. SNAPSHOT (CONGELAMIENTO) DINÁMICO DE TODOS LOS SOPORTES ACTIVOS DEL PRESTADOR
             // =========================================================================================
-            // Consulta todos los documentos del prestador que no estén borrados (deletedAt IS NULL)
-            List<Documento> soportesPrestador = documentoRepository.findSoportesPrestadorByNit(factura.getNit());
+            // Consulta en caché o BD todos los documentos del prestador que no estén borrados (deletedAt IS NULL)
+            List<Documento> soportesPrestador = soportesPorNitCache.computeIfAbsent(factura.getNit(), 
+                nit -> documentoRepository.findSoportesPrestadorByNit(nit)
+            );
 
             for (Documento soporteOrigen : soportesPrestador) {
                 // Verificamos que el soporte esté activo y tenga ruta física configurada
@@ -83,7 +88,7 @@ public class FacturaZipWriter implements ItemWriter<Factura> {
                     File archivoOrigen = new File(soporteOrigen.getRuta());
                     
                     if (archivoOrigen.exists()) {
-                        String nombreCopia = "SOPORTE_" + soporteOrigen.getTipoId() + "_" + UUID.randomUUID() + "_" + soporteOrigen.getNombreOriginal();
+                        String nombreCopia = "SOPORTE_" + (soporteOrigen.getCodigoTipo() != null ? soporteOrigen.getCodigoTipo() : "DOC") + "_" + UUID.randomUUID() + "_" + soporteOrigen.getNombreOriginal();
                         Path destinoCopia = directorioFactura.resolve(nombreCopia);
 
                         // Copiar físicamente el archivo del prestador a la carpeta única de esta factura
@@ -94,9 +99,18 @@ public class FacturaZipWriter implements ItemWriter<Factura> {
                         docCopia.setNombreOriginal(soporteOrigen.getNombreOriginal());
                         docCopia.setRuta(destinoCopia.toString());
                         docCopia.setTamano(soporteOrigen.getTamano());
-                        docCopia.setEstadoId(1L);
-                        docCopia.setExtensionId(soporteOrigen.getExtensionId());
-                        docCopia.setTipoId(soporteOrigen.getTipoId());
+                        docCopia.setCodigoEstado("01");
+
+                        String ext = soporteOrigen.getCodigoExtension();
+                        if (ext == null || ext.isBlank() || ext.equalsIgnoreCase("PDF") || ext.equals("2")) {
+                            ext = "02";
+                        } else if (ext.equalsIgnoreCase("XML") || ext.equals("1")) {
+                            ext = "01";
+                        } else if (ext.equalsIgnoreCase("ZIP") || ext.equals("3")) {
+                            ext = "03";
+                        }
+                        docCopia.setCodigoExtension(ext);
+                        docCopia.setCodigoTipo(soporteOrigen.getCodigoTipo());
                         
                         factura.addDocumento(docCopia);
                     } else {
