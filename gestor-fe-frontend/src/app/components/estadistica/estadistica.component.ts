@@ -91,6 +91,7 @@ export class EstadisticaComponent implements OnInit, OnDestroy {
     this.isAdmin = this.loginService.isAdmin || this.loginService.isGAdmin;
 
     this.esAdminOGestor = this.isAdmin ||
+                          this.loginService.isGReporte ||
                           this.loginService.isGFaseUno ||
                           this.loginService.isGFaseDos ||
                           this.loginService.isGFaseTres ||

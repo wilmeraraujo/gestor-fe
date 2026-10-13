@@ -71,7 +71,25 @@ export class SidebarComponent implements OnInit {
   private construirMenuSegunRoles(): void {
     this.loginService.getUserRoles();
 
+    // 🔒 Si el usuario no tiene ningún rol funcional de negocio (ej: usuario default de Keycloak),
+    // no debe cargar ningún módulo en la navegación.
+    if (!this.loginService.hasAnyRole) {
+      this.menuNav = [];
+      return;
+    }
+
     const isAdminOGAdmin = this.loginService.isAdmin || this.loginService.isGAdmin;
+    const canVerCargue = isAdminOGAdmin || this.loginService.isPrestador || this.loginService.isGCargue;
+    const canVerGestion = isAdminOGAdmin ||
+                          this.loginService.isPrestador ||
+                          this.loginService.isGCargue ||
+                          this.loginService.isGFaseUno ||
+                          this.loginService.isGFaseDos ||
+                          this.loginService.isGFaseTres ||
+                          this.loginService.isGFaseCuatro ||
+                          this.loginService.isGFaseCinco ||
+                          this.loginService.isGReporte;
+    const canVerReportes = isAdminOGAdmin || this.loginService.isGReporte;
 
     // 1. HOME
     const itemHome: MenuItem = {
@@ -140,19 +158,19 @@ export class SidebarComponent implements OnInit {
       name: "Cargue soportes",
       icon: "cloud_upload",
       expanded: false,
-      visible: true,
+      visible: canVerCargue,
       children: [
         {
           name: "Prestador",
           icon: "domain_add",
           route: "/dashboard/prestador",
-          visible: true
+          visible: canVerCargue
         },
         {
           name: "Facturas",
           icon: "upload_file",
           route: "/dashboard/cargue",
-          visible: isAdminOGAdmin || this.loginService.isPrestador || this.loginService.isGCargue
+          visible: canVerCargue
         }
       ]
     };
@@ -162,7 +180,7 @@ export class SidebarComponent implements OnInit {
       name: "Gestión",
       icon: "badge",
       expanded: false,
-      visible: true,
+      visible: canVerGestion,
       children: [
         {
           name: "Gestión inicial",
@@ -192,29 +210,29 @@ export class SidebarComponent implements OnInit {
           name: "Seguimiento de facturas",
           icon: "alt_route",
           route: "/dashboard/seguimiento-factura",
-          visible: true
+          visible: canVerGestion
         }
       ]
     };
 
-    // 5. REPORTES Y ESTADÍSTICAS
+    // 5. REPORTES Y ESTADÍSTICAS (Solo usuarios con rol gestor-fe-reporte o administradores)
     const itemReportesEstadisticas: MenuItem = {
       name: "Reportes y Estadísticas",
       icon: "bar_chart",
       expanded: false,
-      visible: true,
+      visible: canVerReportes,
       children: [
         {
           name: "Reportes",
           icon: "analytics",
           route: "/dashboard/documento",
-          visible: isAdminOGAdmin || this.loginService.isGFaseCinco
+          visible: canVerReportes
         },
         {
           name: "Estadísticas",
           icon: "insights",
           route: "/dashboard/estadistica",
-          visible: true
+          visible: canVerReportes
         }
       ]
     };
