@@ -13,6 +13,8 @@ import { Chart, registerables } from 'chart.js';
 Chart.register(...registerables);
 
 import { EstadisticaService } from '../../services/estadistica.service';
+import { FacturaService } from '../../services/factura.service';
+import { AlertService } from '../../services/alert.service';
 import { LoginService } from '../../services/login.service';
 import { ResumenEstadisticasResponse } from '../../models/estadistica';
 
@@ -37,6 +39,8 @@ import { ResumenEstadisticasResponse } from '../../models/estadistica';
 export class EstadisticaComponent implements OnInit, OnDestroy {
 
   private estadisticaService = inject(EstadisticaService);
+  private facturaService = inject(FacturaService);
+  private alertService = inject(AlertService);
   private loginService = inject(LoginService);
   private currencyPipe = inject(CurrencyPipe);
 
@@ -63,6 +67,13 @@ export class EstadisticaComponent implements OnInit, OnDestroy {
   esPrestador: boolean = false;
   esAdminOGestor: boolean = false;
   isAdmin: boolean = false;
+
+  // 🏛️ Sección Información Exógena - Formato 1001 DIAN
+  anioGravableExogena: number | null = null;
+  aniosDisponibles: number[] = [2026, 2025, 2024, 2023, 2022];
+  fechaExogenaDesde: string = '';
+  fechaExogenaHasta: string = '';
+  descargandoExogena: boolean = false;
 
   ngOnInit(): void {
     this.cargarSesion();
@@ -443,5 +454,88 @@ export class EstadisticaComponent implements OnInit, OnDestroy {
       return 'badge-azul';
     }
     return 'badge-gris';
+  }
+
+  /**
+   * 🏛️ Limpia los filtros de la sección de Información Exógena (Formato 1001)
+   */
+  limpiarFiltrosExogena(): void {
+    this.anioGravableExogena = null;
+    this.fechaExogenaDesde = '';
+    this.fechaExogenaHasta = '';
+  }
+
+  /**
+   * 🏛️ Descarga el archivo Excel estructurado para el Formato 1001 de la DIAN (Información Exógena)
+   */
+  descargarFormato1001(): void {
+    if (this.descargandoExogena) return;
+
+    if (!this.anioGravableExogena && !this.fechaExogenaDesde && !this.fechaExogenaHasta) {
+      this.alertService.advertencia(
+        'Por favor seleccione un Año Gravable o ingrese un rango de fechas para generar el Formato 1001.',
+        'Filtro requerido'
+      );
+      return;
+    }
+
+    this.descargandoExogena = true;
+    const descPeriodo = this.anioGravableExogena
+      ? `año gravable ${this.anioGravableExogena}`
+      : 'periodo de fechas seleccionado';
+
+    this.alertService.cargando(
+      `Generando Formato 1001 DIAN para el ${descPeriodo}...`,
+      'Generando Información Exógena'
+    );
+
+    const filtro: any = {};
+    if (this.fechaExogenaDesde) {
+      filtro.fechaEmisionDesde = this.fechaExogenaDesde;
+    }
+    if (this.fechaExogenaHasta) {
+      filtro.fechaEmisionHasta = this.fechaExogenaHasta;
+    }
+    if (this.esPrestador && this.nitFiltro) {
+      filtro.nit = this.nitFiltro;
+    }
+
+    this.facturaService.exportarFormato1001Excel(
+      this.nitFiltro || undefined,
+      this.rolesUsuario,
+      this.anioGravableExogena || undefined,
+      filtro
+    ).subscribe({
+      next: (blob: Blob) => {
+        this.descargandoExogena = false;
+        this.alertService.cerrar();
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const nombreArchivo = this.anioGravableExogena
+          ? `formato_1001_dian_${this.anioGravableExogena}.xlsx`
+          : `formato_1001_dian_${new Date().getFullYear()}.xlsx`;
+        a.download = nombreArchivo;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        this.alertService.exito(
+          `Formato 1001 DIAN (${descPeriodo}) descargado exitosamente.`,
+          'Descarga Completa'
+        );
+      },
+      error: (err) => {
+        this.descargandoExogena = false;
+        this.alertService.cerrar();
+        console.error('Error al generar Formato 1001:', err);
+        this.alertService.error(
+          'Ocurrió un error al intentar generar el archivo Excel del Formato 1001.',
+          'Error en la descarga'
+        );
+      }
+    });
   }
 }
