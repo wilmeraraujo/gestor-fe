@@ -1,0 +1,211 @@
+<div class="asignar-modal-container">
+
+  <!-- ========================================== -->
+  <!-- 🪟 ENCABEZADO DEL MODAL (NAVY + CYAN #1DA6BA) -->
+  <!-- ========================================== -->
+  <div class="modal-header d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center gap-3">
+      <div class="header-icon-badge">
+        <mat-icon>category</mat-icon>
+      </div>
+      <div>
+        <h2 class="modal-title m-0">Asignar Concepto Contable</h2>
+        <div class="modal-subtitle d-flex align-items-center gap-2 mt-1" *ngIf="factura">
+          <span class="badge-factura">No. {{ factura.numeroFactura || '---' }}</span>
+          <span *ngIf="factura.estado" class="badge-estado">{{ factura.estado }}</span>
+          <span *ngIf="factura.faseId" class="badge-fase">Fase {{ factura.faseId }} (Reconocimiento Contable)</span>
+          <span *ngIf="factura.codigoConcepto" class="badge-concepto-activo">
+            <mat-icon class="mini-icon">sell</mat-icon> {{ factura.codigoConcepto }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <button mat-icon-button (click)="cerrar()" class="btn-close-modal" matTooltip="Cerrar (Esc)">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- SPINNER DE CARGA -->
+  <div *ngIf="cargando" class="loading-overlay">
+    <mat-spinner diameter="44"></mat-spinner>
+    <p class="mt-2 text-muted fw-semibold">Consultando catálogo de conceptos normativos...</p>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 📜 CONTENIDO PRINCIPAL SCROLLABLE          -->
+  <!-- ========================================== -->
+  <div class="modal-body-content" *ngIf="!cargando && factura">
+
+    <!-- 1️⃣ INFORMACIÓN DE LA FACTURA -->
+    <div class="section-title">
+      <mat-icon class="icon-institucional">receipt</mat-icon>
+      <span>Información del Documento</span>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <!-- 🏢 EMISOR / PRESTADOR -->
+      <div class="col-md-6">
+        <div class="party-card emisor-card">
+          <div class="party-card-header d-flex align-items-center gap-2">
+            <mat-icon class="text-navy">storefront</mat-icon>
+            <span class="fw-bold text-navy">Emisor / Prestador</span>
+          </div>
+          <div class="party-card-body">
+            <div class="info-row">
+              <span class="info-label">Razón Social:</span>
+              <span class="info-value fw-semibold text-dark">{{ factura.razonSocialEmisor || 'N/A' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">NIT / ID:</span>
+              <span class="info-value">{{ factura.nit }}<span *ngIf="factura.dv">-{{ factura.dv }}</span></span>
+            </div>
+            <div class="info-row" *ngIf="factura.direccion">
+              <span class="info-label">Dirección:</span>
+              <span class="info-value">{{ factura.direccion }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 💰 DATOS COMERCIALES -->
+      <div class="col-md-6">
+        <div class="party-card cliente-card">
+          <div class="party-card-header d-flex align-items-center gap-2">
+            <mat-icon class="text-cyan">account_balance_wallet</mat-icon>
+            <span class="fw-bold text-cyan">Valores y Concepto Actual</span>
+          </div>
+          <div class="party-card-body">
+            <div class="info-row">
+              <span class="info-label">Valor Total:</span>
+              <span class="info-value fw-bold text-dark">{{ (factura.valorTotal || 0) | currency:'COP':'$':'1.0-0' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Fecha Emisión:</span>
+              <span class="info-value">{{ (factura.fechaEmision | date:'dd/MM/yyyy') || 'N/A' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Concepto Actual:</span>
+              <span class="info-value">
+                <span *ngIf="factura.codigoConcepto" class="badge-concepto-pill">
+                  <mat-icon class="mini-icon">sell</mat-icon> {{ factura.codigoConcepto }}
+                </span>
+                <span *ngIf="!factura.codigoConcepto" class="text-muted fst-italic">Sin concepto asignado</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2️⃣ BÚSQUEDA Y SELECCIÓN DE CONCEPTO -->
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+      <div class="section-title m-0">
+        <mat-icon class="icon-institucional">list_alt</mat-icon>
+        <span>Selección de Concepto Normativo</span>
+      </div>
+      <span class="badge-items-count">{{ conceptosFiltrados.length }} conceptos disponibles</span>
+    </div>
+
+    <!-- BUSCADOR CON ESTILO FORM FIELD ELEGANTE -->
+    <div class="search-wrapper mb-3">
+      <div class="search-box">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input 
+          type="text" 
+          [(ngModel)]="filtroTexto" 
+          (ngModelChange)="filtrarConceptos()"
+          placeholder="Buscar concepto por código o descripción..."
+          class="search-input"
+          autocomplete="off">
+        <button *ngIf="filtroTexto" mat-icon-button class="btn-clear-search" (click)="filtroTexto = ''; filtrarConceptos()" matTooltip="Limpiar filtro">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- TABLA DE CONCEPTOS -->
+    <div class="table-items-wrapper mb-3">
+      <table class="table-items w-100" *ngIf="conceptosFiltrados && conceptosFiltrados.length > 0">
+        <thead>
+          <tr class="table-items-header">
+            <th class="text-center col-select">Sel.</th>
+            <th class="col-codigo">Código</th>
+            <th>Descripción del Concepto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr 
+            *ngFor="let c of conceptosFiltrados" 
+            class="table-items-row clickable-row" 
+            [class.row-selected]="codigoConceptoSeleccionado === c.codigo"
+            (click)="seleccionarConcepto(c)">
+            
+            <td class="text-center col-select">
+              <div class="custom-radio-indicator">
+                <mat-icon class="radio-icon" [class.checked]="codigoConceptoSeleccionado === c.codigo">
+                  {{ codigoConceptoSeleccionado === c.codigo ? 'radio_button_checked' : 'radio_button_unchecked' }}
+                </mat-icon>
+              </div>
+            </td>
+
+            <td class="col-codigo">
+              <span class="code-badge" [class.code-badge-selected]="codigoConceptoSeleccionado === c.codigo">
+                {{ c.codigo }}
+              </span>
+            </td>
+
+            <td class="item-desc-cell">
+              <div class="concepto-descripcion-text" [class.text-selected]="codigoConceptoSeleccionado === c.codigo">
+                {{ c.descripcion }}
+              </div>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- MENSAJE VACÍO SI NO HAY RESULTADOS DE BÚSQUEDA -->
+      <div *ngIf="conceptosFiltrados.length === 0" class="empty-items-alert text-center p-4">
+        <mat-icon class="empty-icon text-muted">search_off</mat-icon>
+        <p class="m-0 text-muted fw-semibold">No se encontraron conceptos que coincidan con "{{ filtroTexto }}".</p>
+        <small class="text-secondary">Intente con otro código o palabra clave.</small>
+      </div>
+    </div>
+
+    <!-- 3️⃣ RESUMEN DEL CONCEPTO SELECCIONADO (PREVIEW) -->
+    <div class="notes-box mb-1" *ngIf="conceptoSeleccionadoObj">
+      <div class="d-flex align-items-center gap-2">
+        <mat-icon class="icon-institucional">check_circle</mat-icon>
+        <div>
+          <span class="fw-bold d-block text-navy">Concepto a Asignar:</span>
+          <p class="m-0 text-dark fw-semibold notes-text">
+            <span class="code-badge me-2" style="background: #1DA6BA; color: #ffffff;">{{ conceptoSeleccionadoObj.codigo }}</span>
+            {{ conceptoSeleccionadoObj.descripcion }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 🔘 PIE DE MODAL (ACCIONES INSTITUCIONALES) -->
+  <!-- ========================================== -->
+  <div class="modal-footer d-flex justify-content-between align-items-center">
+    <button mat-button class="btn-modal-cancel" (click)="cerrar()" [disabled]="guardando">
+      <mat-icon>close</mat-icon> Cancelar
+    </button>
+
+    <button 
+      mat-raised-button 
+      class="btn-modal-asignar" 
+      (click)="asignar()" 
+      [disabled]="!codigoConceptoSeleccionado || guardando">
+      <mat-icon *ngIf="!guardando">sell</mat-icon>
+      <mat-spinner *ngIf="guardando" diameter="18" class="me-1"></mat-spinner>
+      <span>{{ guardando ? 'Asignando...' : 'Asignar Concepto' }}</span>
+    </button>
+  </div>
+
+</div>

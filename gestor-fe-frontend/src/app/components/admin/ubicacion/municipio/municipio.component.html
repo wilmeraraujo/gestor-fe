@@ -1,0 +1,18 @@
+<app-data-table
+  [titulo]="titulo"
+  [columnas]="columnas"
+  [datos]="lista"
+  [totalRegistros]="totalRegistros"
+  [totalPorPagina]="totalPorPagina"
+  [pageSizeOptions]="pageSizeOptions"
+  [mostrarEliminar]="false"
+  [mostrarActivarInactivar]="true"
+  (paginar)="paginar($event)"
+  (editar)="editar($event)"
+  (agregar)="agregar()"
+  (buscar)="buscar($event)"
+  (filtrosChange)="onFiltrosChange($event)"
+  (toggleEstado)="onToggleEstado($event)"
+  (refrescar)="calcularRangos()">
+</app-data-table>
+

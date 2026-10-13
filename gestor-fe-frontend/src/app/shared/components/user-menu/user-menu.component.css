@@ -47,9 +47,9 @@
 
   background: white;
 
-  border-radius: 24px;
+  border-radius: 30px;
 
-  border: 1px solid #e5e7eb;
+  border: 1px solid #1DA6BA;
 
   box-shadow:
     0 10px 30px rgba(0,0,0,0.12);
@@ -82,7 +82,7 @@
 
   border-radius: 50%;
 
-  background: #94a3b8;
+  background: #1DA6BA;
 
   color: white;
 
@@ -157,5 +157,6 @@
 
 .dropdown-item:hover {
 
-  background: #f3f4f6;
+  background: #c7c7c9;
+  color: rgb(71, 71, 71);
 }

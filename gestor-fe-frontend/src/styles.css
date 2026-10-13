@@ -2,3 +2,68 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* 🟢 ESTILO GLOBAL DE CHECKBOX VERDE OSCURO EN LUGAR DE ROSADO */
+.mat-mdc-checkbox {
+  --mdc-checkbox-selected-focus-icon-color: #056839 !important;
+  --mdc-checkbox-selected-hover-icon-color: #056839 !important;
+  --mdc-checkbox-selected-icon-color: #056839 !important;
+  --mdc-checkbox-selected-pressed-icon-color: #056839 !important;
+  --mdc-checkbox-selected-focus-container-color: #056839 !important;
+  --mdc-checkbox-selected-hover-container-color: #056839 !important;
+  --mdc-checkbox-selected-container-color: #056839 !important;
+  --mdc-checkbox-selected-pressed-container-color: #056839 !important;
+  --mdc-checkbox-selected-checkmark-color: #ffffff !important;
+}
+
+.mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__background,
+.mat-mdc-checkbox.mat-mdc-checkbox-indeterminate .mdc-checkbox__background,
+.mat-mdc-checkbox .mdc-checkbox__native-control:enabled:checked ~ .mdc-checkbox__background,
+.mat-mdc-checkbox .mdc-checkbox__native-control:enabled:indeterminate ~ .mdc-checkbox__background {
+  background-color: #056839 !important;
+  border-color: #056839 !important;
+}
+
+.mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__icon-path,
+.mat-mdc-checkbox.mat-mdc-checkbox-indeterminate .mdc-checkbox__icon-path {
+  stroke: #ffffff !important;
+}
+
+/* 🪟 REDONDEO ELEGANTE GLOBAL PARA MODAL DE FICHA */
+.custom-ficha-dialog .mat-mdc-dialog-surface,
+.mat-mdc-dialog-surface:has(.ficha-modal-container) {
+  border-radius: 22px !important;
+  overflow: hidden !important;
+}
+
+/* 🏷️ CARD SEPARADA SUPERIOR EXCLUSIVA PARA EL TÍTULO DEL SUBMÓDULO (ENCIMA DE TABS) */
+.card-titulo-submodulo {
+  padding: 14px 20px !important;
+  margin-bottom: 14px !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03) !important;
+}
+
+.card-titulo-submodulo .titulo-container,
+.titulo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 12px;
+  border-left: 4px solid #1DA6BA;
+  border-radius: 2px;
+}
+
+.card-titulo-submodulo .titulo-tabla,
+.titulo-tabla {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+

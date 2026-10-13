@@ -1,31 +1,27 @@
 <aside
   class="sidebar"
-  [class.sidebar-collapsed]="collapsed">
+  [class.sidebar-collapsed]="collapsed && !isHovered"
+  [class.sidebar-hovered]="collapsed && isHovered"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()">
 
   <!-- LOGO -->
   <div class="sidebar-logo">
-
-    <h2 *ngIf="!collapsed">
-      FE
-    </h2>
-
-    <h2 *ngIf="collapsed">
-      F
-    </h2>
-
+    <img src="assets/images/logo-empresa.png" alt="Logo" class="sidebar-logo-img">
   </div>
 
   <!-- MENU -->
   <ul class="sidebar-menu">
-
     <li *ngFor="let item of menuNav">
 
-      <!-- ITEM NORMAL CON RUTA -->
+      <!-- ITEM NORMAL CON RUTA (ej: HOME) -->
       <a
         *ngIf="item.route && !item.children"
         [routerLink]="item.route"
         routerLinkActive="sidebar-active"
-        class="sidebar-item">
+        class="sidebar-item"
+        [title]="item.name"
+        (click)="onDirectItemClick()">
 
         <!-- ICONO -->
         <span class="material-icons sidebar-icon">
@@ -33,16 +29,16 @@
         </span>
 
         <!-- TEXTO -->
-        <span *ngIf="!collapsed" class="sidebar-text">
+        <span *ngIf="isExpanded" class="sidebar-text">
           {{ item.name }}
         </span>
-
       </a>
 
-      <!-- ITEM CON SUBMENU -->
+      <!-- ITEM CON SUBMENU (ACCIONA EL ACORDEÓN) -->
       <div
         *ngIf="item.children"
         class="sidebar-item"
+        [title]="item.name"
         (click)="toggleMenu(item)">
 
         <!-- ICONO -->
@@ -51,32 +47,29 @@
         </span>
 
         <!-- TEXTO -->
-        <span *ngIf="!collapsed" class="sidebar-text">
+        <span *ngIf="isExpanded" class="sidebar-text">
           {{ item.name }}
         </span>
 
         <!-- FLECHA -->
-        <span
-          *ngIf="!collapsed"
-          class="material-icons sidebar-arrow">
-
+        <span *ngIf="isExpanded" class="material-icons sidebar-arrow">
           {{ item.expanded ? 'expand_less' : 'expand_more' }}
-
         </span>
-
       </div>
 
       <!-- SUBMENU -->
       <ul
-        *ngIf="item.children && item.expanded && !collapsed"
+        *ngIf="item.children && item.expanded && isExpanded"
         class="sidebar-submenu">
 
         <li *ngFor="let child of item.children">
-
+          <!-- CASO A: CHILD ES RUTA DIRECTA -->
           <a
+            *ngIf="child.route && !child.children"
             [routerLink]="child.route"
             routerLinkActive="sidebar-active"
-            class="sidebar-subitem">
+            class="sidebar-subitem"
+            [title]="child.name">
 
             <!-- ICONO SUBMENU -->
             <span class="material-icons sidebar-subicon">
@@ -84,18 +77,56 @@
             </span>
 
             <!-- TEXTO -->
-            <span>
+            <span class="sidebar-subtext">
+              {{ child.name }}
+            </span>
+          </a>
+
+          <!-- CASO B: CHILD ES UN SUBGRUPO (ej: DIAN, Ubicación, Configuración) -->
+          <div
+            *ngIf="child.children"
+            class="sidebar-subitem sidebar-subgroup-header"
+            [title]="child.name"
+            (click)="toggleSubMenu(item, child, $event)">
+
+            <span class="material-icons sidebar-subicon">
+              {{ child.icon }}
+            </span>
+
+            <span class="sidebar-subtext font-semibold">
               {{ child.name }}
             </span>
 
-          </a>
+            <span class="material-icons sidebar-subarrow">
+              {{ child.expanded ? 'expand_less' : 'expand_more' }}
+            </span>
+          </div>
+
+          <!-- SUB-SUBMENU (NIVEL 3: CATÁLOGOS DIAN, UBICACIÓN) -->
+          <ul
+            *ngIf="child.children && child.expanded"
+            class="sidebar-sub-submenu">
+            <li *ngFor="let subChild of child.children">
+              <a
+                [routerLink]="subChild.route"
+                routerLinkActive="sidebar-active"
+                class="sidebar-sub-subitem"
+                [title]="subChild.name">
+                <span class="material-icons sidebar-sub-subicon">
+                  {{ subChild.icon }}
+                </span>
+                <span class="sidebar-sub-subtext">
+                  {{ subChild.name }}
+                </span>
+              </a>
+            </li>
+          </ul>
 
         </li>
 
       </ul>
 
     </li>
-
   </ul>
 
 </aside>

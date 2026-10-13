@@ -1,16 +1,17 @@
 package com.gestor_fe.admin.service.model.entity;
 
 import com.service.common.entity.Global;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
-@Data
-@EqualsAndHashCode(callSuper = true)
-@Table(name="tipo_documento",schema="admin")
+@Table(name = "tipo_identificacion", schema = "admin")
 public class TipoIdentificacion extends Global {
 
 }
