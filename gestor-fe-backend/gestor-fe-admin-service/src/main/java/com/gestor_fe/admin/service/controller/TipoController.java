@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.Tipo;
 import com.gestor_fe.admin.service.services.TipoService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/tipo")
 public class TipoController extends GlobalController<Tipo, TipoService> {

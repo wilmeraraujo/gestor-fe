@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.Movimiento;
 import com.gestor_fe.admin.service.services.MovimientoService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/movimiento")
 public class MovimientoController extends GlobalController<Movimiento, MovimientoService> {

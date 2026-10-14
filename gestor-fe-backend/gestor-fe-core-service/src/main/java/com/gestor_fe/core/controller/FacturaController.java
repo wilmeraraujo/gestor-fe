@@ -18,7 +18,7 @@ import com.gestor_fe.core.entity.FacturaItem;
 import com.gestor_fe.core.repository.FacturaItemRepository;
 import com.gestor_fe.core.service.FacturaService;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/factura")
 public class FacturaController {

@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.Proceso;
 import com.gestor_fe.admin.service.services.ProcesoService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/proceso")
 public class ProcesoController extends GlobalController<Proceso, ProcesoService> {

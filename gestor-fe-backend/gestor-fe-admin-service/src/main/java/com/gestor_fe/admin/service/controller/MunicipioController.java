@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.Municipio;
 import com.gestor_fe.admin.service.services.MunicipioService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/municipio")
 public class MunicipioController extends GlobalController<Municipio, MunicipioService> {

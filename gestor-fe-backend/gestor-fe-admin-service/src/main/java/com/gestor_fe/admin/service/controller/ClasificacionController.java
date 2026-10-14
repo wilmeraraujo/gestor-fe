@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.Clasificacion;
 import com.gestor_fe.admin.service.services.ClasificacionService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/clasificacion")
 public class ClasificacionController extends GlobalController<Clasificacion, ClasificacionService> {

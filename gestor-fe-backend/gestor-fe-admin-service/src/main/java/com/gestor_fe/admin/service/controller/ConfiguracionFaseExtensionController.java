@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.ConfiguracionFaseExtension;
 import com.gestor_fe.admin.service.services.ConfiguracionFaseExtensionService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/configuracion-fase")
 public class ConfiguracionFaseExtensionController

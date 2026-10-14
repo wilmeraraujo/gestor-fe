@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.MedioPago;
 import com.gestor_fe.admin.service.services.MedioPagoService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/medio-pago")
 public class MedioPagoController extends GlobalController<MedioPago, MedioPagoService> {

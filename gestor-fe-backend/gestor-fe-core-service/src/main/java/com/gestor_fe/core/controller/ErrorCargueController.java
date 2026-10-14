@@ -14,7 +14,7 @@ import com.gestor_fe.core.service.ErrorCargueService;
 
 @RestController
 @RequestMapping("/api/v1/cargue/error-cargue")
-// @CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 public class ErrorCargueController {
 
 	private final ErrorCargueService service;

@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.Fase;
 import com.gestor_fe.admin.service.services.FaseService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/fase")
 public class FaseController extends GlobalController<Fase, FaseService> {

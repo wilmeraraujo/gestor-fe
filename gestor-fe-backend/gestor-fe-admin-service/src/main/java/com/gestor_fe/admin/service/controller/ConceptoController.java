@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.Concepto;
 import com.gestor_fe.admin.service.services.ConceptoService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/concepto")
 public class ConceptoController extends GlobalController<Concepto, ConceptoService> {

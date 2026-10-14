@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.TipoIdentificacion;
 import com.gestor_fe.admin.service.services.TipoIdentificacionService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/tipo-identificacion")
 public class TipoIdentificacionController extends GlobalController<TipoIdentificacion, TipoIdentificacionService> {

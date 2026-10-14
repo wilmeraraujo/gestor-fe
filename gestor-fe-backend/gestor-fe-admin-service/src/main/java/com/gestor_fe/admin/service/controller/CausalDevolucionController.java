@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.CausalDevolucion;
 import com.gestor_fe.admin.service.services.CausalDevolucionService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/causal-devolucion")
 public class CausalDevolucionController extends GlobalController<CausalDevolucion, CausalDevolucionService> {

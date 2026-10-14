@@ -36,7 +36,7 @@ import com.gestor_fe.core.service.SseNotificationService;
 
 @RestController
 @RequestMapping("/api/v1/cargue")
-// @CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 public class FacturaCargueController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FacturaCargueController.class);

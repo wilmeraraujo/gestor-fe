@@ -14,7 +14,7 @@ import java.util.List;
 
 import com.gestor_fe.core.service.DocumentoService;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/documento")
 public class DocumentoController {

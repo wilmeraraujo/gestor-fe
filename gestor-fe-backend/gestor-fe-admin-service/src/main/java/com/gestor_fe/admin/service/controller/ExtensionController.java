@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.Extension;
 import com.gestor_fe.admin.service.services.ExtensionService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/extension")
 public class ExtensionController extends GlobalController<Extension, ExtensionService> {

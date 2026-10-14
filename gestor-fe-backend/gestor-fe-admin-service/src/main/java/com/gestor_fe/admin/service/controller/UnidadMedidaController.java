@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.UnidadMedida;
 import com.gestor_fe.admin.service.services.UnidadMedidaService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/unidad-medida")
 public class UnidadMedidaController extends GlobalController<UnidadMedida, UnidadMedidaService> {

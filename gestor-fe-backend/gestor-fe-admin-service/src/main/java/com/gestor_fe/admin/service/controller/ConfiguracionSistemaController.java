@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.ConfiguracionSistema;
 import com.gestor_fe.admin.service.services.ConfiguracionSistemaService;
 import com.service.common.controller.GlobalController;
 
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/configuracion-sistema")
 public class ConfiguracionSistemaController

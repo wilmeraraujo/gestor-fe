@@ -17,7 +17,7 @@ import com.gestor_fe.core.entity.Prestador;
 import com.gestor_fe.core.service.PrestadorService;
 
 @RestController
-// @CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RequestMapping("/api/v1/prestadores")
 public class PrestadorController {
 

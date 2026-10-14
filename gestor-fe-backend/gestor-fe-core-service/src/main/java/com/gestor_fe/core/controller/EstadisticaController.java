@@ -17,7 +17,7 @@ import com.gestor_fe.core.service.EstadisticaService;
 
 @RestController
 @RequestMapping("/api/v1/estadisticas")
-// @CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 public class EstadisticaController {
 
     @Autowired
