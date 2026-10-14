@@ -14,8 +14,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -158,9 +160,14 @@ public class FacturaCargueController {
         return ResponseEntity.ok(cargueService.findCarguesSegunRol(usuario, roles, sortedPageable));
     }
 
-    @GetMapping(value = "/sse/subscribir/{usuario}", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribirNotificaciones(@PathVariable("usuario") String usuario) {
-        return sseNotificationService.crearConexion(usuario);
+    @GetMapping(value = "/sse/subscribir/{usuario}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> subscribirNotificaciones(
+            @PathVariable("usuario") String usuario,
+            HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-cache, no-transform");
+        response.setHeader("X-Accel-Buffering", "no");
+        response.setHeader("Connection", "keep-alive");
+        return ResponseEntity.ok(sseNotificationService.crearConexion(usuario));
     }
 
     @PutMapping("/deleted-at/{id}")
