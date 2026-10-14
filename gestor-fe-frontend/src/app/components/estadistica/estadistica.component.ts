@@ -70,14 +70,23 @@ export class EstadisticaComponent implements OnInit, OnDestroy {
 
   // 🏛️ Sección Información Exógena - Formato 1001 DIAN
   anioGravableExogena: number | null = null;
-  aniosDisponibles: number[] = [2026, 2025, 2024, 2023, 2022];
+  aniosDisponibles: number[] = [];
   fechaExogenaDesde: string = '';
   fechaExogenaHasta: string = '';
   descargandoExogena: boolean = false;
 
   ngOnInit(): void {
+    this.generarAniosDisponibles();
     this.cargarSesion();
     this.consultarEstadisticas();
+  }
+
+  /**
+   * 📅 Genera dinámicamente la lista de años gravables (año actual del sistema y los últimos 10 años)
+   */
+  private generarAniosDisponibles(aniosAtras: number = 10): void {
+    const anioActual = new Date().getFullYear();
+    this.aniosDisponibles = Array.from({ length: aniosAtras + 1 }, (_, i) => anioActual - i);
   }
 
   ngOnDestroy(): void {

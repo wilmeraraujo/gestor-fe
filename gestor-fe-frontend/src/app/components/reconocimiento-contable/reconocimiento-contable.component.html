@@ -32,6 +32,7 @@
           [mostrarAsignarConcepto]="esGestorF2"
           [mostrarDetalle]="true"
           [mostrarGestionarFactura]="esGestorF2"
+          [requiereConceptoParaGestionar]="true"
 
           (filtrosChange)="onFiltrosChange($event)"
           (paginar)="paginar($event)"
@@ -87,7 +88,9 @@
             <button
               *ngIf="esGestorF2"
               mat-raised-button
-              style="background-color: #10b981; color: #ffffff;"
+              class="btn-gestionar-visor"
+              [disabled]="!tieneConcepto(facturaSeleccionada)"
+              [matTooltip]="!tieneConcepto(facturaSeleccionada) ? 'Debe asignar un concepto para habilitar la gestión' : 'Gestionar Factura'"
               (click)="abrirModalGestionar(facturaSeleccionada)">
               <mat-icon>receipt_long</mat-icon> Gestionar
             </button>
