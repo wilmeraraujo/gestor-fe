@@ -8,4 +8,4 @@ export const environment = {
   realm: 'gestor-fe',
   clientId: 'gestor-fe-frontend'
 }
-};
+
