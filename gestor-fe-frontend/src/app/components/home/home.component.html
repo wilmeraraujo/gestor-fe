@@ -34,9 +34,26 @@
   </section>
 
   <!-- ========================================================
-       2. MÓDULOS PRINCIPALES
+       2. MÓDULOS PRINCIPALES O AVISO DE SIN ROLES
        ======================================================== -->
-  <section class="section-container">
+  <section class="section-container" *ngIf="!hasAnyRole">
+    <div class="empty-roles-card">
+      <div class="empty-roles-icon-box">
+        <mat-icon>lock_person</mat-icon>
+      </div>
+      <div class="empty-roles-text">
+        <h3 class="empty-roles-title">Usuario sin módulos asignados</h3>
+        <p class="empty-roles-desc">
+          Ha ingresado exitosamente al sistema pero su usuario cuenta únicamente con el rol predeterminado de autenticación y no tiene módulos asignados.
+        </p>
+        <p class="empty-roles-subdesc">
+          Por favor comuníquese con el administrador de ASSOLIDARIA para habilitar sus permisos.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-container" *ngIf="hasAnyRole">
     <div class="section-header">
       <div class="section-title-wrapper">
         <div class="section-indicator"></div>
@@ -50,7 +67,7 @@
     <div class="modules-grid">
 
       <!-- CARD 1: CARGUE DE SOPORTES -->
-      <div class="module-card">
+      <div class="module-card" *ngIf="isAdmin || isPrestador || loginService.isGCargue">
         <div class="module-card-header card-cargue">
           <div class="module-icon-box">
             <mat-icon>cloud_upload</mat-icon>
@@ -66,7 +83,7 @@
       </div>
 
       <!-- CARD 2: GESTIÓN OPERATIVA -->
-      <div class="module-card">
+      <div class="module-card" *ngIf="isAdmin || isPrestador || loginService.isGCargue || loginService.isGFaseUno || loginService.isGFaseDos || loginService.isGFaseTres || loginService.isGFaseCuatro || loginService.isGFaseCinco || loginService.isGReporte">
         <div class="module-card-header card-gestion">
           <div class="module-icon-box">
             <mat-icon>account_balance</mat-icon>
@@ -76,15 +93,14 @@
         <div class="module-card-body">
           <h3 class="module-name">Gestión y Aprobación</h3>
           <p class="module-desc">
-            Trámite de facturas en sus etapas de gestión inicial, reconocimiento contable, liquidación de impuestos y
             Trámite de facturas en sus etapas de gestión inicial, reconocimiento contable, liquidación de impuestos,
             pago y seguimiento.
           </p>
         </div>
       </div>
 
-      <!-- CARD 3: REPORTES Y ESTADÍSTICAS -->
-      <div class="module-card">
+      <!-- CARD 3: REPORTES Y ESTADÍSTICAS (Solo usuarios con gestor-fe-reporte o admin) -->
+      <div class="module-card" *ngIf="isAdmin || loginService.isGReporte">
         <div class="module-card-header card-reportes">
           <div class="module-icon-box">
             <mat-icon>bar_chart</mat-icon>
@@ -122,7 +138,7 @@
   <!-- ========================================================
        3. WORKFLOW DEL CICLO DE FACTURACIÓN ELECTRÓNICA
        ======================================================== -->
-  <section class="section-container">
+  <section class="section-container" *ngIf="hasAnyRole">
     <div class="section-header">
       <div class="section-title-wrapper">
         <div class="section-indicator"></div>

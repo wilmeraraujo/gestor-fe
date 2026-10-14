@@ -166,7 +166,7 @@ public class FacturaServiceImpl implements FacturaService {
             rol.equalsIgnoreCase("admin") ||
             rol.equalsIgnoreCase("gestor-fe-admin") ||
             rol.equalsIgnoreCase("gestor-fe-f5-sf") ||
-            rol.equalsIgnoreCase("default-roles-fe")
+            rol.equalsIgnoreCase("gestor-fe-reporte")
         );
 
         if (!esAdminOGestor && nitPrestador != null && !nitPrestador.isBlank()) {
@@ -670,7 +670,7 @@ public class FacturaServiceImpl implements FacturaService {
             rol.equalsIgnoreCase("admin") ||
             rol.equalsIgnoreCase("gestor-fe-admin") ||
             rol.equalsIgnoreCase("gestor-fe-f5-sf") ||
-            rol.equalsIgnoreCase("default-roles-fe")
+            rol.equalsIgnoreCase("gestor-fe-reporte")
         );
 
         if (!esAdminOGestor && nitPrestador != null && !nitPrestador.isBlank()) {
@@ -815,7 +815,7 @@ public class FacturaServiceImpl implements FacturaService {
             rol.equalsIgnoreCase("admin") ||
             rol.equalsIgnoreCase("gestor-fe-admin") ||
             rol.equalsIgnoreCase("gestor-fe-f5-sf") ||
-            rol.equalsIgnoreCase("default-roles-fe")
+            rol.equalsIgnoreCase("gestor-fe-reporte")
         );
 
         if (!esAdminOGestor && nitPrestador != null && !nitPrestador.isBlank()) {

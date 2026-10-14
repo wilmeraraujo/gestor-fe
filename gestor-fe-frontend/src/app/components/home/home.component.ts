@@ -14,12 +14,13 @@ import { LoginService } from '../../services/login.service';
   styleUrl: './home.component.css'
 })
 export class HomeComponent implements OnInit {
-  private loginService = inject(LoginService);
+  public loginService = inject(LoginService);
 
   username: string = '';
   userRole: string = '';
   isAdmin: boolean = false;
   isPrestador: boolean = false;
+  hasAnyRole: boolean = false;
   fechaActual: Date = new Date();
 
   ngOnInit(): void {
@@ -28,5 +29,6 @@ export class HomeComponent implements OnInit {
     this.userRole = this.loginService.userRole;
     this.isAdmin = this.loginService.isAdmin || this.loginService.isGAdmin;
     this.isPrestador = this.loginService.isPrestador;
+    this.hasAnyRole = this.loginService.hasAnyRole;
   }
 }

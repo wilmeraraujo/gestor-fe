@@ -717,11 +717,22 @@
   background-color: #dcfce7 !important;
   color: #16a34a !important;
 }
-.btn-action-invoice:hover {
+.btn-action-invoice:hover:not(:disabled):not(.btn-action-disabled) {
   background-color: #16a34a !important;
   color: #ffffff !important;
   transform: translateY(-2px) scale(1.05) !important;
   box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3) !important;
+}
+.btn-action-invoice:disabled,
+.btn-action-invoice.btn-action-disabled {
+  background-color: #e2e8f0 !important;
+  color: #94a3b8 !important;
+  border: 1px solid #cbd5e1 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+  opacity: 0.8 !important;
+  pointer-events: auto !important;
 }
 
 /* 📥 Descargar Soporte por Registro (Verde Esmeralda Soft) */

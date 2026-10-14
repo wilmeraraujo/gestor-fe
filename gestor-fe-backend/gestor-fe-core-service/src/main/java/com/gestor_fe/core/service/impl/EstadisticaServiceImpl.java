@@ -60,7 +60,8 @@ public class EstadisticaServiceImpl implements EstadisticaService {
                     r.equalsIgnoreCase("gestor-fe-f2-rc") ||
                     r.equalsIgnoreCase("gestor-fe-f3-i") ||
                     r.equalsIgnoreCase("gestor-fe-f4-pp") ||
-                    r.equalsIgnoreCase("gestor-fe-f5-sf")
+                    r.equalsIgnoreCase("gestor-fe-f5-sf") ||
+                    r.equalsIgnoreCase("gestor-fe-reporte")
             );
             esSoloPrestador = !esAdminOGestor && roles.stream().anyMatch(r -> r.equalsIgnoreCase("gestor-fe-prestador"));
         }

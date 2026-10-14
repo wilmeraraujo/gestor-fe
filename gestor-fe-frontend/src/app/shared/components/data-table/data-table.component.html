@@ -150,7 +150,10 @@
 
               <!-- 🧾 GESTIONAR FACTURA (OCULTO EN ANULADO, RECHAZADO, PROCESANDO) -->
               <button *ngIf="puedeGestionarFactura(row)" mat-icon-button class="btn-action btn-action-invoice"
-                (click)="onGestionarFactura(row)" matTooltip="Gestionar">
+                [disabled]="requiereConceptoParaGestionar && !tieneConcepto(row)"
+                [class.btn-action-disabled]="requiereConceptoParaGestionar && !tieneConcepto(row)"
+                (click)="onGestionarFactura(row)"
+                [matTooltip]="(requiereConceptoParaGestionar && !tieneConcepto(row)) ? 'Debe asignar un concepto para habilitar la gestión' : 'Gestionar'">
                 <mat-icon>receipt_long</mat-icon>
               </button>
 

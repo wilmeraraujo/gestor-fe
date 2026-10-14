@@ -16,6 +16,7 @@ export class LoginService {
   readonly gFaseCuatroRoles: string[] = ['gestor-fe-f4-pp'];
   readonly gFaseCincoRoles: string[] = ['gestor-fe-f5-sf'];
   readonly gPrestadorRoles: string[] = ['gestor-fe-prestador'];
+  readonly gReporteRoles: string[] = ['gestor-fe-reporte'];
 
   // 🚩 Flags de permisos
   isAdmin: boolean = false;
@@ -27,6 +28,7 @@ export class LoginService {
   isGFaseCuatro: boolean = false;
   isGFaseCinco: boolean = false;
   isPrestador: boolean = false;
+  isGReporte: boolean = false;
 
   constructor(private keycloakService: KeycloakService) {}
 
@@ -92,6 +94,7 @@ export class LoginService {
       this.isGFaseCuatro = roles.some(role => this.gFaseCuatroRoles.includes(role));
       this.isGFaseCinco = roles.some(role => this.gFaseCincoRoles.includes(role));
       this.isPrestador = roles.some(role => this.gPrestadorRoles.includes(role));
+      this.isGReporte = roles.some(role => this.gReporteRoles.includes(role));
 
       return roles;
     } catch (error) {
@@ -99,10 +102,34 @@ export class LoginService {
     }
   }
 
+  /**
+   * 🔒 Verifica si el usuario tiene al menos un rol funcional de negocio
+   * (Excluye roles puramente default/técnicos de Keycloak)
+   */
+  get hasAnyRole(): boolean {
+    return this.isAdmin ||
+           this.isGAdmin ||
+           this.isGCargue ||
+           this.isGFaseUno ||
+           this.isGFaseDos ||
+           this.isGFaseTres ||
+           this.isGFaseCuatro ||
+           this.isGFaseCinco ||
+           this.isPrestador ||
+           this.isGReporte;
+  }
+
   get userRole(): string {
     if (this.isAdmin || this.isGAdmin) return 'ADMIN';
+    if (this.isGCargue) return 'CARGUE';
+    if (this.isGFaseUno) return 'FASE 1';
+    if (this.isGFaseDos) return 'FASE 2';
+    if (this.isGFaseTres) return 'FASE 3';
+    if (this.isGFaseCuatro) return 'FASE 4';
+    if (this.isGFaseCinco) return 'FASE 5';
+    if (this.isGReporte) return 'REPORTES';
     if (this.isPrestador) return 'PRESTADOR';
-    return 'PRESTADOR';
+    return 'SIN_ROL';
   }
 
   logout(): void {

@@ -53,6 +53,7 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
   @Input() mostrarDetalle = false;
   @Input() mostrarSeleccion = false;
   @Input() mostrarGestionarFactura = false;
+  @Input() requiereConceptoParaGestionar = false;
   @Input() mostrarAsignarConcepto = false;
   @Input() tooltipAsignarConcepto: string = 'Asignar Concepto';
   @Input() mostrarEditar = true;
@@ -433,7 +434,16 @@ export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnD
     this.asignarConcepto.emit(row);
   }
 
+  tieneConcepto(row: any): boolean {
+    if (!row) return false;
+    const c = row.codigoConcepto ?? row.concepto;
+    return c !== null && c !== undefined && String(c).trim() !== '';
+  }
+
   onGestionarFactura(row: any): void {
+    if (this.requiereConceptoParaGestionar && !this.tieneConcepto(row)) {
+      return;
+    }
     this.gestionarFactura.emit(row);
   }
 

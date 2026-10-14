@@ -6,6 +6,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PageEvent } from '@angular/material/paginator';
 import { forkJoin, of, Subject, Subscription, throwError } from 'rxjs';
@@ -39,7 +40,8 @@ import { AlertService } from '../../services/alert.service';
     MatTabsModule,
     MatCardModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    MatTooltipModule
   ],
   templateUrl: './reconocimiento-contable.component.html',
   styleUrl: './reconocimiento-contable.component.css'
@@ -473,9 +475,23 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
   }
 
   /**
+   * 🏷️ Verifica si la factura tiene asignado un concepto contable
+   */
+  tieneConcepto(factura: any): boolean {
+    if (!factura) return false;
+    const c = factura.codigoConcepto ?? factura.concepto;
+    return c !== null && c !== undefined && String(c).trim() !== '';
+  }
+
+  /**
    * ⚙️ Abrir modal de causación / rechazo consultando previamente si existen soportes activos y cargando clasificaciones actualizadas
    */
   abrirModalGestionar(row: Factura): void {
+    if (!this.tieneConcepto(row)) {
+      this.alertService.advertencia('La factura debe tener un concepto asignado antes de poder ser gestionada.', 'Concepto Requerido');
+      return;
+    }
+
     forkJoin({
       docsActivos: this.documentoService.getSoportesActivosFactura(row.id).pipe(catchError(() => of([]))),
       clasificaciones: this.clasificacionService.listar().pipe(catchError(() => of([])))
@@ -634,6 +650,19 @@ export class ReconocimientoContableComponent extends CommonListarComponent<Factu
 
     dialogRef.afterClosed().subscribe((resultado) => {
       if (resultado) {
+        if (typeof resultado === 'object' && resultado.codigoConcepto) {
+          if (this.facturaSeleccionada && this.facturaSeleccionada.id === resultado.id) {
+            this.facturaSeleccionada.codigoConcepto = resultado.codigoConcepto;
+          }
+        } else if (this.facturaSeleccionada && this.facturaSeleccionada.id === factura.id) {
+          this.service.ver(factura.id).subscribe({
+            next: (fActualizada: Factura) => {
+              if (this.facturaSeleccionada && this.facturaSeleccionada.id === fActualizada.id) {
+                this.facturaSeleccionada = { ...this.facturaSeleccionada, ...fActualizada };
+              }
+            }
+          });
+        }
         this.cargarDatosPaginados();
       }
     });

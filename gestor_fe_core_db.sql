@@ -92,6 +92,7 @@ select * from admin.observacion o order by id desc limit 10;
 select * from admin.tipo t order by id desc limit 10;
 select * from admin."extension" e order by id desc limit 10;
 select * from admin.fase f order by id desc limit 10;
+select * from admin.concepto c order by id desc limit 10;
 
 select * from admin.configuracion_sistema cs order by id desc limit 10;
 select * from admin.configuracion_fase_extension cfe order by id desc limit 10;
