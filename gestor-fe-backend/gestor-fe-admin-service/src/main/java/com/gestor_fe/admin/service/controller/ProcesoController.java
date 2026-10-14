@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.Proceso;
 import com.gestor_fe.admin.service.services.ProcesoService;
 import com.service.common.controller.GlobalController;
 
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/proceso")
 public class ProcesoController extends GlobalController<Proceso, ProcesoService> {
@@ -85,8 +85,10 @@ public class ProcesoController extends GlobalController<Proceso, ProcesoService>
         xDb.setDescripcion(x.getDescripcion());
         xDb.setDeletedAt(x.getDeletedAt());
 
-        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion
+                + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
         String username = this.extraerUsername(request, null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(xDb, "EDITAR", observacion, username));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.saveWithLog(xDb, "EDITAR", observacion, username));
     }
 }

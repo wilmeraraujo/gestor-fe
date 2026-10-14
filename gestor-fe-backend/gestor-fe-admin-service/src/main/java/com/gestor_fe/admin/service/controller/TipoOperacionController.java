@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.TipoOperacion;
 import com.gestor_fe.admin.service.services.TipoOperacionService;
 import com.service.common.controller.GlobalController;
 
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/tipo-operacion")
 public class TipoOperacionController extends GlobalController<TipoOperacion, TipoOperacionService> {
@@ -83,8 +83,10 @@ public class TipoOperacionController extends GlobalController<TipoOperacion, Tip
         xDb.setDescripcion(x.getDescripcion());
         xDb.setDeletedAt(x.getDeletedAt());
 
-        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion
+                + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
         String username = this.extraerUsername(request, null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(xDb, "EDITAR", observacion, username));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.saveWithLog(xDb, "EDITAR", observacion, username));
     }
 }

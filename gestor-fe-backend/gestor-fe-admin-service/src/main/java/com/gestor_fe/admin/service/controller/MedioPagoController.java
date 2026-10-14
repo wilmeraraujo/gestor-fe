@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.MedioPago;
 import com.gestor_fe.admin.service.services.MedioPagoService;
 import com.service.common.controller.GlobalController;
 
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/medio-pago")
 public class MedioPagoController extends GlobalController<MedioPago, MedioPagoService> {
@@ -85,8 +85,10 @@ public class MedioPagoController extends GlobalController<MedioPago, MedioPagoSe
         xDb.setDescripcion(x.getDescripcion());
         xDb.setDeletedAt(x.getDeletedAt());
 
-        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion
+                + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
         String username = this.extraerUsername(request, null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(xDb, "EDITAR", observacion, username));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.saveWithLog(xDb, "EDITAR", observacion, username));
     }
 }

@@ -22,10 +22,11 @@ import com.gestor_fe.admin.service.model.entity.ConfiguracionFaseExtension;
 import com.gestor_fe.admin.service.services.ConfiguracionFaseExtensionService;
 import com.service.common.controller.GlobalController;
 
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/configuracion-fase")
-public class ConfiguracionFaseExtensionController extends GlobalController<ConfiguracionFaseExtension, ConfiguracionFaseExtensionService> {
+public class ConfiguracionFaseExtensionController
+        extends GlobalController<ConfiguracionFaseExtension, ConfiguracionFaseExtensionService> {
 
     private final ConfiguracionFaseExtensionService service;
 
@@ -98,8 +99,10 @@ public class ConfiguracionFaseExtensionController extends GlobalController<Confi
             xDb.setDeletedAt(x.getDeletedAt());
         }
 
-        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion
+                + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
         String username = this.extraerUsername(request, null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(xDb, "EDITAR", observacion, username));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.saveWithLog(xDb, "EDITAR", observacion, username));
     }
 }

@@ -18,7 +18,7 @@ import com.gestor_fe.core.entity.FacturaItem;
 import com.gestor_fe.core.repository.FacturaItemRepository;
 import com.gestor_fe.core.service.FacturaService;
 
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/factura")
 public class FacturaController {
@@ -49,25 +49,29 @@ public class FacturaController {
 
     @GetMapping("/prestador/{nit}")
     public ResponseEntity<?> findByNit(@PathVariable("nit") String nit, Pageable pageable) {
-        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
+        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(service.findByNitAndDeletedAtIsNull(nit, sorted));
     }
 
     @GetMapping("/fase/1")
     public ResponseEntity<?> listarFase1(Pageable pageable) {
-        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
+        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(service.findByFaseIdAndDeletedAtIsNull(1L, sorted));
     }
 
     @GetMapping("/fase/{faseId}")
     public ResponseEntity<?> listarFaseActiva(@PathVariable("faseId") Long faseId, Pageable pageable) {
-        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
+        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(service.findByFaseActiva(faseId, sorted));
     }
 
     @GetMapping("/seguimiento")
     public ResponseEntity<?> listarSeguimiento(Pageable pageable) {
-        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
+        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(service.findByDeletedAtIsNull(sorted));
     }
 
@@ -77,7 +81,8 @@ public class FacturaController {
 
     @PostMapping("/buscar-criteria")
     public ResponseEntity<?> buscarConCriteria(@RequestBody FacturaFilterDto filtro, Pageable pageable) {
-        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
+        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(service.buscarConCriteria(filtro, sorted));
     }
 
@@ -88,7 +93,8 @@ public class FacturaController {
             @RequestBody(required = false) FacturaFilterDto filtro,
             Pageable pageable) {
 
-        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "id"));
+        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "id"));
         return ResponseEntity.ok(service.buscarTrazabilidadSegunRol(nitPrestador, roles, filtro, sorted));
     }
 
@@ -102,7 +108,8 @@ public class FacturaController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=trazabilidad_facturas.xlsx")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelBytes);
     }
 
@@ -124,11 +131,13 @@ public class FacturaController {
 
         byte[] excelBytes = service.exportarFormato1001Excel(nitPrestador, roles, filtro);
 
-        String filename = "formato_1001_dian_" + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
+        String filename = "formato_1001_dian_"
+                + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelBytes);
     }
 
@@ -156,8 +165,8 @@ public class FacturaController {
             @RequestParam(value = "usuario", required = false) String usuario, // 👈 Captura el usuario
             @RequestParam(value = "archivo", required = false) MultipartFile archivo) {
 
-        String codigoFinal = (codigoTipoRegistroContable != null && !codigoTipoRegistroContable.isBlank()) 
-                ? codigoTipoRegistroContable 
+        String codigoFinal = (codigoTipoRegistroContable != null && !codigoTipoRegistroContable.isBlank())
+                ? codigoTipoRegistroContable
                 : tipoRegistroContableIdFallback;
 
         return ResponseEntity.ok(service.procesarCausacionFase2(id, codigoFinal, numeroCausacion, usuario, archivo));
@@ -174,11 +183,12 @@ public class FacturaController {
             @RequestParam(value = "soporteTb", required = false) MultipartFile soporteTb,
             @RequestParam(value = "comprobantePago", required = false) MultipartFile comprobantePago) {
 
-        String codigoFinal = (codigoTipoRegistroContable != null && !codigoTipoRegistroContable.isBlank()) 
-                ? codigoTipoRegistroContable 
+        String codigoFinal = (codigoTipoRegistroContable != null && !codigoTipoRegistroContable.isBlank())
+                ? codigoTipoRegistroContable
                 : tipoRegistroContableIdFallback;
 
-        return ResponseEntity.ok(service.procesarPagoFase4(id, codigoFinal, numeroCausacion, usuario, soporteTb, comprobantePago));
+        return ResponseEntity
+                .ok(service.procesarPagoFase4(id, codigoFinal, numeroCausacion, usuario, soporteTb, comprobantePago));
     }
 
     // 🏷️ ASIGNAR CONCEPTO CONTABLE A FACTURA

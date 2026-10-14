@@ -14,15 +14,15 @@ import com.gestor_fe.core.service.ErrorCargueService;
 
 @RestController
 @RequestMapping("/api/v1/cargue/error-cargue")
-@CrossOrigin("*")
+// @CrossOrigin(origins = "*")
 public class ErrorCargueController {
-	
+
 	private final ErrorCargueService service;
-	
+
 	public ErrorCargueController(ErrorCargueService service) {
 		this.service = service;
 	}
-	
+
 	@GetMapping("/{id}")
 	public ResponseEntity<byte[]> exportErrorToExcel(@PathVariable("id") Long id) {
 		try {

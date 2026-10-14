@@ -22,7 +22,7 @@ import com.gestor_fe.admin.service.model.entity.Departamento;
 import com.gestor_fe.admin.service.services.DepartamentoService;
 import com.service.common.controller.GlobalController;
 
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/departamento")
 public class DepartamentoController extends GlobalController<Departamento, DepartamentoService> {
@@ -61,9 +61,9 @@ public class DepartamentoController extends GlobalController<Departamento, Depar
 
     @PutMapping("/{id}")
     public ResponseEntity<?> edit(@Validated @RequestBody Departamento d,
-                                  BindingResult result,
-                                  @PathVariable Long id,
-                                  jakarta.servlet.http.HttpServletRequest request) {
+            BindingResult result,
+            @PathVariable Long id,
+            jakarta.servlet.http.HttpServletRequest request) {
         if (result.hasErrors()) {
             return this.validar(result);
         }
@@ -81,8 +81,10 @@ public class DepartamentoController extends GlobalController<Departamento, Depar
         dDb.setDescripcion(d.getDescripcion());
         dDb.setDeletedAt(d.getDeletedAt());
 
-        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + d.getCodigo() + " | Descripción: " + d.getDescripcion() + "]";
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion
+                + "] -> Nuevo: [Código: " + d.getCodigo() + " | Descripción: " + d.getDescripcion() + "]";
         String username = this.extraerUsername(request, null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(dDb, "EDITAR", observacion, username));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.saveWithLog(dDb, "EDITAR", observacion, username));
     }
 }

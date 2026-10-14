@@ -22,53 +22,53 @@ import com.gestor_fe.admin.service.model.entity.Fase;
 import com.gestor_fe.admin.service.services.FaseService;
 import com.service.common.controller.GlobalController;
 
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/fase")
 public class FaseController extends GlobalController<Fase, FaseService> {
 
 	private final FaseService service;
-	
+
 	public FaseController(FaseService service) {
 		this.service = service;
 	}
-	
+
 	@GetMapping("/buscar/{desc}")
-	public ResponseEntity<?> filter(@PathVariable String desc){
+	public ResponseEntity<?> filter(@PathVariable String desc) {
 		return ResponseEntity.ok(service.findByDescripcion(desc));
 	}
-	
+
 	@GetMapping("/paginable/activos")
 	public ResponseEntity<?> listAll(Pageable pageable) {
 
-	    Pageable sortedPageable = PageRequest.of(
-	            pageable.getPageNumber(),
-	            pageable.getPageSize(),
-	            Sort.by(Sort.Direction.DESC, "id"));
+		Pageable sortedPageable = PageRequest.of(
+				pageable.getPageNumber(),
+				pageable.getPageSize(),
+				Sort.by(Sort.Direction.DESC, "id"));
 
-	    return ResponseEntity.ok()
-	            .body(service.findByDeletedAtIsNull(sortedPageable));
+		return ResponseEntity.ok()
+				.body(service.findByDeletedAtIsNull(sortedPageable));
 	}
-	
+
 	@PutMapping("/deleted-at/{id}")
-	public ResponseEntity<?> addDeletedAt(@PathVariable Long id){
+	public ResponseEntity<?> addDeletedAt(@PathVariable Long id) {
 		Optional<Fase> x = service.findById(id);
-		
+
 		if (x.isEmpty()) {
 			return ResponseEntity.notFound().build();
 		}
-		
+
 		Fase xDb = x.get();
 		xDb.setDeletedAt(LocalDateTime.now());
 		return ResponseEntity.status(HttpStatus.CREATED).body(service.save(xDb));
 	}
-	
+
 	@PutMapping("/{id}")
 	public ResponseEntity<?> edit(@Validated @RequestBody Fase x,
 			BindingResult result,
 			@PathVariable(name = "id") Long id,
 			jakarta.servlet.http.HttpServletRequest request) {
-		
+
 		if (result.hasErrors()) {
 			return this.validar(result);
 		}
@@ -86,10 +86,11 @@ public class FaseController extends GlobalController<Fase, FaseService> {
 		xDb.setDescripcion(x.getDescripcion());
 		xDb.setDeletedAt(x.getDeletedAt());
 
-		String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
+		String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion
+				+ "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + "]";
 		String username = this.extraerUsername(request, null);
-		return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(xDb, "EDITAR", observacion, username));
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(service.saveWithLog(xDb, "EDITAR", observacion, username));
 	}
-	
-}
 
+}

@@ -17,7 +17,7 @@ import com.gestor_fe.core.service.EstadisticaService;
 
 @RestController
 @RequestMapping("/api/v1/estadisticas")
-@CrossOrigin("*")
+// @CrossOrigin(origins = "*")
 public class EstadisticaController {
 
     @Autowired
@@ -29,15 +29,13 @@ public class EstadisticaController {
             @RequestParam(value = "fechaInicio", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam(value = "fechaFin", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
             @RequestParam(value = "usuario", required = false) String usuario,
-            @RequestParam(value = "roles", required = false) List<String> roles
-    ) {
+            @RequestParam(value = "roles", required = false) List<String> roles) {
         ResumenResponseDto resumen = estadisticaService.obtenerResumenEstadisticas(
                 nit,
                 fechaInicio,
                 fechaFin,
                 usuario,
-                roles
-        );
+                roles);
         return ResponseEntity.ok(resumen);
     }
 }

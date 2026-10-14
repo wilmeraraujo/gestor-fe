@@ -14,13 +14,13 @@ import java.util.List;
 
 import com.gestor_fe.core.service.DocumentoService;
 
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/documento")
 public class DocumentoController {
-    
+
     private final DocumentoService service;
-    
+
     public DocumentoController(DocumentoService service) {
         this.service = service;
     }
@@ -34,11 +34,12 @@ public class DocumentoController {
         return ResponseEntity.ok().body(service.findByDeletedAtIsNull(sortedPageable));
     }
 
-    // 🔍 1. BUSCADOR CON FILTRADO DINÁMICO COMBINADO (POR NIT, FACTURA, EXTENSIÓN/TIPO, NOMBRE ARCHIVO E ID)
+    // 🔍 1. BUSCADOR CON FILTRADO DINÁMICO COMBINADO (POR NIT, FACTURA,
+    // EXTENSIÓN/TIPO, NOMBRE ARCHIVO E ID)
     @GetMapping("/paginable/buscar")
     public ResponseEntity<?> buscarDocumentos(
-            @RequestParam(value = "numeroFactura", required = false) String numeroFactura, 
-            @RequestParam(value = "nit", required = false) String nit,                     
+            @RequestParam(value = "numeroFactura", required = false) String numeroFactura,
+            @RequestParam(value = "nit", required = false) String nit,
             @RequestParam(value = "codigoTipo", required = false) String codigoTipo,
             @RequestParam(value = "tipoId", required = false) String tipoIdFallback,
             @RequestParam(value = "codigoExtension", required = false) String codigoExtension,
@@ -48,7 +49,8 @@ public class DocumentoController {
             Pageable pageable) {
 
         String tipoFinal = (codigoTipo != null && !codigoTipo.isBlank()) ? codigoTipo : tipoIdFallback;
-        String extensionFinal = (codigoExtension != null && !codigoExtension.isBlank()) ? codigoExtension : extensionIdFallback;
+        String extensionFinal = (codigoExtension != null && !codigoExtension.isBlank()) ? codigoExtension
+                : extensionIdFallback;
 
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
@@ -56,20 +58,21 @@ public class DocumentoController {
                 Sort.by(Sort.Direction.DESC, "id"));
 
         return ResponseEntity.ok()
-                .body(service.filtrarDocumentos(numeroFactura, nit, tipoFinal, extensionFinal, nombreOriginal, id, sortedPageable));
+                .body(service.filtrarDocumentos(numeroFactura, nit, tipoFinal, extensionFinal, nombreOriginal, id,
+                        sortedPageable));
     }
 
     // 👁️ 2. VISOR INLINE DE SOPORTES (¡Versión Segura Anti-Nulls!)
     @GetMapping("/preview/{id}")
     public ResponseEntity<Resource> previewDocumento(@PathVariable("id") Long id) {
         Resource resource = service.descargarDocumento(id);
-        
+
         // Evitamos el NullPointerException si el nombre de archivo viene vacío
         String filename = resource.getFilename();
         if (filename == null) {
             filename = "soporte_" + id;
         }
-        
+
         // Detección dinámica y segura de la extensión
         String contentType;
         if (filename.toLowerCase().endsWith(".xml")) {
@@ -90,7 +93,7 @@ public class DocumentoController {
     @GetMapping("/descargar/{id}")
     public ResponseEntity<Resource> descargarDocumento(@PathVariable("id") Long id) {
         Resource resource = service.descargarDocumento(id);
-        
+
         String filename = resource.getFilename();
         if (filename == null) {
             filename = "documento_" + id;

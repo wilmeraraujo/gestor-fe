@@ -36,14 +36,14 @@ import com.gestor_fe.core.service.SseNotificationService;
 
 @RestController
 @RequestMapping("/api/v1/cargue")
-@CrossOrigin("*")
+// @CrossOrigin(origins = "*")
 public class FacturaCargueController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FacturaCargueController.class);
 
     @Autowired
     private CargueService cargueService;
-    
+
     @Autowired
     private SseNotificationService sseNotificationService;
 
@@ -62,9 +62,9 @@ public class FacturaCargueController {
             @RequestParam("usuario") String usuario,
             @RequestParam(value = "roles", required = false) List<String> roles,
             @RequestParam(value = "codigoMovimiento", required = false) String codigoMovimiento,
-            @RequestParam(value = "movimientoId", required = false) String movimientoIdFallback
-    ) {
-        String movFinal = (codigoMovimiento != null && !codigoMovimiento.isBlank()) ? codigoMovimiento : movimientoIdFallback;
+            @RequestParam(value = "movimientoId", required = false) String movimientoIdFallback) {
+        String movFinal = (codigoMovimiento != null && !codigoMovimiento.isBlank()) ? codigoMovimiento
+                : movimientoIdFallback;
 
         // 🛑 VALIDACIÓN 1: Archivo presente
         if (multipartFile == null || multipartFile.isEmpty()) {
@@ -81,20 +81,23 @@ public class FacturaCargueController {
         // 🛑 VALIDACIÓN 3: Límite de tamaño dinámico desde la BD
         long maxMb = 100; // Valor por defecto de seguridad
         try {
-            ConfiguracionSistemaDto configTamano = adminFeignClient.obtenerConfiguracionPorCodigo(CODIGO_TAMANO_MAX_ZIP);
+            ConfiguracionSistemaDto configTamano = adminFeignClient
+                    .obtenerConfiguracionPorCodigo(CODIGO_TAMANO_MAX_ZIP);
             if (configTamano != null && configTamano.getValor() != null) {
                 maxMb = Long.parseLong(configTamano.getValor().trim());
             }
         } catch (Exception e) {
-            LOGGER.warn("⚠️ No se pudo obtener [{}] vía Feign. Se usará el límite de respaldo: {} MB", CODIGO_TAMANO_MAX_ZIP, maxMb);
+            LOGGER.warn("⚠️ No se pudo obtener [{}] vía Feign. Se usará el límite de respaldo: {} MB",
+                    CODIGO_TAMANO_MAX_ZIP, maxMb);
         }
 
         long maxBytesPermitidos = maxMb * 1024;
         if (multipartFile.getSize() > maxBytesPermitidos) {
             double pesoMB = (double) multipartFile.getSize() / (1024);
-            String errorTamano = String.format("El archivo pesa %.2f MB y supera el tamaño máximo permitido de %d MB.", pesoMB, maxMb);
+            String errorTamano = String.format("El archivo pesa %.2f MB y supera el tamaño máximo permitido de %d MB.",
+                    pesoMB, maxMb);
             LOGGER.error("❌ RECHAZADO: {}", errorTamano);
-            
+
             // Retorna HTTP 413 (Payload Too Large) SIN crear ningún registro de cargue
             return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(errorTamano);
         }
@@ -106,7 +109,7 @@ public class FacturaCargueController {
             if (!carpetaDestino.exists()) {
                 carpetaDestino.mkdirs();
             }
-            
+
             File zipToImport = new File(carpetaDestino, originalFileName);
             multipartFile.transferTo(zipToImport);
 
@@ -120,12 +123,12 @@ public class FacturaCargueController {
 
             Cargue savedCargue = cargueService.save(cargue);
 
-            // Determinar si el usuario tiene rol administrativo (admin, gestor-fe-admin, gestor-fe-cargue)
-            boolean esAdmin = (roles != null && roles.stream().anyMatch(rol ->
-                    rol.equalsIgnoreCase("admin") ||
+            // Determinar si el usuario tiene rol administrativo (admin, gestor-fe-admin,
+            // gestor-fe-cargue)
+            boolean esAdmin = (roles != null && roles.stream().anyMatch(rol -> rol.equalsIgnoreCase("admin") ||
                     rol.equalsIgnoreCase("gestor-fe-admin") ||
-                    rol.equalsIgnoreCase("gestor-fe-cargue")
-            )) || "admin".equalsIgnoreCase(usuario) || "gestor-fe-admin".equalsIgnoreCase(usuario) || "gestor-fe-cargue".equalsIgnoreCase(usuario);
+                    rol.equalsIgnoreCase("gestor-fe-cargue"))) || "admin".equalsIgnoreCase(usuario)
+                    || "gestor-fe-admin".equalsIgnoreCase(usuario) || "gestor-fe-cargue".equalsIgnoreCase(usuario);
 
             // Iniciar Batch de procesamiento del contenido interno del ZIP
             cargueService.runBatchJobAsynchronously(zipToImport, savedCargue, esAdmin);
@@ -137,13 +140,12 @@ public class FacturaCargueController {
                     .body("Error escribiendo el archivo en el servidor: " + e.getMessage());
         }
     }
-    
+
     @GetMapping("/paginable/activos")
     public ResponseEntity<?> listAll(
             @RequestParam(value = "usuario", required = false, defaultValue = "") String usuario,
             @RequestParam(value = "roles", required = false) List<String> roles,
-            Pageable pageable
-    ) {
+            Pageable pageable) {
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
@@ -155,12 +157,12 @@ public class FacturaCargueController {
 
         return ResponseEntity.ok(cargueService.findCarguesSegunRol(usuario, roles, sortedPageable));
     }
-    
+
     @GetMapping(value = "/sse/subscribir/{usuario}", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribirNotificaciones(@PathVariable("usuario") String usuario) {
         return sseNotificationService.crearConexion(usuario);
     }
-    
+
     @PutMapping("/deleted-at/{id}")
     public ResponseEntity<?> eliminarLogico(@PathVariable("id") Long id) {
         try {

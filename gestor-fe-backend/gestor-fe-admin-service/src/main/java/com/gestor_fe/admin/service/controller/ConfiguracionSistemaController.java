@@ -22,10 +22,11 @@ import com.gestor_fe.admin.service.model.entity.ConfiguracionSistema;
 import com.gestor_fe.admin.service.services.ConfiguracionSistemaService;
 import com.service.common.controller.GlobalController;
 
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/admin/configuracion-sistema")
-public class ConfiguracionSistemaController extends GlobalController<ConfiguracionSistema, ConfiguracionSistemaService> {
+public class ConfiguracionSistemaController
+        extends GlobalController<ConfiguracionSistema, ConfiguracionSistemaService> {
 
     private final ConfiguracionSistemaService service;
 
@@ -99,8 +100,12 @@ public class ConfiguracionSistemaController extends GlobalController<Configuraci
             xDb.setDeletedAt(x.getDeletedAt());
         }
 
-        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion + (oldValor != null ? " | Valor: " + oldValor : "") + "] -> Nuevo: [Código: " + x.getCodigo() + " | Descripción: " + x.getDescripcion() + (x.getValor() != null ? " | Valor: " + x.getValor() : "") + "]";
+        String observacion = "Anterior: [Código: " + oldCodigo + " | Descripción: " + oldDescripcion
+                + (oldValor != null ? " | Valor: " + oldValor : "") + "] -> Nuevo: [Código: " + x.getCodigo()
+                + " | Descripción: " + x.getDescripcion() + (x.getValor() != null ? " | Valor: " + x.getValor() : "")
+                + "]";
         String username = this.extraerUsername(request, null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.saveWithLog(xDb, "EDITAR", observacion, username));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.saveWithLog(xDb, "EDITAR", observacion, username));
     }
 }

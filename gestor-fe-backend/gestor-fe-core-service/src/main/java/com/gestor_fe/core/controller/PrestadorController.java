@@ -17,7 +17,7 @@ import com.gestor_fe.core.entity.Prestador;
 import com.gestor_fe.core.service.PrestadorService;
 
 @RestController
-@CrossOrigin(origins = "*")
+// @CrossOrigin(origins = "*")
 @RequestMapping("/api/v1/prestadores")
 public class PrestadorController {
 
@@ -101,13 +101,14 @@ public class PrestadorController {
         return ResponseEntity.ok(actualizado);
     }
 
-    @PutMapping({"/deleted-at/{id}", "/{id}/deleted-at"})
+    @PutMapping({ "/deleted-at/{id}", "/{id}/deleted-at" })
     public ResponseEntity<Prestador> softDelete(@PathVariable("id") Long id) {
         Prestador p = prestadorService.softDelete(id);
         return ResponseEntity.ok(p);
     }
 
-    @RequestMapping(value = {"/toggle-estado/{id}", "/{id}/toggle-estado"}, method = {RequestMethod.PUT, RequestMethod.PATCH})
+    @RequestMapping(value = { "/toggle-estado/{id}", "/{id}/toggle-estado" }, method = { RequestMethod.PUT,
+            RequestMethod.PATCH })
     public ResponseEntity<Prestador> toggleEstado(@PathVariable("id") Long id) {
         Prestador p = prestadorService.toggleEstado(id);
         return ResponseEntity.ok(p);
@@ -125,7 +126,8 @@ public class PrestadorController {
 
     /**
      * Cargar un soporte asignado al Prestador
-     * Ejemplo Multipart Form-Data: nitPrestador=900123456, tipoId=3, extensionId=2, archivo=[File]
+     * Ejemplo Multipart Form-Data: nitPrestador=900123456, tipoId=3, extensionId=2,
+     * archivo=[File]
      */
     @PostMapping(value = "/soportes/cargar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Documento> cargarSoporte(
@@ -137,7 +139,8 @@ public class PrestadorController {
             @RequestPart("archivo") MultipartFile archivo) {
 
         String tipoFinal = (codigoTipo != null && !codigoTipo.isBlank()) ? codigoTipo : tipoIdFallback;
-        String extensionFinal = (codigoExtension != null && !codigoExtension.isBlank()) ? codigoExtension : extensionIdFallback;
+        String extensionFinal = (codigoExtension != null && !codigoExtension.isBlank()) ? codigoExtension
+                : extensionIdFallback;
 
         Documento soporteGuardado = prestadorService.cargarSoporte(nitPrestador, tipoFinal, extensionFinal, archivo);
         return new ResponseEntity<>(soporteGuardado, HttpStatus.CREATED);
