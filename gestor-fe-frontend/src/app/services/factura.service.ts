@@ -214,14 +214,22 @@ export class FacturaService extends CommonService<Factura> {
   }
 
   /**
-   * 🏛️ 12. EXPORTACIÓN DEL FORMATO 1001 DIAN (INFORMACIÓN EXÓGENA)
+   * 🏛️ 12. EXPORTACIÓN DE FORMATOS DIAN (INFORMACIÓN EXÓGENA)
    */
-  public exportarFormato1001Excel(
+  public exportarFormatoExogenaExcel(
+    formato: '1001' | '1003' | '1005' | '1006' | '1007' | 'consolidado',
     nitPrestador?: string,
     roles: string[] = [],
     anioGravable?: number,
     filtro?: any
   ): Observable<Blob> {
+    let endpoint = 'formato-1001-excel';
+    if (formato === '1003') endpoint = 'formato-1003-excel';
+    else if (formato === '1005') endpoint = 'formato-1005-excel';
+    else if (formato === '1006') endpoint = 'formato-1006-excel';
+    else if (formato === '1007') endpoint = 'formato-1007-excel';
+    else if (formato === 'consolidado') endpoint = 'formatos-exogena-consolidado-excel';
+
     let params = new HttpParams();
 
     if (nitPrestador) {
@@ -239,13 +247,67 @@ export class FacturaService extends CommonService<Factura> {
     }
 
     return this.http.post(
-      `${this.endPointBase}/reportes/formato-1001-excel`,
+      `${this.endPointBase}/reportes/${endpoint}`,
       filtro || {},
       {
         params,
         responseType: 'blob'
       }
     );
+  }
+
+  public exportarFormato1001Excel(
+    nitPrestador?: string,
+    roles: string[] = [],
+    anioGravable?: number,
+    filtro?: any
+  ): Observable<Blob> {
+    return this.exportarFormatoExogenaExcel('1001', nitPrestador, roles, anioGravable, filtro);
+  }
+
+  public exportarFormato1003Excel(
+    nitPrestador?: string,
+    roles: string[] = [],
+    anioGravable?: number,
+    filtro?: any
+  ): Observable<Blob> {
+    return this.exportarFormatoExogenaExcel('1003', nitPrestador, roles, anioGravable, filtro);
+  }
+
+  public exportarFormato1005Excel(
+    nitPrestador?: string,
+    roles: string[] = [],
+    anioGravable?: number,
+    filtro?: any
+  ): Observable<Blob> {
+    return this.exportarFormatoExogenaExcel('1005', nitPrestador, roles, anioGravable, filtro);
+  }
+
+  public exportarFormato1006Excel(
+    nitPrestador?: string,
+    roles: string[] = [],
+    anioGravable?: number,
+    filtro?: any
+  ): Observable<Blob> {
+    return this.exportarFormatoExogenaExcel('1006', nitPrestador, roles, anioGravable, filtro);
+  }
+
+  public exportarFormato1007Excel(
+    nitPrestador?: string,
+    roles: string[] = [],
+    anioGravable?: number,
+    filtro?: any
+  ): Observable<Blob> {
+    return this.exportarFormatoExogenaExcel('1007', nitPrestador, roles, anioGravable, filtro);
+  }
+
+  public exportarFormatosExogenaConsolidadoExcel(
+    nitPrestador?: string,
+    roles: string[] = [],
+    anioGravable?: number,
+    filtro?: any
+  ): Observable<Blob> {
+    return this.exportarFormatoExogenaExcel('consolidado', nitPrestador, roles, anioGravable, filtro);
   }
 
   /**

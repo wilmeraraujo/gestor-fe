@@ -9,9 +9,11 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.apache.poi.ss.usermodel.Workbook;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -804,9 +806,7 @@ public class FacturaServiceImpl implements FacturaService {
         }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public byte[] exportarFormato1001Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro) {
+    private List<Factura> obtenerFacturasParaExogena(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro) {
         if (filtro == null) {
             filtro = new FacturaFilterDto();
         }
@@ -830,153 +830,538 @@ public class FacturaServiceImpl implements FacturaService {
         query.where(cb.and(predicates.toArray(new Predicate[0])));
         query.orderBy(cb.desc(root.get("id")));
 
-        List<Factura> facturas = entityManager.createQuery(query).getResultList();
+        return entityManager.createQuery(query).getResultList();
+    }
 
-        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
-            Sheet sheet = workbook.createSheet("Formato 1001 DIAN");
+    public static String calcularDv(String nit) {
+        if (nit == null || nit.isBlank()) {
+            return "";
+        }
+        String cleanNit = nit.trim().replaceAll("\\D", "");
+        if (cleanNit.isEmpty()) {
+            return "";
+        }
+        int[] primos = {3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71};
+        int suma = 0;
+        int index = 0;
+        for (int i = cleanNit.length() - 1; i >= 0 && index < primos.length; i--, index++) {
+            suma += Character.getNumericValue(cleanNit.charAt(i)) * primos[index];
+        }
+        int residuo = suma % 11;
+        if (residuo == 0) {
+            return "0";
+        } else if (residuo == 1) {
+            return "1";
+        } else {
+            return String.valueOf(11 - residuo);
+        }
+    }
 
-            // Estilo para encabezados (Azul corporativo #1F4E78 como en la imagen)
-            XSSFCellStyle headerStyle = (XSSFCellStyle) workbook.createCellStyle();
-            Font headerFont = workbook.createFont();
-            headerFont.setBold(true);
-            headerFont.setColor(IndexedColors.WHITE.getIndex());
-            headerStyle.setFont(headerFont);
-            byte[] blueRgb = new byte[]{(byte) 31, (byte) 78, (byte) 120};
-            headerStyle.setFillForegroundColor(new XSSFColor(blueRgb, new DefaultIndexedColorMap()));
-            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+    private XSSFCellStyle crearEstiloEncabezado(Workbook workbook) {
+        XSSFCellStyle headerStyle = (XSSFCellStyle) workbook.createCellStyle();
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerFont.setColor(IndexedColors.WHITE.getIndex());
+        headerStyle.setFont(headerFont);
+        byte[] blueRgb = new byte[]{(byte) 31, (byte) 78, (byte) 120}; // #1F4E78
+        headerStyle.setFillForegroundColor(new XSSFColor(blueRgb, new DefaultIndexedColorMap()));
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        headerStyle.setAlignment(HorizontalAlignment.CENTER);
+        return headerStyle;
+    }
 
-            // Estilos para datos numéricos y de moneda
-            CellStyle currencyStyle = workbook.createCellStyle();
-            DataFormat format = workbook.createDataFormat();
-            currencyStyle.setDataFormat(format.getFormat("#,##0.00"));
+    private CellStyle crearEstiloMoneda(Workbook workbook) {
+        CellStyle currencyStyle = workbook.createCellStyle();
+        DataFormat format = workbook.createDataFormat();
+        currencyStyle.setDataFormat(format.getFormat("#,##0.00"));
+        return currencyStyle;
+    }
 
-            String[] encabezados = {
-                "concepto",
-                "tipo_docto",
-                "numero_identificacion",
-                "primer_Apellido",
-                "segundo_apellido",
-                "primer_nombre",
-                "segundo_nombre",
-                "razon_social",
-                "direccion",
-                "codigo_departamento",
-                "codigo_municipio",
-                "codigo_pais",
-                "pago_abono_en_cuenta_gto deducible",
-                "apgo_abono_en_cuenta_no_deducible",
-                "iva_mayor_vr_gasto",
-                "iva_mayor_vr_del_cosot_gasto_no_deducible",
-                "retencion_en_la_fuente",
-                "fte_asumida",
-                "retfte_iva",
-                "fte_iva_no_residentes"
-            };
+    private void llenarHojaFormato1001(Sheet sheet, List<Factura> facturas, CellStyle headerStyle, CellStyle currencyStyle) {
+        String[] encabezados = {
+            "concepto",
+            "tipo_docto",
+            "numero_identificacion",
+            "primer_Apellido",
+            "segundo_apellido",
+            "primer_nombre",
+            "segundo_nombre",
+            "razon_social",
+            "direccion",
+            "codigo_departamento",
+            "codigo_municipio",
+            "codigo_pais",
+            "pago_abono_en_cuenta_gto deducible",
+            "apgo_abono_en_cuenta_no_deducible",
+            "iva_mayor_vr_gasto",
+            "iva_mayor_vr_del_cosot_gasto_no_deducible",
+            "retencion_en_la_fuente",
+            "fte_asumida",
+            "retfte_iva",
+            "fte_iva_no_residentes"
+        };
 
-            Row headerRow = sheet.createRow(0);
-            for (int i = 0; i < encabezados.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(encabezados[i]);
-                cell.setCellStyle(headerStyle);
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < encabezados.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(encabezados[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        int rowIdx = 1;
+        for (Factura f : facturas) {
+            Row row = sheet.createRow(rowIdx++);
+
+            // 1. concepto
+            row.createCell(0).setCellValue(f.getCodigoConcepto() != null ? f.getCodigoConcepto() : "");
+
+            // 2. tipo_docto
+            String tipoDocId = f.getCodigoTipoIdentificacionEmisor();
+            if ((tipoDocId == null || tipoDocId.isBlank()) && f.getNit() != null && !f.getNit().isBlank()) {
+                tipoDocId = "31";
+            }
+            row.createCell(1).setCellValue(tipoDocId != null ? tipoDocId : "");
+
+            // 3. numero_identificacion
+            row.createCell(2).setCellValue(f.getNit() != null ? f.getNit() : "");
+
+            // 4. primer_Apellido
+            row.createCell(3).setCellValue(f.getPrimerApellido() != null ? f.getPrimerApellido() : "");
+
+            // 5. segundo_apellido
+            row.createCell(4).setCellValue(f.getSegundoApellido() != null ? f.getSegundoApellido() : "");
+
+            // 6. primer_nombre
+            row.createCell(5).setCellValue(f.getPrimerNombre() != null ? f.getPrimerNombre() : "");
+
+            // 7. segundo_nombre
+            row.createCell(6).setCellValue(f.getSegundoNombre() != null ? f.getSegundoNombre() : "");
+
+            // 8. razon_social
+            row.createCell(7).setCellValue(f.getRazonSocialEmisor() != null ? f.getRazonSocialEmisor() : "");
+
+            // 9. direccion
+            row.createCell(8).setCellValue(f.getDireccion() != null ? f.getDireccion() : "");
+
+            // 10. codigo_departamento
+            row.createCell(9).setCellValue(f.getCodigoDepartamento() != null ? f.getCodigoDepartamento() : "");
+
+            // 11. codigo_municipio
+            String codMpio = f.getCodigoMunicipio();
+            if (codMpio != null && codMpio.length() > 3) {
+                codMpio = codMpio.substring(codMpio.length() - 3);
+            }
+            row.createCell(10).setCellValue(codMpio != null ? codMpio : "");
+
+            // 12. codigo_pais
+            String codPais = f.getCodigoPais();
+            if (codPais == null || codPais.isBlank() || "CO".equalsIgnoreCase(codPais) || "COL".equalsIgnoreCase(codPais)) {
+                codPais = "169";
+            }
+            row.createCell(11).setCellValue(codPais);
+
+            // 13. pago_abono_en_cuenta_gto deducible
+            Cell celdaGtoDeducible = row.createCell(12);
+            BigDecimal gastoDeducible = f.getValorSubtotal() != null ? f.getValorSubtotal() : (f.getValorTotal() != null ? f.getValorTotal() : BigDecimal.ZERO);
+            celdaGtoDeducible.setCellValue(gastoDeducible.doubleValue());
+            celdaGtoDeducible.setCellStyle(currencyStyle);
+
+            // 14. apgo_abono_en_cuenta_no_deducible
+            Cell celdaGtoNoDeducible = row.createCell(13);
+            celdaGtoNoDeducible.setCellValue(0.00);
+            celdaGtoNoDeducible.setCellStyle(currencyStyle);
+
+            // 15. iva_mayor_vr_gasto
+            Cell celdaIvaGasto = row.createCell(14);
+            BigDecimal iva = f.getValorIva() != null ? f.getValorIva() : BigDecimal.ZERO;
+            celdaIvaGasto.setCellValue(iva.doubleValue());
+            celdaIvaGasto.setCellStyle(currencyStyle);
+
+            // 16. iva_mayor_vr_del_cosot_gasto_no_deducible
+            Cell celdaIvaNoDeducible = row.createCell(15);
+            celdaIvaNoDeducible.setCellValue(0.00);
+            celdaIvaNoDeducible.setCellStyle(currencyStyle);
+
+            // 17. retencion_en_la_fuente
+            Cell celdaReteFuente = row.createCell(16);
+            celdaReteFuente.setCellValue("");
+
+            // 18. fte_asumida
+            Cell celdaFteAsumida = row.createCell(17);
+            celdaFteAsumida.setCellValue("");
+
+            // 19. retfte_iva
+            Cell celdaRetfteIva = row.createCell(18);
+            if (f.getValorReteiva() != null) {
+                celdaRetfteIva.setCellValue(f.getValorReteiva().doubleValue());
+                celdaRetfteIva.setCellStyle(currencyStyle);
+            } else {
+                celdaRetfteIva.setCellValue("");
             }
 
-            int rowIdx = 1;
-            for (Factura f : facturas) {
-                Row row = sheet.createRow(rowIdx++);
+            // 20. fte_iva_no_residentes
+            Cell celdaFteIvaNoRes = row.createCell(19);
+            celdaFteIvaNoRes.setCellValue("");
+        }
+    }
 
-                // 1. concepto
-                row.createCell(0).setCellValue(f.getCodigoConcepto() != null ? f.getCodigoConcepto() : "");
+    private void llenarHojaFormato1003(Sheet sheet, List<Factura> facturas, CellStyle headerStyle, CellStyle currencyStyle) {
+        String[] encabezados = {
+            "Concepto",
+            "TDocto.tercero",
+            "NIT",
+            "DV",
+            "1 AP",
+            "2 AP",
+            "1 NM",
+            "2 NM",
+            "RAZON SOCIAL",
+            "Dirección tercero",
+            "Departamento tercero",
+            "Municipio tercero",
+            "Valor acumulado del pago o abono sujeto a Retención",
+            "Retención en la fuente que le practicaron"
+        };
 
-                // 2. tipo_docto
-                String tipoDocId = f.getCodigoTipoIdentificacionEmisor();
-                if ((tipoDocId == null || tipoDocId.isBlank()) && f.getNit() != null && !f.getNit().isBlank()) {
-                    tipoDocId = "31";
-                }
-                row.createCell(1).setCellValue(tipoDocId != null ? tipoDocId : "");
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < encabezados.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(encabezados[i]);
+            cell.setCellStyle(headerStyle);
+        }
 
-                // 3. numero_identificacion
-                row.createCell(2).setCellValue(f.getNit() != null ? f.getNit() : "");
+        // Agrupación por (Concepto + NIT de retenedor)
+        Map<String, Formato1003Row> acumulador = new LinkedHashMap<>();
 
-                // 4. primer_Apellido
-                row.createCell(3).setCellValue(f.getPrimerApellido() != null ? f.getPrimerApellido() : "");
+        for (Factura f : facturas) {
+            String concepto = (f.getCodigoConcepto() != null && f.getCodigoConcepto().startsWith("13")) 
+                    ? f.getCodigoConcepto() 
+                    : "1303"; // Concepto 1303 por defecto para servicios/salud
 
-                // 5. segundo_apellido
-                row.createCell(4).setCellValue(f.getSegundoApellido() != null ? f.getSegundoApellido() : "");
+            String nitRetenedor = (f.getNitCliente() != null && !f.getNitCliente().isBlank()) 
+                    ? f.getNitCliente().trim() 
+                    : (f.getNit() != null ? f.getNit().trim() : "");
 
-                // 6. primer_nombre
-                row.createCell(5).setCellValue(f.getPrimerNombre() != null ? f.getPrimerNombre() : "");
+            if (nitRetenedor.isBlank()) {
+                continue;
+            }
 
-                // 7. segundo_nombre
-                row.createCell(6).setCellValue(f.getSegundoNombre() != null ? f.getSegundoNombre() : "");
-
-                // 8. razon_social
-                row.createCell(7).setCellValue(f.getRazonSocialEmisor() != null ? f.getRazonSocialEmisor() : "");
-
-                // 9. direccion
-                row.createCell(8).setCellValue(f.getDireccion() != null ? f.getDireccion() : "");
-
-                // 10. codigo_departamento
-                row.createCell(9).setCellValue(f.getCodigoDepartamento() != null ? f.getCodigoDepartamento() : "");
-
-                // 11. codigo_municipio
+            String key = concepto + "|" + nitRetenedor;
+            Formato1003Row rowData = acumulador.computeIfAbsent(key, k -> {
+                Formato1003Row r = new Formato1003Row();
+                r.concepto = concepto;
+                r.nit = nitRetenedor;
+                r.tipoDocto = (f.getCodigoTipoIdentificacionCliente() != null && !f.getCodigoTipoIdentificacionCliente().isBlank()) 
+                        ? f.getCodigoTipoIdentificacionCliente().trim() 
+                        : "31";
+                r.dv = (f.getDvCliente() != null && !f.getDvCliente().isBlank()) 
+                        ? f.getDvCliente().trim() 
+                        : ((f.getDv() != null && !f.getDv().isBlank()) ? f.getDv().trim() : calcularDv(nitRetenedor));
+                r.primerApellido = f.getPrimerApellido() != null ? f.getPrimerApellido() : "";
+                r.segundoApellido = f.getSegundoApellido() != null ? f.getSegundoApellido() : "";
+                r.primerNombre = f.getPrimerNombre() != null ? f.getPrimerNombre() : "";
+                r.segundoNombre = f.getSegundoNombre() != null ? f.getSegundoNombre() : "";
+                r.razonSocial = (f.getRazonSocialCliente() != null && !f.getRazonSocialCliente().isBlank()) 
+                        ? f.getRazonSocialCliente().trim() 
+                        : (f.getRazonSocialEmisor() != null ? f.getRazonSocialEmisor().trim() : "");
+                r.direccion = (f.getDireccionCliente() != null && !f.getDireccionCliente().isBlank()) 
+                        ? f.getDireccionCliente().trim() 
+                        : (f.getDireccion() != null ? f.getDireccion().trim() : "");
+                r.departamento = (f.getCodigoDepartamento() != null && !f.getCodigoDepartamento().isBlank()) 
+                        ? f.getCodigoDepartamento().trim() 
+                        : "52";
                 String codMpio = f.getCodigoMunicipio();
                 if (codMpio != null && codMpio.length() > 3) {
                     codMpio = codMpio.substring(codMpio.length() - 3);
                 }
-                row.createCell(10).setCellValue(codMpio != null ? codMpio : "");
+                r.municipio = (codMpio != null && !codMpio.isBlank()) ? codMpio : "001";
+                return r;
+            });
 
-                // 12. codigo_pais
+            BigDecimal base = f.getValorSubtotal() != null ? f.getValorSubtotal() : (f.getValorTotal() != null ? f.getValorTotal() : BigDecimal.ZERO);
+            rowData.baseRetencion = rowData.baseRetencion.add(base);
+
+            BigDecimal ret = f.getValorRetefuente() != null ? f.getValorRetefuente() : (f.getTotalRetenciones() != null ? f.getTotalRetenciones() : BigDecimal.ZERO);
+            rowData.retencionPracticada = rowData.retencionPracticada.add(ret);
+        }
+
+        int rowIdx = 1;
+        for (Formato1003Row item : acumulador.values()) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(item.concepto);
+            row.createCell(1).setCellValue(item.tipoDocto);
+            row.createCell(2).setCellValue(item.nit);
+            row.createCell(3).setCellValue(item.dv);
+            row.createCell(4).setCellValue(item.primerApellido);
+            row.createCell(5).setCellValue(item.segundoApellido);
+            row.createCell(6).setCellValue(item.primerNombre);
+            row.createCell(7).setCellValue(item.segundoNombre);
+            row.createCell(8).setCellValue(item.razonSocial);
+            row.createCell(9).setCellValue(item.direccion);
+            row.createCell(10).setCellValue(item.departamento);
+            row.createCell(11).setCellValue(item.municipio);
+
+            Cell cellBase = row.createCell(12);
+            cellBase.setCellValue(item.baseRetencion.doubleValue());
+            cellBase.setCellStyle(currencyStyle);
+
+            Cell cellRet = row.createCell(13);
+            cellRet.setCellValue(item.retencionPracticada.doubleValue());
+            cellRet.setCellStyle(currencyStyle);
+        }
+    }
+
+    private void llenarHojaFormato1005(Sheet sheet, List<Factura> facturas, CellStyle headerStyle, CellStyle currencyStyle) {
+        String[] encabezados = {
+            "TIPO DOCTO",
+            "NIT",
+            "DV",
+            "1 APELLIDO",
+            "2 APELLIDO",
+            "1 NOMBRE",
+            "2 NOMBRE",
+            "RAZON SOCIAL",
+            "IMP DESCONTABLE",
+            "DEVOLUCIONES"
+        };
+
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < encabezados.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(encabezados[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        // Agrupación por Proveedor (NIT emisor de compras/gastos con IVA descontable)
+        Map<String, Formato1005Row> acumulador = new LinkedHashMap<>();
+
+        for (Factura f : facturas) {
+            String nitProveedor = f.getNit() != null ? f.getNit().trim() : "";
+            if (nitProveedor.isBlank()) {
+                continue;
+            }
+
+            Formato1005Row rowData = acumulador.computeIfAbsent(nitProveedor, k -> {
+                Formato1005Row r = new Formato1005Row();
+                r.tipoDocto = (f.getCodigoTipoIdentificacionEmisor() != null && !f.getCodigoTipoIdentificacionEmisor().isBlank())
+                        ? f.getCodigoTipoIdentificacionEmisor().trim()
+                        : "31";
+                r.nit = nitProveedor;
+                r.dv = (f.getDv() != null && !f.getDv().isBlank()) ? f.getDv().trim() : calcularDv(nitProveedor);
+                r.primerApellido = f.getPrimerApellido() != null ? f.getPrimerApellido() : "";
+                r.segundoApellido = f.getSegundoApellido() != null ? f.getSegundoApellido() : "";
+                r.primerNombre = f.getPrimerNombre() != null ? f.getPrimerNombre() : "";
+                r.segundoNombre = f.getSegundoNombre() != null ? f.getSegundoNombre() : "";
+                r.razonSocial = f.getRazonSocialEmisor() != null ? f.getRazonSocialEmisor().trim() : "";
+                return r;
+            });
+
+            BigDecimal iva = f.getValorIva() != null ? f.getValorIva() : BigDecimal.ZERO;
+            rowData.impDescontable = rowData.impDescontable.add(iva);
+        }
+
+        int rowIdx = 1;
+        for (Formato1005Row item : acumulador.values()) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(item.tipoDocto);
+            row.createCell(1).setCellValue(item.nit);
+            row.createCell(2).setCellValue(item.dv);
+            row.createCell(3).setCellValue(item.primerApellido);
+            row.createCell(4).setCellValue(item.segundoApellido);
+            row.createCell(5).setCellValue(item.primerNombre);
+            row.createCell(6).setCellValue(item.segundoNombre);
+            row.createCell(7).setCellValue(item.razonSocial);
+
+            Cell cellIva = row.createCell(8);
+            cellIva.setCellValue(item.impDescontable.doubleValue());
+            cellIva.setCellStyle(currencyStyle);
+
+            Cell cellDev = row.createCell(9);
+            cellDev.setCellValue(0.00);
+            cellDev.setCellStyle(currencyStyle);
+        }
+    }
+
+    private void llenarHojaFormato1006(Sheet sheet, List<Factura> facturas, CellStyle headerStyle, CellStyle currencyStyle) {
+        String[] encabezados = {
+            "TIPO DOCTO",
+            "NIT",
+            "DV",
+            "1 APELLIDO",
+            "2 APELLIDO",
+            "1 NOMBRE",
+            "2 NOMBRE",
+            "RAZON SOCIAL",
+            "IVA GENERADO",
+            "DEVOLUCIONES"
+        };
+
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < encabezados.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(encabezados[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        // Agrupación por Cliente / Adquirente (a quien se le generó el IVA)
+        Map<String, Formato1006Row> acumulador = new LinkedHashMap<>();
+
+        for (Factura f : facturas) {
+            String nitCliente = (f.getNitCliente() != null && !f.getNitCliente().isBlank())
+                    ? f.getNitCliente().trim()
+                    : (f.getNit() != null ? f.getNit().trim() : "");
+
+            if (nitCliente.isBlank()) {
+                continue;
+            }
+
+            Formato1006Row rowData = acumulador.computeIfAbsent(nitCliente, k -> {
+                Formato1006Row r = new Formato1006Row();
+                r.tipoDocto = (f.getCodigoTipoIdentificacionCliente() != null && !f.getCodigoTipoIdentificacionCliente().isBlank())
+                        ? f.getCodigoTipoIdentificacionCliente().trim()
+                        : "31";
+                r.nit = nitCliente;
+                r.dv = (f.getDvCliente() != null && !f.getDvCliente().isBlank())
+                        ? f.getDvCliente().trim()
+                        : ((f.getDv() != null && !f.getDv().isBlank()) ? f.getDv().trim() : calcularDv(nitCliente));
+                r.primerApellido = f.getPrimerApellido() != null ? f.getPrimerApellido() : "";
+                r.segundoApellido = f.getSegundoApellido() != null ? f.getSegundoApellido() : "";
+                r.primerNombre = f.getPrimerNombre() != null ? f.getPrimerNombre() : "";
+                r.segundoNombre = f.getSegundoNombre() != null ? f.getSegundoNombre() : "";
+                r.razonSocial = (f.getRazonSocialCliente() != null && !f.getRazonSocialCliente().isBlank())
+                        ? f.getRazonSocialCliente().trim()
+                        : (f.getRazonSocialEmisor() != null ? f.getRazonSocialEmisor().trim() : "");
+                return r;
+            });
+
+            BigDecimal iva = f.getValorIva() != null ? f.getValorIva() : BigDecimal.ZERO;
+            rowData.ivaGenerado = rowData.ivaGenerado.add(iva);
+        }
+
+        int rowIdx = 1;
+        for (Formato1006Row item : acumulador.values()) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(item.tipoDocto);
+            row.createCell(1).setCellValue(item.nit);
+            row.createCell(2).setCellValue(item.dv);
+            row.createCell(3).setCellValue(item.primerApellido);
+            row.createCell(4).setCellValue(item.segundoApellido);
+            row.createCell(5).setCellValue(item.primerNombre);
+            row.createCell(6).setCellValue(item.segundoNombre);
+            row.createCell(7).setCellValue(item.razonSocial);
+
+            Cell cellIva = row.createCell(8);
+            cellIva.setCellValue(item.ivaGenerado.doubleValue());
+            cellIva.setCellStyle(currencyStyle);
+
+            Cell cellDev = row.createCell(9);
+            cellDev.setCellValue(0.00);
+            cellDev.setCellStyle(currencyStyle);
+        }
+    }
+
+    private void llenarHojaFormato1007(Sheet sheet, List<Factura> facturas, CellStyle headerStyle, CellStyle currencyStyle) {
+        String[] encabezados = {
+            "Concepto",
+            "TDocto.tercero",
+            "Id.tercero",
+            "Primer apellido",
+            "Segundo apellido",
+            "Primer nombre",
+            "Segundo nombre",
+            "Nombre tercero",
+            "Pais",
+            "Ingresos brutos recibidos",
+            "Devoluciones, rebajas y descuentos"
+        };
+
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < encabezados.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(encabezados[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        // Agrupación por (Concepto + Id.tercero)
+        Map<String, Formato1007Row> acumulador = new LinkedHashMap<>();
+
+        for (Factura f : facturas) {
+            String concepto = (f.getCodigoConcepto() != null && f.getCodigoConcepto().startsWith("4"))
+                    ? f.getCodigoConcepto()
+                    : "4001"; // Ingresos brutos operacionales por defecto
+
+            String idTercero = (f.getNitCliente() != null && !f.getNitCliente().isBlank())
+                    ? f.getNitCliente().trim()
+                    : (f.getNit() != null ? f.getNit().trim() : "");
+
+            if (idTercero.isBlank()) {
+                continue;
+            }
+
+            String key = concepto + "|" + idTercero;
+            Formato1007Row rowData = acumulador.computeIfAbsent(key, k -> {
+                Formato1007Row r = new Formato1007Row();
+                r.concepto = concepto;
+                r.tipoDocto = (f.getCodigoTipoIdentificacionCliente() != null && !f.getCodigoTipoIdentificacionCliente().isBlank())
+                        ? f.getCodigoTipoIdentificacionCliente().trim()
+                        : ((f.getCodigoTipoIdentificacionEmisor() != null && !f.getCodigoTipoIdentificacionEmisor().isBlank()) ? f.getCodigoTipoIdentificacionEmisor().trim() : "31");
+                r.idTercero = idTercero;
+                r.primerApellido = f.getPrimerApellido() != null ? f.getPrimerApellido() : "";
+                r.segundoApellido = f.getSegundoApellido() != null ? f.getSegundoApellido() : "";
+                r.primerNombre = f.getPrimerNombre() != null ? f.getPrimerNombre() : "";
+                r.segundoNombre = f.getSegundoNombre() != null ? f.getSegundoNombre() : "";
+                r.nombreTercero = (f.getRazonSocialCliente() != null && !f.getRazonSocialCliente().isBlank())
+                        ? f.getRazonSocialCliente().trim()
+                        : (f.getRazonSocialEmisor() != null ? f.getRazonSocialEmisor().trim() : "");
                 String codPais = f.getCodigoPais();
                 if (codPais == null || codPais.isBlank() || "CO".equalsIgnoreCase(codPais) || "COL".equalsIgnoreCase(codPais)) {
                     codPais = "169";
                 }
-                row.createCell(11).setCellValue(codPais);
+                r.pais = codPais;
+                return r;
+            });
 
-                // 13. pago_abono_en_cuenta_gto deducible
-                Cell celdaGtoDeducible = row.createCell(12);
-                BigDecimal gastoDeducible = f.getValorSubtotal() != null ? f.getValorSubtotal() : (f.getValorTotal() != null ? f.getValorTotal() : BigDecimal.ZERO);
-                celdaGtoDeducible.setCellValue(gastoDeducible.doubleValue());
-                celdaGtoDeducible.setCellStyle(currencyStyle);
+            BigDecimal ingreso = f.getValorSubtotal() != null ? f.getValorSubtotal() : (f.getValorTotal() != null ? f.getValorTotal() : BigDecimal.ZERO);
+            rowData.ingresosBrutos = rowData.ingresosBrutos.add(ingreso);
 
-                // 14. apgo_abono_en_cuenta_no_deducible
-                Cell celdaGtoNoDeducible = row.createCell(13);
-                celdaGtoNoDeducible.setCellValue(0.00);
-                celdaGtoNoDeducible.setCellStyle(currencyStyle);
+            BigDecimal devolucion = f.getTotalDescuentos() != null ? f.getTotalDescuentos() : BigDecimal.ZERO;
+            rowData.devoluciones = rowData.devoluciones.add(devolucion);
+        }
 
-                // 15. iva_mayor_vr_gasto
-                Cell celdaIvaGasto = row.createCell(14);
-                BigDecimal iva = f.getValorIva() != null ? f.getValorIva() : BigDecimal.ZERO;
-                celdaIvaGasto.setCellValue(iva.doubleValue());
-                celdaIvaGasto.setCellStyle(currencyStyle);
+        int rowIdx = 1;
+        for (Formato1007Row item : acumulador.values()) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(item.concepto);
+            row.createCell(1).setCellValue(item.tipoDocto);
+            row.createCell(2).setCellValue(item.idTercero);
+            row.createCell(3).setCellValue(item.primerApellido);
+            row.createCell(4).setCellValue(item.segundoApellido);
+            row.createCell(5).setCellValue(item.primerNombre);
+            row.createCell(6).setCellValue(item.segundoNombre);
+            row.createCell(7).setCellValue(item.nombreTercero);
+            row.createCell(8).setCellValue(item.pais);
 
-                // 16. iva_mayor_vr_del_cosot_gasto_no_deducible
-                Cell celdaIvaNoDeducible = row.createCell(15);
-                celdaIvaNoDeducible.setCellValue(0.00);
-                celdaIvaNoDeducible.setCellStyle(currencyStyle);
+            Cell cellIngreso = row.createCell(9);
+            cellIngreso.setCellValue(item.ingresosBrutos.doubleValue());
+            cellIngreso.setCellStyle(currencyStyle);
 
-                // 17. retencion_en_la_fuente (se deja vacío según solicitud)
-                Cell celdaReteFuente = row.createCell(16);
-                celdaReteFuente.setCellValue("");
+            Cell cellDev = row.createCell(10);
+            cellDev.setCellValue(item.devoluciones.doubleValue());
+            cellDev.setCellStyle(currencyStyle);
+        }
+    }
 
-                // 18. fte_asumida
-                Cell celdaFteAsumida = row.createCell(17);
-                celdaFteAsumida.setCellValue("");
+    // =========================================================================
+    // 🏛️ EXPORTACIÓN DE FORMATOS DE INFORMACIÓN EXÓGENA DIAN
+    // =========================================================================
 
-                // 19. retfte_iva
-                Cell celdaRetfteIva = row.createCell(18);
-                if (f.getValorReteiva() != null) {
-                    celdaRetfteIva.setCellValue(f.getValorReteiva().doubleValue());
-                    celdaRetfteIva.setCellStyle(currencyStyle);
-                } else {
-                    celdaRetfteIva.setCellValue("");
-                }
-
-                // 20. fte_iva_no_residentes
-                Cell celdaFteIvaNoRes = row.createCell(19);
-                celdaFteIvaNoRes.setCellValue("");
-            }
-
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportarFormato1001Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro) {
+        List<Factura> facturas = obtenerFacturasParaExogena(nitPrestador, rolesUsuario, filtro);
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+            Sheet sheet = workbook.createSheet("Formato 1001 DIAN");
+            llenarHojaFormato1001(sheet, facturas, crearEstiloEncabezado(workbook), crearEstiloMoneda(workbook));
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
                 workbook.write(baos);
                 workbook.dispose();
@@ -986,6 +1371,173 @@ public class FacturaServiceImpl implements FacturaService {
             LOGGER.error("❌ Error generando archivo Excel de Formato 1001 DIAN", e);
             throw new RuntimeException("Error generando archivo Excel de Formato 1001 DIAN", e);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportarFormato1003Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro) {
+        List<Factura> facturas = obtenerFacturasParaExogena(nitPrestador, rolesUsuario, filtro);
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+            Sheet sheet = workbook.createSheet("FORMATO 1003 DIAN");
+            llenarHojaFormato1003(sheet, facturas, crearEstiloEncabezado(workbook), crearEstiloMoneda(workbook));
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                workbook.write(baos);
+                workbook.dispose();
+                return baos.toByteArray();
+            }
+        } catch (IOException e) {
+            LOGGER.error("❌ Error generando archivo Excel de Formato 1003 DIAN", e);
+            throw new RuntimeException("Error generando archivo Excel de Formato 1003 DIAN", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportarFormato1005Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro) {
+        List<Factura> facturas = obtenerFacturasParaExogena(nitPrestador, rolesUsuario, filtro);
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+            Sheet sheet = workbook.createSheet("F 1005 IVA DESCONTABLE");
+            llenarHojaFormato1005(sheet, facturas, crearEstiloEncabezado(workbook), crearEstiloMoneda(workbook));
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                workbook.write(baos);
+                workbook.dispose();
+                return baos.toByteArray();
+            }
+        } catch (IOException e) {
+            LOGGER.error("❌ Error generando archivo Excel de Formato 1005 DIAN", e);
+            throw new RuntimeException("Error generando archivo Excel de Formato 1005 DIAN", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportarFormato1006Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro) {
+        List<Factura> facturas = obtenerFacturasParaExogena(nitPrestador, rolesUsuario, filtro);
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+            Sheet sheet = workbook.createSheet("FORMATO 1006 IVA GENERADO");
+            llenarHojaFormato1006(sheet, facturas, crearEstiloEncabezado(workbook), crearEstiloMoneda(workbook));
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                workbook.write(baos);
+                workbook.dispose();
+                return baos.toByteArray();
+            }
+        } catch (IOException e) {
+            LOGGER.error("❌ Error generando archivo Excel de Formato 1006 DIAN", e);
+            throw new RuntimeException("Error generando archivo Excel de Formato 1006 DIAN", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportarFormato1007Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro) {
+        List<Factura> facturas = obtenerFacturasParaExogena(nitPrestador, rolesUsuario, filtro);
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+            Sheet sheet = workbook.createSheet("FORMATO 1007");
+            llenarHojaFormato1007(sheet, facturas, crearEstiloEncabezado(workbook), crearEstiloMoneda(workbook));
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                workbook.write(baos);
+                workbook.dispose();
+                return baos.toByteArray();
+            }
+        } catch (IOException e) {
+            LOGGER.error("❌ Error generando archivo Excel de Formato 1007 DIAN", e);
+            throw new RuntimeException("Error generando archivo Excel de Formato 1007 DIAN", e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportarFormatosExogenaConsolidadoExcel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro) {
+        List<Factura> facturas = obtenerFacturasParaExogena(nitPrestador, rolesUsuario, filtro);
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+            XSSFCellStyle headerStyle = crearEstiloEncabezado(workbook);
+            CellStyle currencyStyle = crearEstiloMoneda(workbook);
+
+            // 1. Hoja Formato 1001
+            Sheet sheet1001 = workbook.createSheet("Formato 1001 DIAN");
+            llenarHojaFormato1001(sheet1001, facturas, headerStyle, currencyStyle);
+
+            // 2. Hoja Formato 1003
+            Sheet sheet1003 = workbook.createSheet("FORMATO 1003 DIAN");
+            llenarHojaFormato1003(sheet1003, facturas, headerStyle, currencyStyle);
+
+            // 3. Hoja Formato 1005 (IVA Descontable)
+            Sheet sheet1005 = workbook.createSheet("F 1005 IVA DESCONTABLE");
+            llenarHojaFormato1005(sheet1005, facturas, headerStyle, currencyStyle);
+
+            // 4. Hoja Formato 1006 (IVA Generado)
+            Sheet sheet1006 = workbook.createSheet("FORMATO 1006 IVA GENERADO");
+            llenarHojaFormato1006(sheet1006, facturas, headerStyle, currencyStyle);
+
+            // 5. Hoja Formato 1007
+            Sheet sheet1007 = workbook.createSheet("FORMATO 1007");
+            llenarHojaFormato1007(sheet1007, facturas, headerStyle, currencyStyle);
+
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                workbook.write(baos);
+                workbook.dispose();
+                return baos.toByteArray();
+            }
+        } catch (IOException e) {
+            LOGGER.error("❌ Error generando archivo Excel Consolidado de Exógena DIAN", e);
+            throw new RuntimeException("Error generando archivo Excel Consolidado de Exógena DIAN", e);
+        }
+    }
+
+    // Helper classes para acumulación agrupada de formatos
+    private static class Formato1003Row {
+        String concepto;
+        String tipoDocto;
+        String nit;
+        String dv;
+        String primerApellido;
+        String segundoApellido;
+        String primerNombre;
+        String segundoNombre;
+        String razonSocial;
+        String direccion;
+        String departamento;
+        String municipio;
+        BigDecimal baseRetencion = BigDecimal.ZERO;
+        BigDecimal retencionPracticada = BigDecimal.ZERO;
+    }
+
+    private static class Formato1005Row {
+        String tipoDocto;
+        String nit;
+        String dv;
+        String primerApellido;
+        String segundoApellido;
+        String primerNombre;
+        String segundoNombre;
+        String razonSocial;
+        BigDecimal impDescontable = BigDecimal.ZERO;
+    }
+
+    private static class Formato1006Row {
+        String tipoDocto;
+        String nit;
+        String dv;
+        String primerApellido;
+        String segundoApellido;
+        String primerNombre;
+        String segundoNombre;
+        String razonSocial;
+        BigDecimal ivaGenerado = BigDecimal.ZERO;
+    }
+
+    private static class Formato1007Row {
+        String concepto;
+        String tipoDocto;
+        String idTercero;
+        String primerApellido;
+        String segundoApellido;
+        String primerNombre;
+        String segundoNombre;
+        String nombreTercero;
+        String pais;
+        BigDecimal ingresosBrutos = BigDecimal.ZERO;
+        BigDecimal devoluciones = BigDecimal.ZERO;
     }
 
     @Override

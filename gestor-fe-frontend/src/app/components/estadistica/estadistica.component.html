@@ -193,20 +193,43 @@
   <mat-card class="card-seccion card-reporte-exogena mb-3" *ngIf="esAdminOGestor">
     <div class="seccion-header">
       <div class="seccion-header-title">
-        <div class="icon-dian-box">
-          <mat-icon>account_balance</mat-icon>
+        <div class="icon-dian-box" [style.background]="formatoActualInfo.color + '20'" [style.color]="formatoActualInfo.color">
+          <mat-icon>{{ formatoActualInfo.icono }}</mat-icon>
         </div>
         <div>
-          <h2 class="titulo-seccion">Reporte de Información Exógena - Formato 1001 DIAN</h2>
+          <h2 class="titulo-seccion">Reporte de Información Exógena DIAN</h2>
           <p class="subtitulo-seccion">
-            Pagos o abonos en cuenta y retenciones en la fuente practicadas / asumidas según especificación técnica DIAN
+            Seleccione los filtros de período/fechas y haga clic directamente en cualquiera de los cuadros para descargar el archivo Excel:
           </p>
         </div>
       </div>
 
-      <div class="badge-dian-status">
+      <div class="badge-dian-status" [style.borderColor]="formatoActualInfo.color + '60'" [style.color]="formatoActualInfo.color">
         <mat-icon>verified</mat-icon>
-        <span>Exógena DIAN Formato 1001</span>
+        <span>{{ formatoActualInfo.codigo }} DIAN</span>
+      </div>
+    </div>
+
+    <!-- 🔘 Selector y Descarga Directa por Cuadros DIAN -->
+    <div class="exogena-selector-tabs mb-3">
+      <div class="exogena-tab-item"
+           *ngFor="let f of formatosExogena"
+           [class.active]="formatoExogenaSeleccionado === f.id"
+           [class.descargando]="descargandoExogena && formatoEnDescarga === f.id"
+           (click)="clickDescargarCuadroExogena(f.id)"
+           [matTooltip]="'Clic para generar y descargar ' + f.codigo + ' en Excel según los filtros seleccionados'">
+        <div class="tab-icon-box" [style.background]="f.color + '18'" [style.color]="f.color">
+          <mat-icon *ngIf="!(descargandoExogena && formatoEnDescarga === f.id)">{{ f.icono }}</mat-icon>
+          <mat-icon *ngIf="descargandoExogena && formatoEnDescarga === f.id" class="spinner-rotar">sync</mat-icon>
+        </div>
+        <div class="tab-info flex-grow-1">
+          <div class="d-flex align-items-center justify-content-between gap-1">
+            <span class="tab-code">{{ f.codigo }}</span>
+            <mat-icon class="download-mini-icon" [style.color]="f.color" *ngIf="!(descargandoExogena && formatoEnDescarga === f.id)">file_download</mat-icon>
+            <span *ngIf="descargandoExogena && formatoEnDescarga === f.id" class="descargando-mini-tag">Generando...</span>
+          </div>
+          <span class="tab-badge">{{ f.badge }}</span>
+        </div>
       </div>
     </div>
 
@@ -214,7 +237,7 @@
       <div class="row g-3 align-items-end">
 
         <!-- Campo 1: Selector Año Gravable -->
-        <div class="col-xl-3 col-lg-3 col-md-4 col-12">
+        <div class="col-xl-4 col-lg-4 col-md-4 col-12">
           <label class="campo-label">
             <mat-icon>calendar_today</mat-icon>
             <span>Año Gravable</span>
@@ -228,7 +251,7 @@
         </div>
 
         <!-- Campo 2: Fecha Desde (Opcional) -->
-        <div class="col-xl-2 col-lg-2 col-md-4 col-12">
+        <div class="col-xl-3 col-lg-3 col-md-3 col-12">
           <label class="campo-label">
             <mat-icon>event</mat-icon>
             <span>Fecha Desde (Opcional)</span>
@@ -247,7 +270,7 @@
         </div>
 
         <!-- Campo 3: Fecha Hasta (Opcional) -->
-        <div class="col-xl-2 col-lg-2 col-md-4 col-12">
+        <div class="col-xl-3 col-lg-3 col-md-3 col-12">
           <label class="campo-label">
             <mat-icon>event_available</mat-icon>
             <span>Fecha Hasta (Opcional)</span>
@@ -265,25 +288,14 @@
           </div>
         </div>
 
-        <!-- Campo 4: Botón Descargar Excel y Limpiar -->
-        <div class="col-xl-5 col-lg-5 col-md-12 col-12">
+        <!-- Campo 4: Botón Limpiar Filtros -->
+        <div class="col-xl-2 col-lg-2 col-md-2 col-12">
           <div class="filtro-botones-box">
             <button
               type="button"
-              class="btn-descargar-exogena flex-grow-1"
-              [disabled]="descargandoExogena"
-              (click)="descargarFormato1001()"
-              matTooltip="Exportar las 20 columnas del Formato 1001 a archivo Excel">
-              <mat-icon *ngIf="!descargandoExogena">file_download</mat-icon>
-              <mat-icon *ngIf="descargandoExogena" class="spinner-rotar">sync</mat-icon>
-              <span>{{ descargandoExogena ? 'Generando...' : 'Descargar Formato 1001' }}</span>
-            </button>
-
-            <button
-              type="button"
-              class="btn-filtro-limpiar btn-exogena-limpiar"
+              class="btn-exogena-limpiar w-100"
               (click)="limpiarFiltrosExogena()"
-              matTooltip="Restablecer filtros del Formato 1001">
+              matTooltip="Restablecer filtros de búsqueda">
               <mat-icon>refresh</mat-icon>
               <span>Limpiar</span>
             </button>
@@ -292,13 +304,16 @@
 
       </div>
 
-      <!-- Fila informativa de columnas técnicas -->
+      <!-- Fila informativa de columnas técnicas según formato seleccionado -->
       <div class="exogena-columnas-banner mt-3">
-        <mat-icon class="banner-info-icon">info</mat-icon>
+        <mat-icon class="banner-info-icon" [style.color]="formatoActualInfo.color">info</mat-icon>
         <div class="banner-info-text">
-          <span class="banner-info-title">Estructura oficial del reporte (20 columnas ordenadas):</span>
+          <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+            <span class="banner-info-title">{{ formatoActualInfo.codigo }} DIAN — {{ formatoActualInfo.titulo }}</span>
+            <span class="badge-columnas-count">{{ formatoActualInfo.id === 'consolidado' ? '5 pestañas incluidas' : formatoActualInfo.columnasCount + ' columnas ordenadas' }}</span>
+          </div>
           <span class="banner-info-chips">
-            concepto, tipo_docto, numero_identificacion, primer_Apellido, segundo_apellido, primer_nombre, segundo_nombre, razon_social, direccion, codigo_departamento, codigo_municipio, codigo_pais, pago_abono_en_cuenta_gto deducible, apgo_abono_en_cuenta_no_deducible, iva_mayor_vr_gasto, iva_mayor_vr_del_cosot_gasto_no_deducible, retencion_en_la_fuente, fte_asumida, retfte_iva, fte_iva_no_residentes
+            {{ formatoActualInfo.columnas }}
           </span>
         </div>
       </div>
