@@ -68,12 +68,87 @@ export class EstadisticaComponent implements OnInit, OnDestroy {
   esAdminOGestor: boolean = false;
   isAdmin: boolean = false;
 
-  // 🏛️ Sección Información Exógena - Formato 1001 DIAN
+  // 🏛️ Sección Información Exógena DIAN (Formatos 1001, 1003, 1005, 1006, 1007 y Consolidado)
+  formatoExogenaSeleccionado: '1001' | '1003' | '1005' | '1006' | '1007' | 'consolidado' = '1001';
   anioGravableExogena: number | null = null;
   aniosDisponibles: number[] = [];
   fechaExogenaDesde: string = '';
   fechaExogenaHasta: string = '';
   descargandoExogena: boolean = false;
+  formatoEnDescarga: string | null = null;
+
+  formatosExogena = [
+    {
+      id: '1001' as const,
+      codigo: 'Formato 1001',
+      titulo: 'Pagos o Abonos en Cuenta y Retenciones Practicadas',
+      badge: 'Costos, Gastos y Ret. Practicadas',
+      icono: 'payments',
+      color: '#10b981',
+      columnasCount: 20,
+      descripcion: 'Pagos o abonos en cuenta y retenciones en la fuente practicadas / asumidas a terceros (Gastos y Costos según especificación técnica DIAN).',
+      columnas: 'concepto, tipo_docto, numero_identificacion, primer_Apellido, segundo_apellido, primer_nombre, segundo_nombre, razon_social, direccion, codigo_departamento, codigo_municipio, codigo_pais, pago_abono_en_cuenta_gto_deducible, apgo_abono_en_cuenta_no_deducible, iva_mayor_vr_gasto, iva_mayor_vr_del_cosot_gasto_no_deducible, retencion_en_la_fuente, fte_asumida, retfte_iva, fte_iva_no_residentes'
+    },
+    {
+      id: '1003' as const,
+      codigo: 'Formato 1003',
+      titulo: 'Retenciones en la Fuente que le Practicaron',
+      badge: 'Retenciones que le Practicaron',
+      icono: 'account_balance_wallet',
+      color: '#3b82f6',
+      columnasCount: 14,
+      descripcion: 'Retenciones en la fuente a título de renta e IVA que le practicaron clientes u otros agentes de retención por servicios, honorarios, etc.',
+      columnas: 'Concepto, TDocto.tercero, NIT, DV, 1 AP, 2 AP, 1 NM, 2 NM, RAZON SOCIAL, Dirección tercero, Departamento tercero, Municipio tercero, Valor acumulado del pago o abono sujeto a Retención, Retención en la fuente que le practicaron'
+    },
+    {
+      id: '1005' as const,
+      codigo: 'Formato 1005',
+      titulo: 'Impuesto Descontable (IVA Descontable)',
+      badge: 'IVA Descontable en Compras',
+      icono: 'remove_shopping_cart',
+      color: '#8b5cf6',
+      columnasCount: 10,
+      descripcion: 'Impuesto sobre las ventas que le facturaron y descontó en adquisiciones de bienes y servicios gravados según proveedores.',
+      columnas: 'TIPO DOCTO, NIT, DV, 1 APELLIDO, 2 APELLIDO, 1 NOMBRE, 2 NOMBRE, RAZON SOCIAL, IMP DESCONTABLE, DEVOLUCIONES'
+    },
+    {
+      id: '1006' as const,
+      codigo: 'Formato 1006',
+      titulo: 'Impuesto Generado (IVA Generado)',
+      badge: 'IVA Generado en Ventas',
+      icono: 'add_shopping_cart',
+      color: '#06b6d4',
+      columnasCount: 10,
+      descripcion: 'Impuesto sobre las ventas por pagar (generado) facturado a clientes en operaciones y servicios prestados gravados.',
+      columnas: 'TIPO DOCTO, NIT, DV, 1 APELLIDO, 2 APELLIDO, 1 NOMBRE, 2 NOMBRE, RAZON SOCIAL, IVA GENERADO, DEVOLUCIONES'
+    },
+    {
+      id: '1007' as const,
+      codigo: 'Formato 1007',
+      titulo: 'Ingresos Propios Recibidos en el Período',
+      badge: 'Ingresos Brutos Recibidos',
+      icono: 'trending_up',
+      color: '#f59e0b',
+      columnasCount: 11,
+      descripcion: 'Ingresos brutos operacionales y no operacionales recibidos durante el año fiscal, detallados por tercero.',
+      columnas: 'Concepto, TDocto.tercero, Id.tercero, Primer apellido, Segundo apellido, Primer nombre, Segundo nombre, Nombre tercero, Pais, Ingresos brutos recibidos, Devoluciones, rebajas y descuentos'
+    },
+    {
+      id: 'consolidado' as const,
+      codigo: 'Consolidado',
+      titulo: 'Libro Excel Consolidado (5 Formatos en Pestañas)',
+      badge: 'Multi-Formato DIAN',
+      icono: 'auto_stories',
+      color: '#ec4899',
+      columnasCount: 5,
+      descripcion: 'Libro de trabajo completo que reúne los 5 formatos en pestañas individuales: [Formato 1001], [1003], [1005], [1006] y [1007].',
+      columnas: 'Pestañas: [Formato 1001 DIAN] | [FORMATO 1003 DIAN] | [F 1005 IVA DESCONTABLE] | [FORMATO 1006 IVA GENERADO] | [FORMATO 1007]'
+    }
+  ];
+
+  get formatoActualInfo() {
+    return this.formatosExogena.find(f => f.id === this.formatoExogenaSeleccionado) || this.formatosExogena[0];
+  }
 
   ngOnInit(): void {
     this.generarAniosDisponibles();
@@ -467,7 +542,7 @@ export class EstadisticaComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * 🏛️ Limpia los filtros de la sección de Información Exógena (Formato 1001)
+   * 🏛️ Limpia los filtros de la sección de Información Exógena
    */
   limpiarFiltrosExogena(): void {
     this.anioGravableExogena = null;
@@ -476,27 +551,47 @@ export class EstadisticaComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * 🏛️ Descarga el archivo Excel estructurado para el Formato 1001 de la DIAN (Información Exógena)
+   * 🏛️ Selecciona el formato exógena activo para visualización o descarga
    */
-  descargarFormato1001(): void {
+  seleccionarFormatoExogena(formatoId: '1001' | '1003' | '1005' | '1006' | '1007' | 'consolidado'): void {
+    this.formatoExogenaSeleccionado = formatoId;
+  }
+
+  /**
+   * 🏛️ Al hacer clic en cualquier cuadro, lo selecciona y descarga automáticamente con los filtros aplicados
+   */
+  clickDescargarCuadroExogena(formatoId: '1001' | '1003' | '1005' | '1006' | '1007' | 'consolidado'): void {
+    this.formatoExogenaSeleccionado = formatoId;
+    this.descargarFormatoExogena(formatoId);
+  }
+
+  /**
+   * 🏛️ Descarga el archivo Excel estructurado para el Formato DIAN seleccionado o especificado
+   */
+  descargarFormatoExogena(formatoId?: '1001' | '1003' | '1005' | '1006' | '1007' | 'consolidado'): void {
     if (this.descargandoExogena) return;
+
+    const targetFormato = formatoId || this.formatoExogenaSeleccionado;
 
     if (!this.anioGravableExogena && !this.fechaExogenaDesde && !this.fechaExogenaHasta) {
       this.alertService.advertencia(
-        'Por favor seleccione un Año Gravable o ingrese un rango de fechas para generar el Formato 1001.',
+        `Por favor seleccione un Año Gravable o ingrese un rango de fechas para generar el Formato ${targetFormato}.`,
         'Filtro requerido'
       );
       return;
     }
 
     this.descargandoExogena = true;
+    this.formatoEnDescarga = targetFormato;
     const descPeriodo = this.anioGravableExogena
       ? `año gravable ${this.anioGravableExogena}`
       : 'periodo de fechas seleccionado';
 
+    const info = this.formatosExogena.find(f => f.id === targetFormato) || this.formatosExogena[0];
+
     this.alertService.cargando(
-      `Generando Formato 1001 DIAN para el ${descPeriodo}...`,
-      'Generando Información Exógena'
+      `Generando ${info.codigo} (${info.titulo}) para el ${descPeriodo}...`,
+      'Generando Información Exógena DIAN'
     );
 
     const filtro: any = {};
@@ -510,7 +605,8 @@ export class EstadisticaComponent implements OnInit, OnDestroy {
       filtro.nit = this.nitFiltro;
     }
 
-    this.facturaService.exportarFormato1001Excel(
+    this.facturaService.exportarFormatoExogenaExcel(
+      targetFormato,
       this.nitFiltro || undefined,
       this.rolesUsuario,
       this.anioGravableExogena || undefined,
@@ -518,14 +614,25 @@ export class EstadisticaComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (blob: Blob) => {
         this.descargandoExogena = false;
+        this.formatoEnDescarga = null;
         this.alertService.cerrar();
 
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const nombreArchivo = this.anioGravableExogena
-          ? `formato_1001_dian_${this.anioGravableExogena}.xlsx`
-          : `formato_1001_dian_${new Date().getFullYear()}.xlsx`;
+        const anioNom = this.anioGravableExogena ? this.anioGravableExogena : new Date().getFullYear();
+
+        let nombreArchivo = `formato_${targetFormato}_dian_${anioNom}.xlsx`;
+        if (targetFormato === '1005') {
+          nombreArchivo = `formato_1005_iva_descontable_${anioNom}.xlsx`;
+        } else if (targetFormato === '1006') {
+          nombreArchivo = `formato_1006_iva_generado_${anioNom}.xlsx`;
+        } else if (targetFormato === '1007') {
+          nombreArchivo = `formato_1007_ingresos_${anioNom}.xlsx`;
+        } else if (targetFormato === 'consolidado') {
+          nombreArchivo = `exogena_dian_consolidado_${anioNom}.xlsx`;
+        }
+
         a.download = nombreArchivo;
         document.body.appendChild(a);
         a.click();
@@ -533,19 +640,27 @@ export class EstadisticaComponent implements OnInit, OnDestroy {
         window.URL.revokeObjectURL(url);
 
         this.alertService.exito(
-          `Formato 1001 DIAN (${descPeriodo}) descargado exitosamente.`,
+          `${info.codigo} DIAN (${descPeriodo}) descargado exitosamente.`,
           'Descarga Completa'
         );
       },
       error: (err) => {
         this.descargandoExogena = false;
+        this.formatoEnDescarga = null;
         this.alertService.cerrar();
-        console.error('Error al generar Formato 1001:', err);
+        console.error(`Error al generar ${info.codigo}:`, err);
         this.alertService.error(
-          'Ocurrió un error al intentar generar el archivo Excel del Formato 1001.',
+          `Ocurrió un error al intentar generar el archivo Excel de ${info.codigo}.`,
           'Error en la descarga'
         );
       }
     });
+  }
+
+  /**
+   * 🏛️ Descarga directa del Formato 1001 (mantiene compatibilidad)
+   */
+  descargarFormato1001(): void {
+    this.descargarFormatoExogena('1001');
   }
 }

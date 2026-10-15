@@ -34,4 +34,9 @@ public interface FacturaService {
     Page<Factura> buscarTrazabilidadSegunRol(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro, Pageable pageable);
     byte[] exportarFacturasExcel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro);
     byte[] exportarFormato1001Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro);
+    byte[] exportarFormato1003Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro);
+    byte[] exportarFormato1005Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro);
+    byte[] exportarFormato1006Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro);
+    byte[] exportarFormato1007Excel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro);
+    byte[] exportarFormatosExogenaConsolidadoExcel(String nitPrestador, List<String> rolesUsuario, FacturaFilterDto filtro);
 }
