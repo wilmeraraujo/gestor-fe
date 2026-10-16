@@ -1,0 +1,377 @@
+/* ========================================================================= */
+/* TEMA PERSONALIZADO PARA KEYCLOAK - GESTOR FACTURACIÓN ELECTRÓNICA         */
+/* MUTUAL ASSOLIDARIA                                                        */
+/* ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* ------------------------------------------------------------------------- */
+/* 1. FONDO DE PÁGINA CON ONDAS FLUIDAS Y EFECTO AMBIENTAL                    */
+/* ------------------------------------------------------------------------- */
+html {
+    height: 100% !important;
+}
+
+body {
+    min-height: 100vh !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    background-color: #091224 !important;
+    background-image: 
+        radial-gradient(ellipse at 15% 15%, rgba(29, 166, 186, 0.25) 0%, transparent 45%),
+        radial-gradient(ellipse at 85% 85%, rgba(5, 104, 57, 0.28) 0%, transparent 45%),
+        radial-gradient(ellipse at 50% 50%, rgba(9, 18, 36, 0.4) 0%, transparent 65%),
+        url('../img/waves.svg') !important;
+    background-position: center center, center center, center center, center bottom !important;
+    background-repeat: no-repeat !important;
+    background-size: cover, cover, cover, 100% 100% !important;
+    background-attachment: fixed !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 2. CONTENEDOR PRINCIPAL - CENTRADO VERTICAL Y HORIZONTAL EXACTO           */
+/* ------------------------------------------------------------------------- */
+.login-pf-page,
+#kc-page-body {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 100vh !important;
+    width: 100% !important;
+    padding: 30px 16px !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 3. LOGO SUPERIOR PERSONALIZADO CON CONTENEDOR LUMINOSO                   */
+/* ------------------------------------------------------------------------- */
+#kc-header {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-bottom: 22px !important;
+    width: 100% !important;
+}
+
+#kc-header-wrapper {
+    background-image: url('../img/logo.png') !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: 72% auto !important;
+    width: 200px !important;
+    height: 70px !important;
+    background-color: #ffffff !important;
+    border-radius: 18px !important;
+    box-shadow: 0 14px 32px -6px rgba(0, 0, 0, 0.55), 
+                0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+    text-indent: -9999px !important;
+    overflow: hidden !important;
+    font-size: 0 !important;
+    margin: 0 auto !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+#kc-header-wrapper:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 18px 36px -4px rgba(0, 0, 0, 0.65),
+                0 0 0 1px rgba(255, 255, 255, 0.3) !important;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 4. TARJETA CONTENEDORA DEL LOGIN (CARD PRINCIPAL)                         */
+/* ------------------------------------------------------------------------- */
+.card-pf {
+    background: #ffffff !important;
+    border-radius: 24px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                0 8px 24px -4px rgba(29, 166, 186, 0.15) !important;
+    border: none !important;
+    padding: 38px 36px 30px 36px !important;
+    max-width: 440px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 4.1 OCULTAR SELECTOR DE IDIOMA DE KEYCLOAK (KEYCLOAK LOCALE DROPDOWN)     */
+/* ------------------------------------------------------------------------- */
+#kc-locale,
+#kc-locale-wrapper,
+.kc-dropdown,
+.login-pf-header #kc-locale {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 5. TÍTULOS Y CABECERA DEL FORMULARIO (EN ESPAÑOL)                         */
+/* ------------------------------------------------------------------------- */
+#kc-page-title,
+.login-pf-header h1 {
+    font-size: 0 !important;
+    line-height: 0 !important;
+    color: transparent !important;
+    text-align: center !important;
+    margin-top: 0 !important;
+    margin-bottom: 26px !important;
+}
+
+/* Subtítulo institucional antes del título */
+#kc-page-title::before,
+.login-pf-header h1::before {
+    content: "ASSOLIDARIA" !important;
+    display: block !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    color: #1DA6BA !important;
+    margin-bottom: 6px !important;
+    line-height: 1.2 !important;
+}
+
+/* Título principal en español */
+#kc-page-title::after,
+.login-pf-header h1::after {
+    content: "Iniciar Sesión" !important;
+    display: block !important;
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.02em !important;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 6. CAMPOS DE TEXTO E INPUTS                                               */
+/* ------------------------------------------------------------------------- */
+.form-group {
+    margin-bottom: 20px !important;
+}
+
+label.control-label,
+label {
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+    margin-bottom: 8px !important;
+    display: inline-block !important;
+    letter-spacing: -0.01em !important;
+}
+
+.form-control,
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+    width: 100% !important;
+    height: 48px !important;
+    padding: 10px 16px !important;
+    font-size: 15px !important;
+    font-family: 'Outfit', sans-serif !important;
+    color: #0f172a !important;
+    background-color: #f8fafc !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.form-control:focus,
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus {
+    background-color: #ffffff !important;
+    border-color: #1DA6BA !important;
+    box-shadow: 0 0 0 4px rgba(29, 166, 186, 0.16) !important;
+    outline: none !important;
+}
+
+/* Botón de visibilidad de contraseña (ojo) */
+.pf-v5-c-form-control__icon,
+.btn-password-visibility,
+button[aria-label*="password"],
+button[aria-label*="contraseña"],
+button[aria-label*="Password"] {
+    border-radius: 10px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    transition: all 0.2s ease !important;
+}
+
+button[aria-label*="password"]:hover,
+button[aria-label*="contraseña"]:hover {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 7. BOTÓN PRINCIPAL DE INICIO DE SESIÓN (INICIAR SESIÓN EN ESPAÑOL)        */
+/* ------------------------------------------------------------------------- */
+#kc-login,
+.btn-primary {
+    width: 100% !important;
+    height: 48px !important;
+    background: linear-gradient(135deg, #1DA6BA 0%, #056839 100%) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    color: #ffffff !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    font-family: 'Outfit', sans-serif !important;
+    letter-spacing: 0.01em !important;
+    box-shadow: 0 8px 18px -4px rgba(5, 104, 57, 0.38) !important;
+    transition: all 0.25s ease !important;
+    cursor: pointer !important;
+    margin-top: 12px !important;
+    position: relative !important;
+}
+
+/* En caso de que se renderice como elemento <button>, forzar texto en español */
+button#kc-login {
+    font-size: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+button#kc-login::after {
+    content: "Iniciar Sesión" !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+}
+
+#kc-login:hover,
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1893a6 0%, #04542d 100%) !important;
+    box-shadow: 0 12px 22px -4px rgba(5, 104, 57, 0.48) !important;
+    transform: translateY(-2px) !important;
+}
+
+#kc-login:active,
+.btn-primary:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 4px 10px -2px rgba(5, 104, 57, 0.3) !important;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 8. ALERTAS Y MENSAJES DE ERROR                                            */
+/* ------------------------------------------------------------------------- */
+.alert-error {
+    background-color: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #b91c1c !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    margin-bottom: 20px !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 9. ENLACES Y ACCIONES SECUNDARIAS                                         */
+/* ------------------------------------------------------------------------- */
+#kc-form-options a,
+#kc-info-wrapper a {
+    color: #1DA6BA !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    font-size: 13.5px !important;
+    transition: color 0.2s ease !important;
+}
+
+#kc-form-options a:hover,
+#kc-info-wrapper a:hover {
+    color: #056839 !important;
+    text-decoration: underline !important;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 10. FOOTER INTERNO EN LA TARJETA Y FOOTER INFERIOR DE PÁGINA              */
+/* ------------------------------------------------------------------------- */
+.card-pf::after {
+    content: "© 2026 Mutual Assolidaria · Facturación Electrónica\A Acceso Seguro · Sistema DIAN Radian";
+    white-space: pre-wrap;
+    display: block;
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #94a3b8;
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid #f1f5f9;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+}
+
+.login-pf-page::after {
+    content: "Plataforma protegida con autenticación OAuth2 / OIDC · Conexión Cifrada SSL";
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 22px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 11. ADAPTABILIDAD RESPONSIVA (MÓVILES Y PANTALLAS COMPACTAS)            */
+/* ------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+    .login-pf-page {
+        padding: 20px 12px !important;
+    }
+
+    #kc-header {
+        margin-bottom: 16px !important;
+    }
+
+    #kc-header-wrapper {
+        width: 180px !important;
+        height: 64px !important;
+    }
+
+    .card-pf {
+        padding: 28px 22px 24px 22px !important;
+        border-radius: 20px !important;
+    }
+
+    #kc-page-title::after,
+    .login-pf-header h1::after {
+        font-size: 21px !important;
+    }
+
+    .form-control,
+    input[type="text"],
+    input[type="password"] {
+        height: 44px !important;
+        font-size: 14px !important;
+    }
+
+    #kc-login,
+    .btn-primary {
+        height: 44px !important;
+        font-size: 15px !important;
+    }
+}

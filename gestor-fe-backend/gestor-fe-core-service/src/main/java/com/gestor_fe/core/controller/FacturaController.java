@@ -158,11 +158,13 @@ public class FacturaController {
         }
 
         byte[] excelBytes = service.exportarFormato1003Excel(nitPrestador, roles, filtro);
-        String filename = "formato_1003_dian_" + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
+        String filename = "formato_1003_dian_"
+                + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelBytes);
     }
 
@@ -183,11 +185,13 @@ public class FacturaController {
         }
 
         byte[] excelBytes = service.exportarFormato1005Excel(nitPrestador, roles, filtro);
-        String filename = "formato_1005_iva_descontable_" + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
+        String filename = "formato_1005_iva_descontable_"
+                + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelBytes);
     }
 
@@ -208,11 +212,13 @@ public class FacturaController {
         }
 
         byte[] excelBytes = service.exportarFormato1006Excel(nitPrestador, roles, filtro);
-        String filename = "formato_1006_iva_generado_" + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
+        String filename = "formato_1006_iva_generado_"
+                + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelBytes);
     }
 
@@ -233,11 +239,13 @@ public class FacturaController {
         }
 
         byte[] excelBytes = service.exportarFormato1007Excel(nitPrestador, roles, filtro);
-        String filename = "formato_1007_ingresos_" + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
+        String filename = "formato_1007_ingresos_"
+                + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelBytes);
     }
 
@@ -258,11 +266,13 @@ public class FacturaController {
         }
 
         byte[] excelBytes = service.exportarFormatosExogenaConsolidadoExcel(nitPrestador, roles, filtro);
-        String filename = "exogena_dian_consolidado_" + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
+        String filename = "exogena_dian_consolidado_"
+                + (anioGravable != null ? anioGravable : java.time.LocalDate.now().getYear()) + ".xlsx";
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelBytes);
     }
 

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="none" width="100%" height="100%">
+  <defs>
+    <!-- Gradientes de ondas institucionales -->
+    <linearGradient id="waveGrad1" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#056839" stop-opacity="0.35"/>
+      <stop offset="50%" stop-color="#0b4629" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="waveGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1DA6BA" stop-opacity="0.28"/>
+      <stop offset="60%" stop-color="#0e7490" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="waveGrad3" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#1DA6BA" stop-opacity="0.32"/>
+      <stop offset="40%" stop-color="#056839" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="waveGradTop" x1="0%" y1="0%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#1DA6BA" stop-opacity="0.18"/>
+      <stop offset="70%" stop-color="#056839" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="goldGlow" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#eab308" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#eab308" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="blurFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="60"/>
+    </filter>
+  </defs>
+
+  <!-- Orbes de luz ambiental suaves (glows) -->
+  <circle cx="200" cy="300" r="320" fill="url(#goldGlow)" filter="url(#blurFilter)" />
+  <circle cx="1700" cy="750" r="420" fill="#1DA6BA" fill-opacity="0.1" filter="url(#blurFilter)" />
+  <circle cx="960" cy="150" r="350" fill="#056839" fill-opacity="0.12" filter="url(#blurFilter)" />
+
+  <!-- Onda superior decorativa sutil -->
+  <path d="M 0,0 L 1920,0 L 1920,240 C 1580,310 1320,120 960,200 C 600,280 340,150 0,260 Z" fill="url(#waveGradTop)"/>
+
+  <!-- Capa 1 de ondas de fondo (Verde y Teal profundo) -->
+  <path d="M 0,1080 L 1920,1080 L 1920,650 C 1600,520 1380,780 1020,670 C 680,560 400,790 0,680 Z" fill="url(#waveGrad1)"/>
+
+  <!-- Capa 2 de ondas intermedia (Cian brillante) -->
+  <path d="M 0,1080 L 1920,1080 L 1920,740 C 1520,620 1280,860 880,720 C 500,590 280,810 0,760 Z" fill="url(#waveGrad2)"/>
+
+  <!-- Capa 3 de ondas frontal (Teal - Esmeralda) -->
+  <path d="M 0,1080 L 1920,1080 L 1920,850 C 1650,780 1440,940 1100,830 C 740,710 420,950 0,860 Z" fill="url(#waveGrad3)"/>
+
+  <!-- Líneas de contorno dinámicas (Stroke luminiscentes) -->
+  <path d="M 0,680 C 400,790 680,560 1020,670 C 1380,780 1600,520 1920,650" fill="none" stroke="#1DA6BA" stroke-width="1.5" stroke-opacity="0.25"/>
+  <path d="M 0,760 C 280,810 500,590 880,720 C 1280,860 1520,620 1920,740" fill="none" stroke="#056839" stroke-width="1.5" stroke-opacity="0.3"/>
+  <path d="M 0,860 C 420,950 740,710 1100,830 C 1440,940 1650,780 1920,850" fill="none" stroke="#1DA6BA" stroke-width="2" stroke-opacity="0.35"/>
+  <path d="M 0,260 C 340,150 600,280 960,200 C 1320,120 1580,310 1920,240" fill="none" stroke="#1DA6BA" stroke-width="1.2" stroke-opacity="0.2"/>
+</svg>

@@ -1,0 +1,97 @@
+================================================================================
+INVENTARIO Y ARQUITECTURA DE DESPLIEGUE - MUTUAL ASSOLIDARIA 2
+================================================================================
+
+DATOS DE ACCESO TENANT
+URL Panel de control: https://cloudh.hostdime.com/tenant
+Organización: MUTUAL_ASSOLIDARIA_2
+Usuario: ADMIN_ASSOLIDARIA_2
+Contraseña: H*B%j*S0OdKlq2
+
+--------------------------------------------------------------------------------
+1. Servidor de Bases de Datos: VM1 (10.3.26.2)
+--------------------------------------------------------------------------------
+Ubicación en el servidor: /opt/databases/ (docker-compose.yml y volúmenes persistentes).
+Usuario SSH: root | Contraseña: MTL2026*- | Puerto: 22
+
+PostgreSQL 16:
+- Host / Puerto: 10.3.26.2:5432
+- Usuario: postgres
+- Contraseña: MTL2026*-
+- Bases de datos:
+    * gestor_fe_core_db (Esquemas: admin, gestor, logs, public)
+    * keycloak (Tablas del servicio de autenticación)
+    * postgres (Administración)
+- Estado: Up (healthy)
+
+MongoDB 7.0:
+- Host / Puerto: 10.3.26.2:27017
+- Usuario: admin
+- Contraseña: MTL2026*-
+- URI de conexión: mongodb://admin:MTL2026*-@10.3.26.2:27017/?authSource=admin
+- Estado: Up (healthy)
+
+--------------------------------------------------------------------------------
+2. Servidor Backend: VM2 (10.3.26.3)
+--------------------------------------------------------------------------------
+Usuario SSH: root | Contraseña: MTL2026*- | Puerto: 22
+Ubicación en el servidor: /opt/gestor-fe-backend/
+
+Servicios Desplegados:
+1. gestor-fe-admin-service:
+   - Puerto: 9095:9095
+   - Contenedor Docker: gestor-fe-admin-service
+   - Imagen: gestor-fe-admin-service:latest
+   - Datasource: jdbc:postgresql://10.3.26.2:5432/gestor_fe_core_db
+
+2. gestor-fe-core-service:
+   - Puerto: 9096:9096
+   - Contenedor Docker: gestor-fe-core-service
+   - Imagen: gestor-fe-core-service:latest
+   - Datasource: jdbc:postgresql://10.3.26.2:5432/gestor_fe_core_db
+   - Feign Admin URL: http://10.3.26.3:9095
+   - Volúmenes montados:
+     * /opt/storage/gestion-fe:/opt/storage/gestion-fe
+     * /opt/storage/gestion-fe-validos:/opt/storage/gestion-fe-validos
+
+Script de despliegue:
+   python deploy_back.py
+
+--------------------------------------------------------------------------------
+3. Servidor Frontend & Autenticación: VM3 (10.3.26.4)
+--------------------------------------------------------------------------------
+Usuario SSH: root | Contraseña: MTL2026*- | Puerto: 22
+Ubicación en el servidor: /opt/gestor-fe-frontend/, /opt/nginx/ y /opt/keycloak/
+
+Subdominios Asignados (DNS Institucional -> 10.3.26.4):
+• Frontend Gestor FE: https://gestor-fe.assolidaria.org.co
+• Keycloak Autenticación: https://auth.assolidaria.org.co
+
+Servicios Desplegados:
+1. Keycloak 26:
+   - Contenedor Docker: keycloak_app
+   - URL Pública: https://auth.assolidaria.org.co
+   - URL Interna: http://10.3.26.4:8080
+   - URL de Administración: https://auth.assolidaria.org.co/admin/
+   - Usuario Admin: admin | Contraseña: MTL2026*-
+   - Base de datos: PostgreSQL en 10.3.26.2:5432/keycloak
+   - Realm de la aplicación: gestor-fe (gestor-fe-realm.json)
+   - Cliente configurado: gestor-fe-frontend
+   - Tema personalizado: gestor-fe-theme
+
+2. gestor-fe-frontend (Angular 17 + Nginx):
+   - Contenedor Docker: gestor-fe-frontend
+   - Imagen: gestor-fe-frontend:latest
+   - Puertos: 80:80 y 4200:80
+   - URLs de acceso web:
+     * https://gestor-fe.assolidaria.org.co
+     * http://10.3.26.4
+     * http://10.3.26.4:4200
+   - Nginx Reverse Proxy Config: /opt/nginx/conf.d/default.conf
+   - Conexión Backend:
+     * BEADMIN: http://10.3.26.3:9095
+     * BECORE: http://10.3.26.3:9096
+   - Autenticación: Keycloak https://auth.assolidaria.org.co (Realm: gestor-fe)
+
+Script de despliegue:
+   python deploy_front.py

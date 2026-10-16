@@ -1,0 +1,52 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.0
+    container_name: keycloak_local
+    restart: unless-stopped
+    ports:
+      # Puerto 8082 en tu PC para no chocar con el puerto 8080 que ya está ocupado
+      - "8082:8080"
+    environment:
+      # =========================================================================
+      # 1. Credenciales de Administrador de Keycloak
+      # =========================================================================
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+
+      # =========================================================================
+      # 2. Conexión a Base de Datos PostgreSQL en tu PC (Host Local)
+      # =========================================================================
+      KC_DB: postgres
+      # 'host.docker.internal' permite al contenedor acceder al localhost de tu PC Windows
+      KC_DB_URL: jdbc:postgresql://host.docker.internal:5432/keycloak
+      KC_DB_USERNAME: postgres
+      # Ajusta aquí la contraseña de tu PostgreSQL local si es diferente
+      KC_DB_PASSWORD: 12345
+      KC_DB_SCHEMA: public
+
+      # =========================================================================
+      # 3. Configuraciones de Modo Desarrollo
+      # =========================================================================
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+
+      # Desactivar caché de temas para ver cambios de CSS inmediatamente con F5
+      KC_THEME_STATIC_MAX_AGE: -1
+      KC_THEME_CACHE_TEMPLATES: "false"
+      KC_THEME_CACHE_THEMES: "false"
+
+    extra_hosts:
+      # Permite la resolución de host.docker.internal en Windows y Linux
+      - "host.docker.internal:host-gateway"
+
+    volumes:
+      # 🎨 Carpeta local donde puedes editar el CSS y estilos de login en vivo
+      - ./keycloak-themes:/opt/keycloak/themes:rw
+      # Importación automática del realm de la aplicación si existe el archivo
+      - ./gestor-fe-frontend/gestor-fe-realm.json:/opt/keycloak/data/import/gestor-fe-realm.json:ro
+
+    command:
+      - start-dev
+      - --import-realm

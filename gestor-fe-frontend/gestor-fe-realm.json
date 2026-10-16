@@ -3,6 +3,7 @@
   "realm": "gestor-fe",
   "displayName": "Gestor FE",
   "displayNameHtml": "<div class=\"kc-logo-text\"><span>Gestor FE</span></div>",
+  "loginTheme": "gestor-fe-theme",
   "notBefore": 0,
   "defaultSignatureAlgorithm": "RS256",
   "revokeRefreshToken": false,
@@ -112,13 +113,19 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
+      "rootUrl": "https://gestor-fe.assolidaria.org.co",
+      "baseUrl": "https://gestor-fe.assolidaria.org.co",
       "redirectUris": [
+        "http://gestor-fe.assolidaria.org.co/*",
+        "https://gestor-fe.assolidaria.org.co/*",
         "http://localhost:4200/*",
         "http://10.3.26.4/*",
         "http://10.3.26.4:80/*",
         "http://10.3.26.4:4200/*"
       ],
       "webOrigins": [
+        "http://gestor-fe.assolidaria.org.co",
+        "https://gestor-fe.assolidaria.org.co",
         "http://localhost:4200",
         "http://10.3.26.4",
         "http://10.3.26.4:80",
@@ -137,7 +144,7 @@
       "frontchannelLogout": false,
       "protocol": "openid-connect",
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:4200/*##http://10.3.26.4/*##http://10.3.26.4:80/*",
+        "post.logout.redirect.uris": "http://gestor-fe.assolidaria.org.co/*##https://gestor-fe.assolidaria.org.co/*##http://localhost:4200/*##http://10.3.26.4/*##http://10.3.26.4:80/*",
         "pkce.code.challenge.method": "S256"
       },
       "authenticationFlowBindingOverrides": {},
